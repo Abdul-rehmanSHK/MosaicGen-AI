@@ -1,0 +1,102 @@
+// Prisma Schema for AI Mosaic Floor & Surface Design Studio
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String?
+  email        String         @unique
+  passwordHash String
+  role         String         @default("USER") // "ADMIN" | "USER"
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  generations  AIGeneration[]
+  inquiries    Inquiry[]
+  auditLogs    AuditLog[]
+}
+
+model Product {
+  id             String         @id @default(cuid())
+  title          String
+  slug           String         @unique
+  description    String
+  category       String         // e.g., "Marble Medallion", "Glass Mosaic", "Waterjet Accent", "Pool Inlay"
+  sampleImageUrl String
+  pricePerSqFt   Float
+  specs          String         // Stored as JSON string (material, chip size, finish, grout width, origin)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  generations    AIGeneration[]
+  inquiries      Inquiry[]
+}
+
+model AIGeneration {
+  id             String      @id @default(cuid())
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  prompt         String
+  placement      String      // "Floor Medallion", "Backsplash", "Accent Wall", "Pool", "Entryway"
+  inputImageUrl  String?
+  maskUrl        String?
+  resultImageUrl String
+  productId      String?
+  product        Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdAt      DateTime    @default(now())
+  inquiries      Inquiry[]
+}
+
+model Page {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  templateType  String   // "classic_grid" | "hero_showcase" | "split_gallery"
+  heading       String
+  bodyText      String
+  heroImageUrl  String?
+  secondaryText String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Inquiry {
+  id           String        @id @default(cuid())
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId    String?
+  product      Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  generationId String?
+  generation   AIGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  inquiryType  String        @default("QUOTE_REQUEST") // "QUOTE_REQUEST" | "TALK_TO_SPECIALIST"
+  name         String
+  email        String
+  phone        String?
+  preferredTime String?
+  message      String
+  status       String        @default("PENDING") // "PENDING" | "CONTACTED" | "COMPLETED"
+  createdAt    DateTime      @default(now())
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail String?
+  action    String   // e.g. "AI_GENERATION_CREATED", "PRODUCT_CREATED", "PAGE_UPDATED", "ROLE_CHANGED"
+  details   String   // Stored as text / JSON
+  createdAt DateTime @default(now())
+}

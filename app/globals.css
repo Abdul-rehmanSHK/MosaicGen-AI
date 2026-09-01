@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #08080A;
+  --foreground: #F5F5F5;
+}
+
+.light {
+  --background: #FAF8F5;
+  --foreground: #171922;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.light body {
+  background-color: #FAF8F5;
+  color: #171922;
+}
+
+/* Light theme overrides for cards and components */
+.light .bg-obsidian-950 {
+  background-color: #FAF8F5 !important;
+  color: #171922 !important;
+}
+
+.light .bg-obsidian-900 {
+  background-color: #FFFFFF !important;
+  color: #171922 !important;
+  border-color: rgba(203, 167, 65, 0.25) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light .bg-obsidian-800 {
+  background-color: #F3EFEA !important;
+  color: #171922 !important;
+}
+
+.light .text-white {
+  color: #1A1C24 !important;
+}
+
+.light .text-neutral-300,
+.light .text-neutral-400 {
+  color: #4A4E5D !important;
+}
+
+.light .border-neutral-800 {
+  border-color: #E6E1DA !important;
+}
+
+.light .bg-luxury-gradient {
+  background: radial-gradient(ellipse at top, rgba(203, 167, 65, 0.12), rgba(250, 248, 245, 0.98)) !important;
+}
+
+h1, h2, h3, h4, .font-serif {
+  font-family: 'Cinzel', serif;
+}
+
+/* Glassmorphism utility */
+.glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(203, 167, 65, 0.2);
+}
+
+.light .glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(245, 240, 232, 0.95) 100%);
+  border: 1px solid rgba(203, 167, 65, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBA741;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #96721C;
+}
