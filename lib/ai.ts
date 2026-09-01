@@ -60,6 +60,10 @@ export async function processMosaicGeneration(
   let resultImageUrl = "";
 
   if (openai) {
+    console.log("=======================================================");
+    console.log("[OPENAI AI PIPELINE] 🚀 Executing DALL-E 3 Image Generation...");
+    console.log("[OPENAI PROMPT]:", fullPrompt);
+    console.log("=======================================================");
     try {
       const response = await openai.images.generate({
         model: "dall-e-3",
@@ -70,14 +74,19 @@ export async function processMosaicGeneration(
 
       if (response && response.data && response.data[0]?.url) {
         resultImageUrl = response.data[0].url;
+        console.log("[OPENAI SUCCESS] ✅ Live DALL-E 3 image URL generated:", resultImageUrl);
       }
-    } catch (err) {
-      console.warn("OpenAI API call failed or quota exceeded, using high-resolution architectural preset fallback:", err);
+    } catch (err: any) {
+      console.warn("[OPENAI WARNING] ⚠️ API call error or quota limit reached, using placement-aware fallback:", err?.message || err);
     }
+  } else {
+    console.log("=======================================================");
+    console.log("[AI PIPELINE INFO] ℹ️ OPENAI_API_KEY is not set in .env.");
+    console.log("[AI PIPELINE INFO] Paste your OPENAI_API_KEY in .env to stream live OpenAI DALL-E 3 renderings.");
+    console.log("=======================================================");
   }
 
   if (!resultImageUrl) {
-    // If a reference image is provided and no OpenAI key, use high quality placement preset
     const presets = LUXURY_MOSAIC_PRESETS[placement] || LUXURY_MOSAIC_PRESETS["Floor Medallion"];
     const randomIndex = Math.floor(Math.abs(hashString(prompt + placement)) % presets.length);
     resultImageUrl = referenceProductImageUrl || presets[randomIndex];

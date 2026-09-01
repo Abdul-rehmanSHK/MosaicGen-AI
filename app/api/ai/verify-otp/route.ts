@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendOtpVerificationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -30,10 +31,15 @@ export async function POST(request: Request) {
         },
       });
 
+      // Dispatch email to user mailbox
+      await sendOtpVerificationEmail({
+        to: cleanEmail,
+        code: generatedCode,
+      });
+
       return NextResponse.json({
         success: true,
-        message: "Verification code sent to your email.",
-        demoCode: generatedCode,
+        message: `Verification code sent to ${cleanEmail}. Please check your email inbox.`,
         expiresInSeconds: 300,
       });
     }
@@ -50,7 +56,7 @@ export async function POST(request: Request) {
 
       if (!record) {
         return NextResponse.json(
-          { error: "Invalid verification code. Please check and try again." },
+          { error: "Invalid verification code. Please check your email inbox and try again." },
           { status: 400 }
         );
       }

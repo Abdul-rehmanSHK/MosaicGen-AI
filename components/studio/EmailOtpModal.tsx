@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Mail, KeyRound, Clock, RefreshCw, CheckCircle2, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { X, Mail, KeyRound, Clock, RefreshCw, CheckCircle2, Loader2, ShieldCheck, Sparkles, Inbox } from "lucide-react";
 
 interface EmailOtpModalProps {
   isOpen: boolean;
@@ -14,12 +14,11 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
   const [email, setEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
 
-  const [demoCode, setDemoCode] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
-
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 5-minute countdown timer effect
   useEffect(() => {
@@ -49,6 +48,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
 
     setIsSending(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const res = await fetch("/api/ai/verify-otp", {
@@ -60,7 +60,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send verification code.");
 
-      setDemoCode(data.demoCode);
+      setSuccessMessage(data.message || `6-digit code sent to ${email}. Check your email mailbox.`);
       setTimeLeft(300); // Reset 5 min timer
       setStep("otp");
     } catch (err: any) {
@@ -73,6 +73,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
   const handleResendCode = async () => {
     setIsSending(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const res = await fetch("/api/ai/verify-otp", {
@@ -84,7 +85,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to resend code.");
 
-      setDemoCode(data.demoCode);
+      setSuccessMessage(`New 6-digit code sent to ${email}. Check your email inbox.`);
       setTimeLeft(300);
       setOtpCode("");
     } catch (err: any) {
@@ -153,17 +154,20 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
           <p className="text-xs text-neutral-400">
             {step === "email"
               ? "Verify your email to enter the AI Mosaic Surface generation phase."
-              : `We sent a 6-digit verification code to ${email}.`}
+              : `We sent a 6-digit verification code to ${email}. Please check your email mailbox.`}
           </p>
         </div>
 
-        {/* Demo Helper Banner showing 6-digit OTP code */}
-        {demoCode && step === "otp" && (
-          <div className="p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-xs text-gold-300 flex items-center justify-between">
-            <span className="font-mono">
-              Demo Test Code: <strong className="text-white text-sm font-bold tracking-widest">{demoCode}</strong>
-            </span>
-            <span className="text-[10px] bg-gold-500 text-obsidian-950 px-2 py-0.5 rounded font-bold">5 MIN EXPIRE</span>
+        {/* Mailbox notification banner */}
+        {step === "otp" && (
+          <div className="p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-xs text-gold-300 flex items-center gap-2.5">
+            <Inbox className="w-5 h-5 text-gold-400 flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="font-bold text-white">Check Your Mailbox</span>
+              <span className="text-[11px] text-neutral-300">
+                A 6-digit code has been dispatched to <strong className="text-gold-300 font-mono">{email}</strong>. Code expires in 5 minutes.
+              </span>
+            </div>
           </div>
         )}
 
@@ -191,7 +195,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
               className="w-full py-3.5 px-6 rounded-xl font-serif font-bold text-xs bg-gold-500 hover:bg-gold-400 text-obsidian-950 flex items-center justify-center gap-2 transition-all shadow-lg shadow-gold-500/20 disabled:opacity-50"
             >
               {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Send 6-Digit Verification Code
+              Send 6-Digit Code to Email
             </button>
           </form>
         ) : (
@@ -217,6 +221,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
             </div>
 
             {error && <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/20 text-xs text-red-300">{error}</div>}
+            {successMessage && <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300">{successMessage}</div>}
 
             <button
               type="submit"
