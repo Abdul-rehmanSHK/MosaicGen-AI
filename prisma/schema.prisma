@@ -66,21 +66,25 @@ model Page {
 }
 
 model Inquiry {
-  id           String        @id @default(cuid())
-  userId       String?
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  productId    String?
-  product      Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
-  generationId String?
-  generation   AIGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
-  inquiryType  String        @default("QUOTE_REQUEST") // "QUOTE_REQUEST" | "TALK_TO_SPECIALIST"
-  name         String
-  email        String
-  phone        String?
-  preferredTime String?
-  message      String
-  status       String        @default("PENDING") // "PENDING" | "CONTACTED" | "COMPLETED"
-  createdAt    DateTime      @default(now())
+  id             String        @id @default(cuid())
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId      String?
+  product        Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  generationId   String?
+  generation     AIGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  inquiryType    String        @default("QUOTE_REQUEST") // "QUOTE_REQUEST" | "TALK_TO_SPECIALIST"
+  name           String
+  email          String
+  phone          String?
+  spaceType      String        @default("General Surface") // e.g., "Living Room", "Kitchen Backsplash", "Pool Accent", etc.
+  dimensions     String?       // e.g., "12ft x 15ft" or "180 sq ft"
+  designImageUrl String?       // Optional URL to uploaded or generated design mockup
+  preferredTime  String?
+  message        String
+  status         String        @default("PENDING") // "PENDING" | "CONTACTED" | "COMPLETED"
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt @default(now())
 }
 
 model VerificationCode {

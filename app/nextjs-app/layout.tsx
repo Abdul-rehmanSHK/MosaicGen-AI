@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { LayoutDashboard, Package, Sparkles, FileText, Users, Mail, ArrowLeft, Shield, Activity } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AdminThemeWrapper } from "@/components/AdminThemeWrapper";
 
 export default async function NextJsAppAdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -13,7 +14,7 @@ export default async function NextJsAppAdminLayout({ children }: { children: Rea
   }
 
   return (
-    <div className="min-h-screen bg-obsidian-950 text-white flex flex-col md:flex-row transition-colors">
+    <AdminThemeWrapper>
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 bg-obsidian-900 border-r border-gold-500/20 p-6 flex flex-col justify-between shrink-0">
         <div className="flex flex-col gap-8">
@@ -94,6 +95,6 @@ export default async function NextJsAppAdminLayout({ children }: { children: Rea
       <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl">
         {children}
       </main>
-    </div>
+    </AdminThemeWrapper>
   );
 }

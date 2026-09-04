@@ -55,13 +55,13 @@ export async function Footer() {
           ) : (
             <>
               <Link href="/classic-collection" className="text-xs hover:text-gold-300 transition-colors">
-                Classic Grid Catalog
+                Product Collections Catalog
               </Link>
               <Link href="/grand-medallions" className="text-xs hover:text-gold-300 transition-colors">
-                Hero Showcase Story
+                Grand Medallions Showcase
               </Link>
               <Link href="/bespoke-studio-experience" className="text-xs hover:text-gold-300 transition-colors">
-                Split Studio & Specs
+                Bespoke Experience & Specs
               </Link>
             </>
           )}

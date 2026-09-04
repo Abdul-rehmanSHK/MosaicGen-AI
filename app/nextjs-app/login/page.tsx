@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Mail, Lock, Loader2, KeyRound } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AdminThemeWrapper } from "@/components/AdminThemeWrapper";
 
 export default function NextJsAppAdminLoginPage() {
   const router = useRouter();
@@ -42,7 +43,8 @@ export default function NextJsAppAdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian-950 flex items-center justify-center p-4 relative overflow-hidden transition-colors">
+    <AdminThemeWrapper>
+      <div className="w-full min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute top-6 right-6">
         <ThemeToggle />
       </div>
@@ -110,5 +112,6 @@ export default function NextJsAppAdminLoginPage() {
         </form>
       </div>
     </div>
+    </AdminThemeWrapper>
   );
 }
