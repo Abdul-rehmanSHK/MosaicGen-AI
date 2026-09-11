@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -14,12 +14,21 @@ model User {
   name         String?
   email        String         @unique
   passwordHash String
-  role         String         @default("USER") // "ADMIN" | "USER"
+  role         String         @default("USER") // SUPER_ADMIN, ADMIN, CONTENT_EDITOR, USER
+  isVerified   Boolean        @default(false)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   generations  AIGeneration[]
-  inquiries    Inquiry[]
+  leads        Lead[]
   auditLogs    AuditLog[]
+}
+
+model EmailVerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Product {
@@ -27,36 +36,39 @@ model Product {
   title          String
   slug           String         @unique
   description    String
-  category       String         // e.g., "Marble Medallion", "Glass Mosaic", "Waterjet Accent", "Pool Inlay"
+  category       String
   sampleImageUrl String
   pricePerSqFt   Float
-  specs          String         // Stored as JSON string (material, chip size, finish, grout width, origin)
+  specs          String
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   generations    AIGeneration[]
-  inquiries      Inquiry[]
+  leads          Lead[]
 }
 
 model AIGeneration {
-  id             String      @id @default(cuid())
-  userId         String?
-  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  prompt         String
-  placement      String      // "Floor Medallion", "Backsplash", "Accent Wall", "Pool", "Entryway"
-  inputImageUrl  String?
-  maskUrl        String?
-  resultImageUrl String
-  productId      String?
-  product        Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
-  createdAt      DateTime    @default(now())
-  inquiries      Inquiry[]
+  id                 String      @id @default(cuid())
+  userId             String?
+  user               User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail          String?
+  prompt             String
+  placement          String
+  inputImageUrl      String?
+  maskUrl            String?
+  resultImageUrl     String
+  productId          String?
+  product            Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  referenceProductId String?
+  status             String      @default("COMPLETED")
+  createdAt          DateTime    @default(now())
+  leads              Lead[]
 }
 
 model Page {
   id            String   @id @default(cuid())
   title         String
   slug          String   @unique
-  templateType  String   // "classic_grid" | "hero_showcase" | "split_gallery"
+  templateType  String
   heading       String
   bodyText      String
   heroImageUrl  String?
@@ -65,7 +77,7 @@ model Page {
   updatedAt     DateTime @updatedAt
 }
 
-model Inquiry {
+model Lead {
   id             String        @id @default(cuid())
   userId         String?
   user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -73,34 +85,54 @@ model Inquiry {
   product        Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
   generationId   String?
   generation     AIGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
-  inquiryType    String        @default("QUOTE_REQUEST") // "QUOTE_REQUEST" | "TALK_TO_SPECIALIST"
   name           String
   email          String
   phone          String?
-  spaceType      String        @default("General Surface") // e.g., "Living Room", "Kitchen Backsplash", "Pool Accent", etc.
-  dimensions     String?       // e.g., "12ft x 15ft" or "180 sq ft"
-  designImageUrl String?       // Optional URL to uploaded or generated design mockup
-  preferredTime  String?
+  spaceType      String        @default("General Surface")
+  roomDimensions String?
+  designImageUrl String?
   message        String
-  status         String        @default("PENDING") // "PENDING" | "CONTACTED" | "COMPLETED"
+  status         String        @default("NEW") // NEW, CONTACTED, IN_PROGRESS, CLOSED
+  assignedToId   String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt @default(now())
 }
 
-model VerificationCode {
-  id        String   @id @default(cuid())
-  email     String
-  code      String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+model AuditLog {
+  id             String   @id @default(cuid())
+  adminId        String?
+  user           User?    @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  action         String
+  targetResource String?
+  resourceId     String?
+  metadata       String?
+  createdAt      DateTime @default(now())
 }
 
-model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userEmail String?
-  action    String   // e.g. "AI_GENERATION_CREATED", "PRODUCT_CREATED", "PAGE_UPDATED", "ROLE_CHANGED"
-  details   String   // Stored as text / JSON
-  createdAt DateTime @default(now())
+model FinderStep {
+  id            String         @id @default(cuid())
+  stepNumber    Int            @unique // 1, 2, 3, 4, 5
+  key           String         @unique // style, shape, color, space, result
+  title         String
+  highlightWord String?
+  subtitle      String?
+  description   String
+  order         Int            @default(0)
+  options       FinderOption[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt @default(now())
 }
+
+model FinderOption {
+  id           String      @id @default(cuid())
+  stepId       String
+  step         FinderStep  @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  label        String
+  value        String
+  imageUrl     String?
+  colorHex     String?
+  order        Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt @default(now())
+}
+

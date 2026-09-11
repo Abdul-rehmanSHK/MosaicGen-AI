@@ -13,10 +13,9 @@ export async function logActivity({ action, userId, userEmail, details }: LogPar
 
     await prisma.auditLog.create({
       data: {
-        userId: userId || null,
-        userEmail: userEmail || null,
+        adminId: userId || null,
         action,
-        details: detailsString,
+        metadata: detailsString,
       },
     });
   } catch (error) {

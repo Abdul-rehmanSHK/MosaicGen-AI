@@ -28,21 +28,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const inquiry = await prisma.inquiry.create({
+    const inquiry = await prisma.lead.create({
       data: {
         userId: session?.user?.id || null,
         productId: productId || null,
         generationId: generationId || null,
-        inquiryType,
         name,
         email,
         phone: phone || null,
         spaceType,
-        dimensions: dimensions || null,
+        roomDimensions: dimensions || null,
         designImageUrl: designImageUrl || null,
-        preferredTime: preferredTime || null,
-        message,
-        status: "PENDING",
+        message: preferredTime ? `[Preferred Time: ${preferredTime}] [Type: ${inquiryType}] ${message}` : message,
+        status: "NEW",
       },
       include: {
         product: true,

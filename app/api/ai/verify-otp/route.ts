@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
     if (action === "send" || action === "resend") {
       // Delete old codes for this email
-      await prisma.verificationCode.deleteMany({
+      await prisma.emailVerificationCode.deleteMany({
         where: { email: cleanEmail },
       });
 
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiration
 
-      await prisma.verificationCode.create({
+      await prisma.emailVerificationCode.create({
         data: {
           email: cleanEmail,
           code: generatedCode,
@@ -31,11 +31,11 @@ export async function POST(request: Request) {
         },
       });
 
-      // Dispatch email to user mailbox
-      await sendOtpVerificationEmail({
+      // Dispatch email to user mailbox (Fire and forget, so the API responds instantly in <1s)
+      sendOtpVerificationEmail({
         to: cleanEmail,
         code: generatedCode,
-      });
+      }).catch(err => console.error("Background email dispatch failed:", err));
 
       return NextResponse.json({
         success: true,
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Please enter a valid 6-digit code." }, { status: 400 });
       }
 
-      const record = await prisma.verificationCode.findFirst({
+      const record = await prisma.emailVerificationCode.findFirst({
         where: { email: cleanEmail, code: code.trim() },
         orderBy: { createdAt: "desc" },
       });
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       }
 
       // Cleanup code after successful verification
-      await prisma.verificationCode.delete({ where: { id: record.id } });
+      await prisma.emailVerificationCode.delete({ where: { id: record.id } });
 
       return NextResponse.json({ success: true, verifiedEmail: cleanEmail });
     }

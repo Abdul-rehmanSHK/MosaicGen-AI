@@ -10,29 +10,43 @@ async function main() {
   const adminPasswordHash = await bcrypt.hash('admin123', 10);
   const userPasswordHash = await bcrypt.hash('user123', 10);
 
+  const superAdminUser = await prisma.user.upsert({
+    where: { email: 'abdulrehman.irfan11286@gmail.com' },
+    update: { passwordHash: adminPasswordHash, role: 'SUPER_ADMIN', isVerified: true },
+    create: {
+      name: 'Owner / Super Admin',
+      email: 'abdulrehman.irfan11286@gmail.com',
+      passwordHash: adminPasswordHash,
+      role: 'SUPER_ADMIN',
+      isVerified: true,
+    },
+  });
+
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@mosaic.com' },
-    update: { passwordHash: adminPasswordHash, role: 'ADMIN' },
+    update: { passwordHash: adminPasswordHash, role: 'ADMIN', isVerified: true },
     create: {
       name: 'Aurelia Vance (Master Architect)',
       email: 'admin@mosaic.com',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
+      isVerified: true,
     },
   });
 
   const demoUser = await prisma.user.upsert({
     where: { email: 'user@mosaic.com' },
-    update: { passwordHash: userPasswordHash },
+    update: { passwordHash: userPasswordHash, isVerified: true },
     create: {
       name: 'Julian Thorne',
       email: 'user@mosaic.com',
       passwordHash: userPasswordHash,
       role: 'USER',
+      isVerified: true,
     },
   });
 
-  console.log('Users created:', { adminUser: adminUser.email, demoUser: demoUser.email });
+  console.log('Users created:', { superAdmin: superAdminUser.email, adminUser: adminUser.email, demoUser: demoUser.email });
 
   // 2. Create Products
   const products = [
@@ -162,13 +176,14 @@ async function main() {
   }
   console.log(`${pages.length} CMS Pages seeded.`);
 
-  // 4. Create Initial AI Generations & Inquiries
+  // 4. Create Initial AI Generations & Leads
   const sampleProduct = await prisma.product.findFirst({ where: { slug: 'calacatta-celestial-medallion' } });
   
   if (sampleProduct) {
     const generation = await prisma.aIGeneration.create({
       data: {
         userId: demoUser.id,
+        userEmail: demoUser.email,
         prompt: 'Luxury grand rotunda entryway with radiant Calacatta gold sunburst medallion and dark polished border tiles.',
         placement: 'Floor Medallion',
         resultImageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
@@ -176,7 +191,7 @@ async function main() {
       }
     });
 
-    await prisma.inquiry.create({
+    await prisma.lead.create({
       data: {
         userId: demoUser.id,
         productId: sampleProduct.id,
@@ -184,7 +199,10 @@ async function main() {
         name: 'Julian Thorne',
         email: 'julian@thorne-architects.com',
         message: 'Requesting sample chip box and 64 sq.ft quote for a penthouse foyer project in New York.',
-        status: 'PENDING'
+        status: 'NEW',
+        spaceType: 'Entryway',
+        roomDimensions: '64 sq.ft',
+        assignedToId: adminUser.id,
       }
     });
   }

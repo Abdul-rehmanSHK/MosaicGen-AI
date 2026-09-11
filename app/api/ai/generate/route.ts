@@ -8,10 +8,36 @@ import { logActivity } from "@/lib/logger";
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    const userId = session?.user?.id || null;
-    const userEmail = session?.user?.email || "Guest Client";
+    let userId = session?.user?.id || null;
+    let userEmail = session?.user?.email || null;
+    const isSessionVerified = (session?.user as any)?.isVerified;
 
     const body = await request.json();
+    const providedEmail = body.email;
+
+    if (!userEmail && providedEmail) {
+      userEmail = providedEmail;
+    }
+
+    if (!userEmail) {
+      return NextResponse.json({ error: "Email is required for verification before generation." }, { status: 401 });
+    }
+
+    // Check verification status
+    let isVerified = false;
+    if (isSessionVerified) {
+      isVerified = true;
+    } else {
+      const dbUser = await prisma.user.findUnique({ where: { email: userEmail } });
+      if (dbUser && dbUser.isVerified) {
+        isVerified = true;
+        userId = dbUser.id;
+      }
+    }
+
+    if (!isVerified) {
+      return NextResponse.json({ error: "UNVERIFIED_EMAIL", message: "You must verify your email before generating AI designs." }, { status: 403 });
+    }
     const {
       prompt,
       placement = "Floor Medallion",

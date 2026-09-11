@@ -41,6 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          isVerified: user.isVerified,
         };
       }
     })
@@ -50,19 +51,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role || "USER";
+        token.isVerified = (user as { isVerified?: boolean }).isVerified || false;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = (token.role as "ADMIN" | "USER") || "USER";
+        session.user.role = (token.role as string) || "USER";
+        (session.user as any).isVerified = (token.isVerified as boolean) || false;
       }
       return session;
     }
   },
   pages: {
-    signIn: "/nextjs-app/login",
+    signIn: "/login",
   },
   secret: process.env.AUTH_SECRET || "ai-mosaic-luxury-studio-secret-key-2026-super-secure",
 });

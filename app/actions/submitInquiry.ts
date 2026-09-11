@@ -43,13 +43,13 @@ export async function submitInquiry(
     }
 
     // 3. Database Integration: Save to PostgreSQL/Database via Prisma
-    await prisma.inquiry.create({
+    await prisma.lead.create({
       data: {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone ? phone.trim() : null,
         spaceType: spaceType.trim(),
-        dimensions: dimensions ? dimensions.trim() : null,
+        roomDimensions: dimensions ? dimensions.trim() : null,
         message: message.trim(),
         designImageUrl: designImageUrl ? designImageUrl.trim() : null,
       },

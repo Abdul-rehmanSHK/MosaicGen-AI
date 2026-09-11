@@ -1,10 +1,10 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
-import { ProductsManagerClient } from "@/app/admin/products/ProductsManagerClient";
+import { ProductsManagerClient } from "./ProductsManagerClient";
 
 export const revalidate = 0;
 
-export default async function NextAppProductsPage() {
+export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
   });

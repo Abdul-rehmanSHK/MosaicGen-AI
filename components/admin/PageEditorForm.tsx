@@ -105,10 +105,10 @@ export function PageEditorForm({ initialData, isNew = false }: PageEditorFormPro
       setTimeout(() => setSaveSuccess(false), 3000);
 
       if (returnToList) {
-        router.push("/nextjs-app/pages");
+        router.push("/admin/pages");
         router.refresh();
       } else if (isNew && data.page?.id) {
-        router.push(`/nextjs-app/pages/edit/${data.page.id}`);
+        router.push(`/admin/pages/edit/${data.page.id}`);
         router.refresh();
       }
     } catch (err: any) {
@@ -124,7 +124,7 @@ export function PageEditorForm({ initialData, isNew = false }: PageEditorFormPro
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-obsidian-900 border border-gold-500/20 backdrop-blur-md shadow-xl sticky top-20 z-30">
         <div className="flex items-center gap-3">
           <Link
-            href="/nextjs-app/pages"
+            href="/admin/pages"
             className="p-2 rounded-xl bg-obsidian-950 border border-neutral-800 text-neutral-300 hover:text-gold-300 hover:border-gold-500/40 flex items-center gap-1.5 text-xs font-semibold transition-all"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Pages List

@@ -1,17 +1,18 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
-import { Sparkles, Users, Mail, DollarSign, TrendingUp } from "lucide-react";
+import { Sparkles, Users, Mail, DollarSign, Eye, TrendingUp, Package } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 export const revalidate = 0;
 
-export default async function NextJsAppAdminDashboardPage() {
+export default async function AdminDashboardPage() {
   const totalUsers = await prisma.user.count();
   const totalProducts = await prisma.product.count();
   const totalGenerations = await prisma.aIGeneration.count();
-  const totalInquiries = await prisma.inquiry.count();
+  const totalInquiries = await prisma.lead.count();
 
+  // Estimate API Cost ($0.040 per DALL-E 3 / AI image render)
   const apiCostEstimate = (totalGenerations * 0.04).toFixed(2);
 
   const recentGenerations = await prisma.aIGeneration.findMany({
@@ -20,7 +21,7 @@ export default async function NextJsAppAdminDashboardPage() {
     include: { user: true, product: true },
   });
 
-  const recentInquiries = await prisma.inquiry.findMany({
+  const recentInquiries = await prisma.lead.findMany({
     take: 4,
     orderBy: { createdAt: "desc" },
   });
@@ -28,7 +29,7 @@ export default async function NextJsAppAdminDashboardPage() {
   return (
     <div className="flex flex-col gap-10">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-white">NextJS App Analytics Overview</h1>
+        <h1 className="text-3xl font-serif font-bold text-white">Analytics Overview</h1>
         <p className="text-xs text-neutral-400 mt-1">
           Monitor live studio usage metrics, AI pipeline compute costs, and client architect inquiries.
         </p>
@@ -87,6 +88,7 @@ export default async function NextJsAppAdminDashboardPage() {
 
       {/* Recent Activity Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Recent AI Generations Showcase (7 cols) */}
         <div className="lg:col-span-7 p-6 rounded-2xl bg-obsidian-900 border border-neutral-800 flex flex-col gap-6">
           <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
             <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">
@@ -122,6 +124,7 @@ export default async function NextJsAppAdminDashboardPage() {
           </div>
         </div>
 
+        {/* Recent Inquiries List (5 cols) */}
         <div className="lg:col-span-5 p-6 rounded-2xl bg-obsidian-900 border border-neutral-800 flex flex-col gap-6">
           <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
             <h2 className="text-lg font-serif font-bold text-white flex items-center gap-2">

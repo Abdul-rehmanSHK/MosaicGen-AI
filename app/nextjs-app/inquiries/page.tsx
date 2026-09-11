@@ -1,11 +1,11 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
-import { InquiriesManagerClient } from "@/app/admin/inquiries/InquiriesManagerClient";
+import { InquiriesManagerClient } from "./InquiriesManagerClient";
 
 export const revalidate = 0;
 
-export default async function NextAppInquiriesPage() {
-  const inquiries = await prisma.inquiry.findMany({
+export default async function AdminInquiriesPage() {
+  const inquiries = await prisma.lead.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       product: true,

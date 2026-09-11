@@ -2,15 +2,15 @@ import React from "react";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { LayoutDashboard, Package, Sparkles, FileText, Users, Mail, ArrowLeft, Shield, Activity } from "lucide-react";
+import { LayoutDashboard, Package, Sparkles, FileText, Users, Mail, ArrowLeft, Shield, Palette } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminThemeWrapper } from "@/components/AdminThemeWrapper";
 
-export default async function NextJsAppAdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/nextjs-app/login");
+  if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN")) {
+    redirect("/login?callbackUrl=/nextjs-app");
   }
 
   return (
@@ -22,12 +22,12 @@ export default async function NextJsAppAdminLayout({ children }: { children: Rea
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gold-500 flex items-center justify-center text-obsidian-950 font-serif font-bold text-lg shadow-md shadow-gold-500/20">
-                N
+                A
               </div>
               <div>
-                <h2 className="font-serif font-bold text-white text-base">NextJS App Admin</h2>
+                <h2 className="font-serif font-bold text-white text-base">Studio Admin</h2>
                 <span className="text-[10px] text-gold-400 font-mono flex items-center gap-1">
-                  <Shield className="w-3 h-3" /> Admin Restricted
+                  <Shield className="w-3 h-3" /> RBAC Mode
                 </span>
               </div>
             </div>
@@ -61,22 +61,22 @@ export default async function NextJsAppAdminLayout({ children }: { children: Rea
               <FileText className="w-4 h-4 text-gold-400" /> CMS Dynamic Pages
             </Link>
             <Link
+              href="/nextjs-app/finder"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
+            >
+              <Palette className="w-4 h-4 text-gold-400" /> Aesthetic Finder CMS
+            </Link>
+            <Link
               href="/nextjs-app/users"
               className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
             >
-              <Users className="w-4 h-4 text-gold-400" /> Admin Users
+              <Users className="w-4 h-4 text-gold-400" /> Users & Roles
             </Link>
             <Link
               href="/nextjs-app/inquiries"
               className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
             >
               <Mail className="w-4 h-4 text-gold-400" /> Client Inquiries
-            </Link>
-            <Link
-              href="/nextjs-app/logs"
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-            >
-              <Activity className="w-4 h-4 text-gold-400" /> System Audit Logs
             </Link>
           </nav>
         </div>

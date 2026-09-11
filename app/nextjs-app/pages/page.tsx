@@ -1,10 +1,10 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
-import { PagesManagerClient } from "@/app/admin/pages/PagesManagerClient";
+import { PagesManagerClient } from "./PagesManagerClient";
 
 export const revalidate = 0;
 
-export default async function NextAppPagesPage() {
+export default async function AdminPagesPage() {
   const pages = await prisma.page.findMany({
     orderBy: { updatedAt: "desc" },
   });

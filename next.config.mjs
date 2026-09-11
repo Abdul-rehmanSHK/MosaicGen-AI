@@ -5,7 +5,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'plus.unsplash.com' },
       { protocol: 'https', hostname: 'cdn.fal.ai' },
-      { protocol: 'https', hostname: 'oaidalleapiprodscus.blob.core.windows.net' }
+      { protocol: 'https', hostname: 'oaidalleapiprodscus.blob.core.windows.net' },
+      { protocol: 'https', hostname: 'mecartworks.com' }
     ],
   },
   experimental: {
