@@ -50,7 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as { role?: string }).role || "USER";
+        token.role = (user as { role?: string }).role || "CONTENT_EDITOR";
         token.isVerified = (user as { isVerified?: boolean }).isVerified || false;
       }
       return token;
@@ -58,7 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = (token.role as string) || "USER";
+        session.user.role = (token.role as string) || "CONTENT_EDITOR";
         (session.user as any).isVerified = (token.isVerified as boolean) || false;
       }
       return session;

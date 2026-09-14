@@ -2,8 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { CanvasDraw, CanvasDrawRef } from "./CanvasDraw";
+import { CanvasDraw, CanvasDrawRef, PRESET_ROOMS } from "./CanvasDraw";
 import { EmailOtpModal } from "./EmailOtpModal";
+import { InpaintingMaskModal } from "./InpaintingMaskModal";
 import { SpecialistModal } from "./SpecialistModal";
 import { InquiryModal } from "@/components/InquiryModal";
 import { InspirationGallery } from "./InspirationGallery";
@@ -22,6 +23,7 @@ const SCRATCH_INSPIRATIONS = [
 interface Product {
   id: string;
   title: string;
+  description?: string;
   category: string;
   sampleImageUrl: string;
   pricePerSqFt: number;
@@ -77,12 +79,44 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isSpecialistModalOpen, setIsSpecialistModalOpen] = useState(false);
 
+  // Room Photo & Inpainting Mask Modal State
+  const [isMaskModalOpen, setIsMaskModalOpen] = useState(false);
+  const [roomPhotoUrl, setRoomPhotoUrl] = useState<string | null>(null);
+  const [roomPhotoName, setRoomPhotoName] = useState<string | null>(null);
+  const [hasDrawnMask, setHasDrawnMask] = useState(false);
+
+  const handleSelectPresetRoom = (preset: { name: string; url: string }) => {
+    setRoomPhotoUrl(preset.url);
+    setRoomPhotoName(preset.name);
+    canvasRef.current?.loadPresetImage(preset.url);
+  };
+
+  const handleRoomPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setRoomPhotoUrl(dataUrl);
+      setRoomPhotoName(file.name);
+      canvasRef.current?.loadCustomImage?.(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearRoomPhoto = () => {
+    setRoomPhotoUrl(null);
+    setRoomPhotoName(null);
+    setHasDrawnMask(false);
+    canvasRef.current?.clearCanvas();
+  };
+
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync prompt and placement from URL search parameters (e.g., from Finder wizard)
+  // Sync prompt, placement, and verified status from URL search parameters (e.g., from Finder wizard)
   useEffect(() => {
     const urlPrompt = searchParams?.get("prompt");
     if (urlPrompt) {
@@ -100,6 +134,11 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       } else {
         setPlacement(urlPlacement);
       }
+    }
+    if (searchParams?.get("verified") === "true") {
+      setIsOtpVerified(true);
+      const urlEmail = searchParams.get("email");
+      if (urlEmail) setVerifiedEmail(urlEmail);
     }
   }, [searchParams]);
 
@@ -240,55 +279,59 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 />
               </div>
 
-              {/* Surface Placement & Finishing Specs */}
-              <div className="pt-2 border-t border-neutral-800/80 flex flex-col gap-5">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
-                    Where should it go?
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {PLACEMENTS.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setPlacement(item.id)}
-                        className={`px-4 py-2 rounded-full text-xs font-medium transition-all border ${
-                          placement === item.id
-                            ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-md shadow-gold-500/20 scale-[1.02]"
-                            : "bg-obsidian-950 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-white"
-                        }`}
+              {/* Surface Placement & Finishing Specs (2-column layout to cover empty space) */}
+              <div className="pt-2 border-t border-neutral-800/80">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                  {/* Left: Where should it go? (col-span-7) */}
+                  <div className="lg:col-span-7 flex flex-col gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
+                      Where should it go?
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {PLACEMENTS.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setPlacement(item.id)}
+                          className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-medium transition-all border ${
+                            placement === item.id
+                              ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-md shadow-gold-500/20 scale-[1.02]"
+                              : "bg-obsidian-950 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-white"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right: The 2 Select Fields Covering Up the Empty Space (col-span-5) */}
+                  <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-medium text-neutral-400">Surface Finish</label>
+                      <select
+                        value={finish}
+                        onChange={(e) => setFinish(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
                       >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                        {FINISHES.map((f) => (
+                          <option key={f} value={f}>{f}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-neutral-400">Surface Finish</label>
-                    <select
-                      value={finish}
-                      onChange={(e) => setFinish(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
-                    >
-                      {FINISHES.map((f) => (
-                        <option key={f} value={f}>{f}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-neutral-400">Grout Accent</label>
-                    <select
-                      value={groutColor}
-                      onChange={(e) => setGroutColor(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
-                    >
-                      {GROUT_COLORS.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-medium text-neutral-400">Grout Accent</label>
+                      <select
+                        value={groutColor}
+                        onChange={(e) => setGroutColor(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
+                      >
+                        {GROUT_COLORS.map((g) => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -343,17 +386,17 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
         </div>
       ) : (
         /* ==================== CUSTOMIZE YOUR SPACE MODE ==================== */
-        <div className="w-full flex flex-col gap-10">
+        <div className="w-full flex flex-col gap-6">
           {/* Studio Header Banner */}
-          <div className="text-center flex flex-col items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-300 text-xs font-semibold uppercase tracking-widest shadow-lg shadow-gold-500/5">
+          <div className="text-center flex flex-col items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-300 text-xs font-semibold uppercase tracking-widest shadow-lg shadow-gold-500/5">
               <Sparkles className="w-3.5 h-3.5" /> Bespoke AI Surface Studio
             </div>
-            <h1 className="text-3xl md:text-5xl font-serif font-bold tracking-tight text-white drop-shadow-md">
+            <h1 className="text-2xl md:text-4xl font-serif font-bold tracking-tight text-white drop-shadow-md">
               AI Mosaic Surface & Floor Designer
             </h1>
-            <p className="text-sm md:text-base text-neutral-400 max-w-2xl">
-              Upload room photography or sketch mask boundaries on our interactive canvas to generate photorealistic luxury mosaic surfaces tailored for elite spaces.
+            <p className="text-xs md:text-sm text-neutral-400 max-w-2xl">
+              Upload room photography and target your space boundary to generate photorealistic luxury mosaic surfaces tailored for elite spaces.
             </p>
 
             {isOtpVerified && verifiedEmail && (
@@ -363,17 +406,98 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             )}
           </div>
 
-          {/* Upper Section: Full Width Room Photo & Inpainting Mask Canvas */}
-          <div className="w-full p-6 rounded-2xl bg-obsidian-900/80 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col gap-4">
+          {/* Upper Section: Compact Room Photo Upload & Inpainting Target Button */}
+          <div className="w-full p-4 sm:p-5 rounded-2xl bg-obsidian-900/90 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">1</span>
+              <h2 className="text-base sm:text-lg font-serif font-semibold text-white flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">1</span>
                 Room Photo & Inpainting Mask
               </h2>
-              <span className="text-xs text-neutral-400">Draw or upload space boundary</span>
+              <span className="text-xs text-neutral-400">Target exact surface area with mask</span>
             </div>
 
-            <CanvasDraw ref={canvasRef} />
+            {roomPhotoUrl ? (
+              /* Image is Loaded -> Show Compact Thumbnail Preview + Target Inpainting Mask Button */
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 rounded-xl bg-obsidian-950/80 border border-gold-500/30">
+                <div className="flex items-center gap-3.5">
+                  <div className="relative w-20 h-16 sm:w-24 sm:h-16 rounded-lg overflow-hidden border border-gold-500/40 shrink-0 bg-obsidian-900">
+                    <img
+                      src={roomPhotoUrl}
+                      alt="Room Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-white line-clamp-1">
+                      {roomPhotoName || "Custom Room Space"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
+                        hasDrawnMask
+                          ? "bg-gold-500/20 text-gold-300 border border-gold-500/40"
+                          : "bg-neutral-800 text-neutral-400"
+                      }`}>
+                        {hasDrawnMask ? "✓ Inpainting Mask Active" : "Full Space Selected"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIsMaskModalOpen(true)}
+                    className="py-2.5 px-4 rounded-xl font-serif font-bold text-xs bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-obsidian-950 flex items-center gap-2 shadow-md shadow-gold-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 fill-obsidian-950" />
+                    Target Inpainting Mask on Photo
+                  </button>
+                  <label className="py-2.5 px-3 rounded-xl text-xs font-semibold bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 hover:text-white border border-neutral-700 cursor-pointer transition-all">
+                    Change
+                    <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleClearRoomPhoto}
+                    className="py-2.5 px-3 rounded-xl text-xs font-semibold bg-obsidian-800 hover:bg-red-950/40 text-neutral-400 hover:text-red-300 border border-neutral-700 transition-all"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* No Image Loaded -> Show Sleek Compact Upload Field + Preset Buttons */
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-obsidian-950/80 border border-neutral-800 hover:border-gold-500/30 transition-all">
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="py-2 px-4 rounded-xl text-xs font-semibold bg-gold-500/10 text-gold-300 hover:bg-gold-500/20 border border-gold-500/30 cursor-pointer flex items-center gap-2 transition-all shrink-0">
+                    <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+                    Upload Room Photo
+                    <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
+                  </label>
+                  <span className="text-xs text-neutral-500 hidden md:inline">or choose preset:</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {PRESET_ROOMS.map((p) => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => handleSelectPresetRoom(p)}
+                        className="text-[11px] px-2.5 py-1 rounded-lg bg-obsidian-900 hover:bg-gold-500/20 text-neutral-300 hover:text-gold-300 border border-neutral-800 transition-all"
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMaskModalOpen(true)}
+                  className="py-2 px-4 rounded-xl font-serif font-semibold text-xs bg-obsidian-800 hover:bg-obsidian-700 text-gold-300 border border-gold-500/30 flex items-center justify-center gap-1.5 transition-all shrink-0"
+                >
+                  Draw Mask Directly ↗
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Underneath: Architecture and Prompt, both half-width (50% each) */}
@@ -583,14 +707,33 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       {/* Mosaic Finder Teaser Banner */}
       <MosaicFinderBanner />
 
-      {/* Inspiration Masonry Gallery */}
-      <InspirationGallery onSelectPrompt={setPrompt} />
+      {/* Inspiration Masonry Gallery - dynamically loaded from Catalog products */}
+      <InspirationGallery 
+        products={initialProducts} 
+        onSelectPrompt={(newPrompt, prodId) => {
+          setPrompt(newPrompt);
+          if (prodId) setSelectedProductId(prodId);
+        }} 
+      />
 
       {/* OTP Email Verification Modal */}
       <EmailOtpModal
         isOpen={isOtpModalOpen}
         onClose={() => setIsOtpModalOpen(false)}
         onVerified={handleOtpVerified}
+      />
+
+      {/* Inpainting Mask Tool Modal Popup */}
+      <InpaintingMaskModal
+        isOpen={isMaskModalOpen}
+        onClose={() => setIsMaskModalOpen(false)}
+        canvasRef={canvasRef}
+        onImageUploaded={(hasImg, previewUrl) => {
+          if (previewUrl) {
+            setRoomPhotoUrl(previewUrl);
+          }
+        }}
+        onMaskDrawn={() => setHasDrawnMask(true)}
       />
 
       {/* Quote & Sample Inquiry Modal */}

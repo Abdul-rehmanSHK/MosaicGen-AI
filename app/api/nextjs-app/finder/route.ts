@@ -3,17 +3,17 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/logger";
 
-async function verifyAdmin() {
+async function verifyEditorOrAdmin() {
   const session = await auth();
-  if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN")) {
-    throw new Error("Unauthorized");
+  if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "CONTENT_EDITOR")) {
+    throw new Error("Unauthorized: Access restricted to ADMIN and CONTENT_EDITOR");
   }
   return session.user;
 }
 
 export async function GET() {
   try {
-    await verifyAdmin();
+    await verifyEditorOrAdmin();
     const steps = await prisma.finderStep.findMany({
       orderBy: { order: "asc" },
       include: {
@@ -31,7 +31,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const adminUser = await verifyAdmin();
+    const adminUser = await verifyEditorOrAdmin();
     const body = await request.json();
     const { action, stepId, stepData, optionId, optionData } = body;
 
@@ -44,6 +44,7 @@ export async function PUT(request: Request) {
           highlightWord: stepData.highlightWord || null,
           subtitle: stepData.subtitle || null,
           description: stepData.description,
+          featuredProductIds: stepData.featuredProductIds !== undefined ? (typeof stepData.featuredProductIds === "string" ? stepData.featuredProductIds : JSON.stringify(stepData.featuredProductIds || [])) : undefined,
         },
       });
 

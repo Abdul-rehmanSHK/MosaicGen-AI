@@ -60,7 +60,11 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send verification code.");
 
-      setSuccessMessage(data.message || `6-digit code sent to ${email}. Check your email mailbox.`);
+      if (data.devCode) {
+        setSuccessMessage(`${data.message} (Local Demo Code: ${data.devCode})`);
+      } else {
+        setSuccessMessage(data.message || `6-digit code sent to ${email}. Check your email mailbox.`);
+      }
       setTimeLeft(300); // Reset 5 min timer
       setStep("otp");
     } catch (err: any) {
@@ -85,7 +89,11 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to resend code.");
 
-      setSuccessMessage(`New 6-digit code sent to ${email}. Check your email inbox.`);
+      if (data.devCode) {
+        setSuccessMessage(`New 6-digit code sent to ${email}. Check your email inbox. (Local Demo Code: ${data.devCode})`);
+      } else {
+        setSuccessMessage(`New 6-digit code sent to ${email}. Check your email inbox.`);
+      }
       setTimeLeft(300);
       setOtpCode("");
     } catch (err: any) {

@@ -37,9 +37,15 @@ export async function POST(request: Request) {
         code: generatedCode,
       }).catch(err => console.error("Background email dispatch failed:", err));
 
+      const isEmailConfigured = Boolean(
+        process.env.RESEND_API_KEY ||
+        (process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_PASS.trim().length > 0)
+      );
+
       return NextResponse.json({
         success: true,
         message: `Verification code sent to ${cleanEmail}. Please check your email inbox.`,
+        devCode: isEmailConfigured ? undefined : generatedCode,
         expiresInSeconds: 300,
       });
     }

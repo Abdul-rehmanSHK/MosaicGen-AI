@@ -14,7 +14,7 @@ model User {
   name         String?
   email        String         @unique
   passwordHash String
-  role         String         @default("USER") // SUPER_ADMIN, ADMIN, CONTENT_EDITOR, USER
+  role         String         @default("CONTENT_EDITOR") // ADMIN, CONTENT_EDITOR
   isVerified   Boolean        @default(false)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
@@ -40,6 +40,8 @@ model Product {
   sampleImageUrl String
   pricePerSqFt   Float
   specs          String
+  isTrashed      Boolean        @default(false)
+  trashedAt      DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   generations    AIGeneration[]
@@ -60,21 +62,24 @@ model AIGeneration {
   product            Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
   referenceProductId String?
   status             String      @default("COMPLETED")
+  isTrashed          Boolean     @default(false)
+  trashedAt          DateTime?
   createdAt          DateTime    @default(now())
   leads              Lead[]
 }
 
 model Page {
-  id            String   @id @default(cuid())
-  title         String
-  slug          String   @unique
-  templateType  String
-  heading       String
-  bodyText      String
-  heroImageUrl  String?
-  secondaryText String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  title              String
+  slug               String   @unique
+  templateType       String
+  heading            String
+  bodyText           String
+  heroImageUrl       String?
+  secondaryText      String?
+  featuredProductIds String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model Lead {
@@ -94,6 +99,8 @@ model Lead {
   message        String
   status         String        @default("NEW") // NEW, CONTACTED, IN_PROGRESS, CLOSED
   assignedToId   String?
+  adminNotes     String?
+  quoteAmount    Float?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt @default(now())
 }
@@ -116,11 +123,12 @@ model FinderStep {
   title         String
   highlightWord String?
   subtitle      String?
-  description   String
-  order         Int            @default(0)
-  options       FinderOption[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt @default(now())
+  description        String
+  order              Int            @default(0)
+  featuredProductIds String?
+  options            FinderOption[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt @default(now())
 }
 
 model FinderOption {
@@ -135,4 +143,50 @@ model FinderOption {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt @default(now())
 }
+
+model Media {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  mimeType     String
+  size         Int      // Compressed size in bytes
+  originalSize Int      // Original size in bytes
+  width        Int?
+  height       Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
+}
+
+model FinderResult {
+  id              String   @id @default(cuid())
+  userEmail       String?
+  style           String
+  shape           String
+  color           String
+  space           String
+  generatedPrompt String
+  createdAt       DateTime @default(now())
+}
+
+model SiteAppearance {
+  id                 String   @id @default("default")
+  headerBrandName    String   @default("MEC AI MOSAIC")
+  headerTagline      String   @default("Bespoke Surface Studio")
+  headerLogoUrl      String?
+  headerMenuJson     String   @default("[{\"label\":\"Customize your space\",\"url\":\"/\"},{\"label\":\"Imagine from scratch\",\"url\":\"/from-scratch\"},{\"label\":\"Find your aesthetic\",\"url\":\"/finder\"},{\"label\":\"Contact Us\",\"url\":\"https://zakiahmarble.com/contact-us/\",\"external\":true}]")
+
+  footerBrandName    String   @default("MEC AI MOSAIC STUDIO")
+  footerDescription  String   @default("Pioneering luxury architectural surface design with AI-powered inpainting, custom waterjet mesh manufacturing, and Italian marble artistry.")
+  footerLogoUrl      String?
+  footerCopyright    String   @default("© 2026 MEC Artworks Studio. All Rights Reserved.")
+  footerContactEmail String?  @default("concierge@mecartworks.com")
+  footerContactPhone String?  @default("+1 (800) 555-MOSAIC")
+  footerAddress      String?  @default("Carrara, Italy & NY, USA")
+  footerLinksJson    String   @default("[{\"label\":\"Customize your space\",\"url\":\"/\"},{\"label\":\"Imagine from scratch\",\"url\":\"/from-scratch\"},{\"label\":\"Find your aesthetic\",\"url\":\"/finder\"},{\"label\":\"Contact Us\",\"url\":\"https://zakiahmarble.com/contact-us/\",\"external\":true}]")
+  socialLinksJson    String?  @default("{\"instagram\":\"https://instagram.com\",\"pinterest\":\"https://pinterest.com\",\"linkedin\":\"https://linkedin.com\"}")
+
+  updatedAt          DateTime @updatedAt @default(now())
+}
+
 

@@ -8,13 +8,17 @@ export interface CanvasDrawRef {
   getInputImageBase64: () => string | null;
   clearCanvas: () => void;
   loadPresetImage: (url: string) => void;
+  loadCustomImage?: (dataUrl: string) => void;
+  resizeCanvas?: () => void;
+  hasDrawnMask?: () => boolean;
 }
 
-interface CanvasDrawProps {
-  onImageUploaded?: (hasImage: boolean) => void;
+export interface CanvasDrawProps {
+  onImageUploaded?: (hasImage: boolean, previewUrl?: string) => void;
+  onMaskDrawn?: () => void;
 }
 
-const PRESET_ROOMS = [
+export const PRESET_ROOMS = [
   {
     name: "Luxury Foyer Rotunda",
     url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80"
@@ -33,7 +37,7 @@ const PRESET_ROOMS = [
   }
 ];
 
-export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageUploaded }, ref) => {
+export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageUploaded, onMaskDrawn }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -43,24 +47,25 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [hasBackgroundImage, setHasBackgroundImage] = useState<boolean>(false);
   const [backgroundImageElement, setBackgroundImageElement] = useState<HTMLImageElement | null>(null);
+  const [hasMaskStrokes, setHasMaskStrokes] = useState<boolean>(false);
 
   // Initialize canvas resolution
+  const updateCanvasSize = () => {
+    if (containerRef.current && imageCanvasRef.current && drawCanvasRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const width = rect.width || 800;
+      const height = Math.min(rect.width * 0.65, 550);
+
+      imageCanvasRef.current.width = width;
+      imageCanvasRef.current.height = height;
+      drawCanvasRef.current.width = width;
+      drawCanvasRef.current.height = height;
+
+      redrawBackground();
+    }
+  };
+
   useEffect(() => {
-    const updateCanvasSize = () => {
-      if (containerRef.current && imageCanvasRef.current && drawCanvasRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const width = rect.width || 800;
-        const height = Math.min(rect.width * 0.65, 550);
-
-        imageCanvasRef.current.width = width;
-        imageCanvasRef.current.height = height;
-        drawCanvasRef.current.width = width;
-        drawCanvasRef.current.height = height;
-
-        redrawBackground();
-      }
-    };
-
     updateCanvasSize();
     window.addEventListener("resize", updateCanvasSize);
     return () => window.removeEventListener("resize", updateCanvasSize);
@@ -122,9 +127,19 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
     img.onload = () => {
       setBackgroundImageElement(img);
       setHasBackgroundImage(true);
-      if (onImageUploaded) onImageUploaded(true);
+      if (onImageUploaded) onImageUploaded(true, url);
     };
     img.src = url;
+  };
+
+  const loadCustomImage = (dataUrl: string) => {
+    const img = new Image();
+    img.onload = () => {
+      setBackgroundImageElement(img);
+      setHasBackgroundImage(true);
+      if (onImageUploaded) onImageUploaded(true, dataUrl);
+    };
+    img.src = dataUrl;
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,13 +148,14 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
     const reader = new FileReader();
     reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
       const img = new Image();
       img.onload = () => {
         setBackgroundImageElement(img);
         setHasBackgroundImage(true);
-        if (onImageUploaded) onImageUploaded(true);
+        if (onImageUploaded) onImageUploaded(true, dataUrl);
       };
-      img.src = event.target?.result as string;
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -151,6 +167,7 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
     if (ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+    setHasMaskStrokes(false);
   };
 
   // Drawing event handlers
@@ -210,6 +227,8 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
       ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = "rgba(203, 167, 65, 0.75)"; // Gold mask preview overlay
       ctx.fillStyle = "rgba(203, 167, 65, 0.75)";
+      setHasMaskStrokes(true);
+      if (onMaskDrawn) onMaskDrawn();
     } else {
       ctx.globalCompositeOperation = "destination-out";
       ctx.strokeStyle = "rgba(0, 0, 0, 1)";
@@ -248,7 +267,10 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
       return canvas.toDataURL("image/png");
     },
     clearCanvas,
-    loadPresetImage
+    loadPresetImage,
+    loadCustomImage,
+    resizeCanvas: updateCanvasSize,
+    hasDrawnMask: () => hasMaskStrokes,
   }));
 
   return (

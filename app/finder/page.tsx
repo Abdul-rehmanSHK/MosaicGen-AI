@@ -60,6 +60,12 @@ export default async function FinderPage() {
     }
   }
 
+  // Fetch active products from catalog for result recommendations
+  const products = await prisma.product.findMany({
+    where: { isTrashed: false },
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <div className="min-h-screen bg-obsidian-950 text-white flex flex-col justify-between selection:bg-gold-500 selection:text-obsidian-950 relative overflow-hidden">
       {/* Sitewide Background Glow */}
@@ -71,7 +77,7 @@ export default async function FinderPage() {
 
       {/* Main Finder Wizard Area */}
       <main className="flex-1 py-8 sm:py-12 relative z-10">
-        <AestheticFinderWizard initialSteps={steps} />
+        <AestheticFinderWizard initialSteps={steps} availableProducts={products} />
       </main>
 
       {/* Sitewide Footer */}

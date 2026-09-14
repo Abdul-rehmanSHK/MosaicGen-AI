@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Check, Sparkles, RefreshCw, ArrowRight, Compass, Layers } from "lucide-react";
+import { EmailOtpModal } from "@/components/studio/EmailOtpModal";
 
 export interface OptionRecord {
   id: string;
@@ -25,22 +26,24 @@ export interface StepRecord {
   subtitle?: string | null;
   description: string;
   order: number;
+  featuredProductIds?: string | null;
   options: OptionRecord[];
 }
 
 interface WizardProps {
   initialSteps: StepRecord[];
+  availableProducts?: any[];
 }
 
-export function AestheticFinderWizard({ initialSteps }: WizardProps) {
+export function AestheticFinderWizard({ initialSteps, availableProducts = [] }: WizardProps) {
   return (
     <Suspense fallback={<div className="p-12 text-center text-gold-400">Loading Aesthetic Studio...</div>}>
-      <AestheticFinderContent initialSteps={initialSteps} />
+      <AestheticFinderContent initialSteps={initialSteps} availableProducts={availableProducts} />
     </Suspense>
   );
 }
 
-function AestheticFinderContent({ initialSteps }: WizardProps) {
+function AestheticFinderContent({ initialSteps, availableProducts = [] }: WizardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -54,6 +57,11 @@ function AestheticFinderContent({ initialSteps }: WizardProps) {
   const [selectedShape, setSelectedShape] = useState<string>(paramShape);
   const [selectedColor, setSelectedColor] = useState<string>(paramColor);
   const [selectedSpace, setSelectedSpace] = useState<string>(paramSpace);
+
+  // OTP Email Verification state
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState("");
 
   // Determine current active step (0 to 4)
   const getInitialStep = () => {
@@ -180,6 +188,48 @@ function AestheticFinderContent({ initialSteps }: WizardProps) {
   const spaceLabel = getSelectedLabel("space", selectedSpace);
 
   const generatedVisionPrompt = `A bespoke ${styleLabel.toLowerCase()} luxury mosaic for ${spaceLabel.toLowerCase()} in ${shapeLabel.toLowerCase()} orientation, crafted with fine glass tesserae and ${colorLabel.toLowerCase()} palette accents.`;
+
+  // Automatically record quiz result to database for the admin dashboard
+  useEffect(() => {
+    if (currentStepIndex === 4 && selectedStyle && selectedShape && selectedColor && selectedSpace) {
+      fetch("/api/finder/result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          style: selectedStyle,
+          shape: selectedShape,
+          color: selectedColor,
+          space: selectedSpace,
+          generatedPrompt: generatedVisionPrompt,
+          userEmail: verifiedEmail || null,
+        }),
+      }).catch((err) => console.error("Auto-recording quiz result failed:", err));
+    }
+  }, [currentStepIndex, selectedStyle, selectedShape, selectedColor, selectedSpace, verifiedEmail, generatedVisionPrompt]);
+
+  const navigateToGeneration = (email?: string) => {
+    const params = new URLSearchParams({
+      prompt: generatedVisionPrompt,
+      placement: spaceLabel,
+      verified: "true",
+    });
+    if (email) params.set("email", email);
+    router.push(`/from-scratch?${params.toString()}`);
+  };
+
+  const handleGenerateClick = () => {
+    if (!isVerified) {
+      setIsOtpModalOpen(true);
+      return;
+    }
+    navigateToGeneration(verifiedEmail);
+  };
+
+  const handleOtpVerified = (email: string) => {
+    setIsVerified(true);
+    setVerifiedEmail(email);
+    navigateToGeneration(email);
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-10 py-6 px-4 sm:px-6">
@@ -433,61 +483,161 @@ function AestheticFinderContent({ initialSteps }: WizardProps) {
 
         {/* Step 5: RESULT */}
         {currentStepIndex === 4 && (
-          <div className="w-full p-8 sm:p-10 rounded-3xl bg-obsidian-900/90 border border-gold-500/30 shadow-2xl backdrop-blur-2xl flex flex-col gap-8">
-            <div className="flex flex-col gap-2">
-              <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-gold-400 font-semibold">
-                YOUR TASTE
-              </span>
-              <h2 className="text-xl sm:text-2xl font-serif font-light text-white">
-                Based on your answers, you have an <em className="italic text-gold-400 font-normal">exquisite aesthetic sense</em>.
-              </h2>
+          <div className="w-full flex flex-col gap-10">
+            {/* Main Result Card with Rich Gold Luxury Background */}
+            <div className="relative w-full p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-[#1c1507] via-[#2d1e08] to-[#120d04] border-2 border-gold-500/60 shadow-[0_0_70px_rgba(218,165,32,0.28)] backdrop-blur-2xl flex flex-col gap-8 overflow-hidden">
+              {/* Gold Ambient Glow Highlight */}
+              <div className="absolute -top-24 -right-24 w-80 h-80 bg-gold-500/25 rounded-full blur-[90px] pointer-events-none" />
+              <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-amber-500/20 rounded-full blur-[90px] pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col gap-2">
+                <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-gold-400 font-semibold flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-gold-400" /> YOUR AESTHETIC RESULT
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-light text-white">
+                  Based on your answers, you have an <em className="italic text-gold-400 font-normal">exquisite architectural sense</em>.
+                </h2>
+              </div>
+
+              {/* 4 Taste Attributes Grid */}
+              <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 rounded-2xl bg-obsidian-950/80 border border-gold-500/25 shadow-inner">
+                <div className="flex flex-col gap-1 border-r border-neutral-800/80 pr-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400/80">COLLECTION</span>
+                  <span className="text-sm font-serif font-bold text-white capitalize">{styleLabel}</span>
+                </div>
+                <div className="flex flex-col gap-1 border-r border-neutral-800/80 pr-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400/80">SHAPE</span>
+                  <span className="text-sm font-serif font-bold text-white capitalize">{shapeLabel}</span>
+                </div>
+                <div className="flex flex-col gap-1 border-r border-neutral-800/80 pr-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400/80">COLOUR</span>
+                  <span className="text-sm font-serif font-bold text-white capitalize">{colorLabel}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400/80">PLACEMENT</span>
+                  <span className="text-sm font-serif font-bold text-white capitalize">{spaceLabel}</span>
+                </div>
+              </div>
+
+              <p className="relative z-10 text-xs sm:text-sm text-neutral-200 leading-relaxed max-w-3xl">
+                Press the button below to generate a one-of-a-kind mosaic design that reflects your taste. You can also explore our handcrafted mosaic references below engineered for luxury floors and surfaces.
+              </p>
+
+              <div className="relative z-10 flex flex-wrap items-center gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={handleGenerateClick}
+                  className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-obsidian-950 font-serif font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-lg shadow-gold-500/25 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 fill-obsidian-950" />
+                  Generate my mosaic
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="px-5 py-3.5 rounded-xl bg-obsidian-800/90 hover:bg-obsidian-700 text-neutral-300 hover:text-white text-xs font-semibold flex items-center gap-2 transition-all border border-neutral-700 hover:border-gold-500/30 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Start over
+                </button>
+              </div>
             </div>
 
-            {/* 4 Taste Attributes Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 rounded-2xl bg-obsidian-950/80 border border-neutral-800">
-              <div className="flex flex-col gap-1 border-r border-neutral-800/80 pr-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">COLLECTION</span>
-                <span className="text-sm font-serif font-bold text-white capitalize">{styleLabel}</span>
-              </div>
-              <div className="flex flex-col gap-1 border-r border-neutral-800/80 pr-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">SHAPE</span>
-                <span className="text-sm font-serif font-bold text-white capitalize">{shapeLabel}</span>
-              </div>
-              <div className="flex flex-col gap-1 border-r border-neutral-800/80 pr-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">COLOUR</span>
-                <span className="text-sm font-serif font-bold text-white capitalize">{colorLabel}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">PLACEMENT</span>
-                <span className="text-sm font-serif font-bold text-white capitalize">{spaceLabel}</span>
-              </div>
-            </div>
+            {/* ================= REAL PRODUCTS AT BOTTOM OF RESULT ================= */}
+            {(() => {
+              let featuredIds: string[] = [];
+              try {
+                if (currentStep?.featuredProductIds) {
+                  featuredIds = JSON.parse(currentStep.featuredProductIds);
+                }
+              } catch {
+                featuredIds = [];
+              }
 
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-3xl">
-              Press the button below to see a one-of-a-kind design that reflects your taste. Customisation can be made to any chosen mosaic, and we&apos;re always available for a free consultation.
-            </p>
+              let resultProducts = availableProducts;
+              if (featuredIds.length > 0) {
+                const curated = featuredIds
+                  .map((id) => availableProducts.find((p) => p.id === id))
+                  .filter(Boolean);
+                if (curated.length > 0) resultProducts = curated;
+              }
 
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                href={`/?mode=scratch&prompt=${encodeURIComponent(generatedVisionPrompt)}&placement=${encodeURIComponent(spaceLabel)}`}
-                className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-obsidian-950 font-serif font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-lg shadow-gold-500/25 hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Sparkles className="w-4 h-4 fill-obsidian-950" />
-                Generate my mosaic
-              </Link>
+              const displayProducts = resultProducts.slice(0, 4);
+              if (displayProducts.length === 0) return null;
 
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-5 py-3.5 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 hover:text-white text-xs font-semibold flex items-center gap-2 transition-all border border-neutral-700 hover:border-gold-500/30"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Start over
-              </button>
-            </div>
+              return (
+                <div className="flex flex-col gap-6 pt-4 border-t border-gold-500/20">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold-400 font-semibold block">
+                        CURATED MOSAIC REFERENCES
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-serif font-bold text-white">
+                        Recommended Pieces For Your Aesthetic
+                      </h3>
+                    </div>
+                    <p className="text-xs text-neutral-400">
+                      Handcrafted Italian Tesserae matching your {styleLabel} style
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {displayProducts.map((prod) => (
+                      <div
+                        key={prod.id}
+                        className="group rounded-2xl bg-obsidian-900/80 border border-gold-500/20 hover:border-gold-500/50 overflow-hidden shadow-xl transition-all flex flex-col justify-between"
+                      >
+                        <div className="relative aspect-[4/3] w-full bg-obsidian-950 overflow-hidden">
+                          <Image
+                            src={prod.sampleImageUrl}
+                            alt={prod.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-obsidian-950/80 backdrop-blur-md border border-gold-500/30 text-gold-300 font-serif font-bold text-[10px]">
+                            ${prod.pricePerSqFt}/sq.ft
+                          </div>
+                        </div>
+
+                        <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
+                          <div>
+                            <span className="text-[10px] font-mono text-gold-400/90 uppercase tracking-wider block">
+                              {prod.category}
+                            </span>
+                            <h4 className="font-serif font-bold text-white text-sm line-clamp-1 mt-0.5">
+                              {prod.title}
+                            </h4>
+                            <p className="text-[11px] text-neutral-400 line-clamp-2 mt-1 leading-relaxed">
+                              {prod.description}
+                            </p>
+                          </div>
+
+                          <Link
+                            href={`/from-scratch?product=${prod.id}&prompt=${encodeURIComponent(
+                              generatedVisionPrompt
+                            )}&placement=${encodeURIComponent(spaceLabel)}`}
+                            className="w-full py-2 rounded-xl bg-obsidian-800 hover:bg-gold-500 text-neutral-200 hover:text-obsidian-950 font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-neutral-700 hover:border-gold-500"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
+
+      {/* OTP Email Verification Modal */}
+      <EmailOtpModal
+        isOpen={isOtpModalOpen}
+        onClose={() => setIsOtpModalOpen(false)}
+        onVerified={handleOtpVerified}
+      />
     </div>
   );
 }

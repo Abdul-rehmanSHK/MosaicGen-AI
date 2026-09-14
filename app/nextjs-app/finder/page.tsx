@@ -50,16 +50,31 @@ export default async function AdminFinderCMSPage() {
     });
   }
 
+  // Fetch active products from catalog for result showcase selection
+  const products = await prisma.product.findMany({
+    where: { isTrashed: false },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Fetch saved user quiz submissions/results
+  const savedResults = await prisma.finderResult.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-serif font-bold text-white">Find Your Aesthetic CMS</h1>
         <p className="text-xs text-neutral-400 mt-1">
-          Dynamically customize the 5-step interactive quiz questions, descriptions, inspiration cards, and color palettes.
+          Dynamically customize the 5-step interactive quiz questions, descriptions, inspiration cards, color palettes, and view stored user quiz results.
         </p>
       </div>
 
-      <FinderManagerClient initialSteps={steps} />
+      <FinderManagerClient
+        initialSteps={steps}
+        availableProducts={products}
+        initialResults={savedResults}
+      />
     </div>
   );
 }

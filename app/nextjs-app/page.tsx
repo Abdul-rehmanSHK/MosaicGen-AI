@@ -4,11 +4,18 @@ import { Sparkles, Users, Mail, DollarSign, Eye, TrendingUp, Package } from "luc
 import Link from "next/link";
 import Image from "next/image";
 
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+
 export const revalidate = 0;
 
 export default async function AdminDashboardPage() {
+  const session = await auth();
+  if (session?.user?.role === "CONTENT_EDITOR") {
+    redirect("/nextjs-app/pages");
+  }
   const totalUsers = await prisma.user.count();
-  const totalProducts = await prisma.product.count();
+  const totalProducts = await prisma.product.count({ where: { isTrashed: false } });
   const totalGenerations = await prisma.aIGeneration.count();
   const totalInquiries = await prisma.lead.count();
 

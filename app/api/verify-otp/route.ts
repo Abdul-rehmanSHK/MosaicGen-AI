@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           email,
           name: "Guest Client",
           passwordHash: "unregistered",
-          role: "USER",
+          role: "CONTENT_EDITOR",
           isVerified: true,
         },
       });

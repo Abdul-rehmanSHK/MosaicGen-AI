@@ -1,10 +1,17 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import { GenerationsClient } from "./GenerationsClient";
 
 export const revalidate = 0;
 
 export default async function GenerationsPage() {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    redirect("/nextjs-app/pages");
+  }
+
   const generations = await prisma.aIGeneration.findMany({
     orderBy: { createdAt: "desc" },
     include: {

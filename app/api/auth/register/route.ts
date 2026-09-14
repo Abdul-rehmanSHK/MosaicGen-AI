@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         name: name || null,
         email: cleanEmail,
         passwordHash,
-        role: "USER",
+        role: "CONTENT_EDITOR",
       },
     });
 
