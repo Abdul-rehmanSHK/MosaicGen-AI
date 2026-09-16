@@ -24,10 +24,14 @@ yarn-error.log*
 
 # Local Environment Variables
 .env
+.env*.local
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# TypeScript
+*.tsbuildinfo
 
 # SQLite Local DB (optional: seed.ts populates dev.db)
 /prisma/dev.db
