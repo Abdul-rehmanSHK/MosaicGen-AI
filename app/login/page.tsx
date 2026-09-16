@@ -23,20 +23,24 @@ function LoginForm() {
 
     try {
       const res = await signIn("credentials", {
-        email,
+        email: email.trim(),
         password,
         redirect: false,
       });
 
-      if (res?.error) {
-        setError("Invalid email or password credentials.");
+      if (!res || res.error) {
+        setError(
+          res?.error === "CredentialsSignin" || res?.error?.includes("Credentials")
+            ? "Invalid email or password credentials."
+            : res?.error || "Invalid login credentials."
+        );
+        setIsLoading(false);
       } else {
-        router.push(callbackUrl);
-        router.refresh();
+        // Hard redirect to ensure HTTPS cookies are committed before middleware verifies the session
+        window.location.href = callbackUrl;
       }
     } catch (err: any) {
-      setError("An unexpected error occurred.");
-    } finally {
+      setError(err?.message || "An unexpected error occurred during login.");
       setIsLoading(false);
     }
   };

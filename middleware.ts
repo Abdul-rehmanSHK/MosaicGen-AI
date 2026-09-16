@@ -62,10 +62,24 @@ export async function middleware(request: NextRequest) {
   // 3. Admin & Content Editor Studio Protection (Auth.js)
   // ---------------------------------------------------------------------------
   if (pathname.startsWith("/nextjs-app")) {
-    const token = await getToken({
+    const isHttps =
+      request.nextUrl.protocol === "https:" ||
+      request.headers.get("x-forwarded-proto") === "https" ||
+      process.env.NODE_ENV === "production";
+
+    let token = await getToken({
       req: request,
       secret: process.env.AUTH_SECRET || "ai-mosaic-luxury-studio-secret-key-2026-super-secure",
+      secureCookie: isHttps,
     });
+
+    if (!token && isHttps) {
+      token = await getToken({
+        req: request,
+        secret: process.env.AUTH_SECRET || "ai-mosaic-luxury-studio-secret-key-2026-super-secure",
+        secureCookie: false,
+      });
+    }
 
     // Both ADMIN and CONTENT_EDITOR can access the studio app
     if (!token || (token.role !== "ADMIN" && token.role !== "CONTENT_EDITOR")) {
