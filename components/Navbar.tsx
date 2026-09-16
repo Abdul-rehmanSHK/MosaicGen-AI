@@ -9,7 +9,9 @@ import {
   LayoutDashboard,
   LogOut,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
+import { UserAccountMenu } from "@/components/studio/UserAccountMenu";
 
 interface MenuItem {
   label: string;
@@ -34,6 +36,18 @@ export function Navbar() {
       { label: "Contact Us", url: "https://zakiahmarble.com/contact-us/", external: true },
     ] as MenuItem[],
   });
+
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const syncEmail = () => {
+      const stored = typeof window !== "undefined" ? localStorage.getItem("mec_verified_email") : null;
+      setVerifiedEmail(stored);
+    };
+    syncEmail();
+    window.addEventListener("mec_verified_email_updated", syncEmail);
+    return () => window.removeEventListener("mec_verified_email_updated", syncEmail);
+  }, []);
 
   useEffect(() => {
     fetch("/api/appearance")
@@ -129,8 +143,29 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Dynamic Auth Action Buttons */}
-        <div className="flex items-center gap-3">
+        {/* Dynamic Auth Action Buttons & User Menu */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <a
+            href="https://zakiahmarble.com/contact-us/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:inline-flex px-3.5 py-2 rounded-full text-xs font-semibold bg-obsidian-900/90 border border-gold-500/30 text-neutral-300 hover:text-gold-300 hover:border-gold-400 transition-all items-center gap-1.5 shadow-sm"
+          >
+            Speak to a Specialist <ExternalLink className="w-3 h-3 text-gold-400" />
+          </a>
+
+          {/* User Account Popover (Active when verified) */}
+          {verifiedEmail && (
+            <UserAccountMenu
+              email={verifiedEmail}
+              onUseDifferentEmail={() => {
+                localStorage.removeItem("mec_verified_email");
+                setVerifiedEmail(null);
+                window.dispatchEvent(new Event("mec_verified_email_updated"));
+              }}
+            />
+          )}
+
           {isLoading ? (
             <div className="px-4 py-2 flex items-center gap-2 text-xs text-neutral-400">
               <Loader2 className="w-4 h-4 animate-spin text-amber-500" />

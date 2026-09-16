@@ -1,6 +1,6 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
-import { Sparkles, Users, Mail, DollarSign, Eye, TrendingUp, Package } from "lucide-react";
+import { Sparkles, Users, Mail, DollarSign, Eye, TrendingUp, Package, Zap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -34,11 +34,11 @@ export default async function AdminDashboardPage() {
   });
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-white">Analytics Overview</h1>
+        <h1 className="text-3xl font-serif font-bold text-white">Analytics & Performance Overview</h1>
         <p className="text-xs text-neutral-400 mt-1">
-          Monitor live studio usage metrics, AI pipeline compute costs, and client architect inquiries.
+          Monitor live studio usage metrics, AI pipeline compute costs, and performance optimization controls.
         </p>
       </div>
 
@@ -90,6 +90,38 @@ export default async function AdminDashboardPage() {
           </div>
           <span className="text-3xl font-serif font-bold text-white">{totalInquiries}</span>
           <span className="text-[11px] text-gold-400">Sample box quote requests</span>
+        </div>
+      </div>
+
+      {/* Site Optimization & Cache Quick Banner */}
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-obsidian-900 via-obsidian-950 to-obsidian-900 border border-gold-500/30 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gold-500/10 border border-gold-500/30 flex items-center justify-center text-gold-400 shrink-0">
+            <Zap className="w-6 h-6 text-gold-400 animate-pulse" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-serif font-bold text-white">
+                Site Performance & Cache Center
+              </h3>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                ACTIVE
+              </span>
+            </div>
+            <p className="text-xs text-neutral-400 mt-0.5">
+              Next.js 15 tagged cache (<code className="text-gold-400">products</code>, <code className="text-gold-400">pages</code>), AVIF/WebP image engine, and database vacuuming.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/nextjs-app/optimization"
+            className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-gold-500/20 whitespace-nowrap"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Manage Cache & Optimization
+          </Link>
         </div>
       </div>
 

@@ -31,16 +31,20 @@ export async function POST(request: Request) {
         },
       });
 
-      // Dispatch email to user mailbox (Fire and forget, so the API responds instantly in <1s)
-      sendOtpVerificationEmail({
+      const emailResult = await sendOtpVerificationEmail({
         to: cleanEmail,
         code: generatedCode,
-      }).catch(err => console.error("Background email dispatch failed:", err));
+      });
 
-      const isEmailConfigured = Boolean(
-        process.env.RESEND_API_KEY ||
-        (process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_PASS.trim().length > 0)
-      );
+      const isEmailConfigured = emailResult.method === "smtp" || emailResult.method === "resend";
+
+      if (!emailResult.success) {
+        await prisma.emailVerificationCode.deleteMany({ where: { email: cleanEmail } });
+        return NextResponse.json(
+          { error: emailResult.error || "Failed to send verification email. Please try again." },
+          { status: 500 }
+        );
+      }
 
       return NextResponse.json({
         success: true,

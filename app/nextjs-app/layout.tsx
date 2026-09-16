@@ -3,21 +3,16 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { 
-  LayoutDashboard, 
-  Package, 
-  Sparkles, 
-  FileText, 
-  Users, 
-  Mail, 
   ArrowLeft, 
   ShieldCheck, 
-  FileEdit,
-  Palette, 
-  Image as ImageIcon,
-  Sliders
+  FileEdit
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AdminThemeWrapper } from "@/components/AdminThemeWrapper";
+import { AdminSidebarNav } from "@/components/admin/AdminSidebarNav";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -67,74 +62,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <ThemeToggle />
           </div>
 
-          {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5">
-            {isAdmin && (
-              <>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 px-4 pt-1 pb-0.5">
-                  Studio Administration
-                </span>
-                <Link
-                  href="/nextjs-app"
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-gold-400" /> Dashboard & Analytics
-                </Link>
-                <Link
-                  href="/nextjs-app/generations"
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-                >
-                  <Sparkles className="w-4 h-4 text-gold-400" /> AI Generations
-                </Link>
-                <Link
-                  href="/nextjs-app/users"
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-                >
-                  <Users className="w-4 h-4 text-gold-400" /> Users & Roles
-                </Link>
-                <Link
-                  href="/nextjs-app/inquiries"
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-                >
-                  <Mail className="w-4 h-4 text-gold-400" /> Client Inquiries
-                </Link>
-              </>
-            )}
-
-            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 px-4 pt-2 pb-0.5">
-              Content & Studio Assets
-            </span>
-            <Link
-              href="/nextjs-app/pages"
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-            >
-              <FileText className="w-4 h-4 text-gold-400" /> Pages Content CMS
-            </Link>
-            <Link
-              href="/nextjs-app/finder"
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-            >
-              <Palette className="w-4 h-4 text-gold-400" /> Aesthetic Finder CMS
-            </Link>
-            <Link
-              href="/nextjs-app/media"
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-            >
-              <ImageIcon className="w-4 h-4 text-gold-400" /> Media Library
-            </Link>
-            <Link
-              href="/nextjs-app/products"
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-            >
-              <Package className="w-4 h-4 text-gold-400" /> Products Catalog
-            </Link>
-            <Link
-              href="/nextjs-app/appearance"
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800 transition-all"
-            >
-              <Sliders className="w-4 h-4 text-gold-400" /> Appearance & Navigation
-            </Link>
-          </nav>
+          {/* Navigation Links with Active Tab Highlighting */}
+          <AdminSidebarNav isAdmin={isAdmin} />
         </div>
 
         <div className="pt-6 border-t border-neutral-800 flex flex-col gap-2">

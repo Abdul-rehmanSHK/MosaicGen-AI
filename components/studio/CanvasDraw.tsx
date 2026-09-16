@@ -20,6 +20,10 @@ export interface CanvasDrawProps {
 
 export const PRESET_ROOMS = [
   {
+    name: "Grand Bedroom & Floor",
+    url: "/images/preset-grand-bedroom.jpg"
+  },
+  {
     name: "Luxury Foyer Rotunda",
     url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80"
   },
@@ -53,8 +57,8 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
   const updateCanvasSize = () => {
     if (containerRef.current && imageCanvasRef.current && drawCanvasRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const width = rect.width || 800;
-      const height = Math.min(rect.width * 0.65, 550);
+      const width = rect.width > 0 ? Math.round(rect.width) : 800;
+      const height = rect.height > 0 ? Math.round(rect.height) : Math.max(Math.round(width * 0.65), 320);
 
       imageCanvasRef.current.width = width;
       imageCanvasRef.current.height = height;
@@ -73,31 +77,35 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
   const redrawBackground = () => {
     const canvas = imageCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || canvas.width <= 0 || canvas.height <= 0) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (backgroundImageElement) {
-      // Draw image to cover canvas smoothly
-      const hRatio = canvas.width / backgroundImageElement.width;
-      const vRatio = canvas.height / backgroundImageElement.height;
-      const ratio = Math.max(hRatio, vRatio);
-      const centerShift_x = (canvas.width - backgroundImageElement.width * ratio) / 2;
-      const centerShift_y = (canvas.height - backgroundImageElement.height * ratio) / 2;
+    if (backgroundImageElement && backgroundImageElement.width > 0 && backgroundImageElement.height > 0) {
+      try {
+        // Draw image to cover canvas smoothly
+        const hRatio = canvas.width / backgroundImageElement.width;
+        const vRatio = canvas.height / backgroundImageElement.height;
+        const ratio = Math.max(hRatio, vRatio);
+        const centerShift_x = (canvas.width - backgroundImageElement.width * ratio) / 2;
+        const centerShift_y = (canvas.height - backgroundImageElement.height * ratio) / 2;
 
-      ctx.drawImage(
-        backgroundImageElement,
-        0,
-        0,
-        backgroundImageElement.width,
-        backgroundImageElement.height,
-        centerShift_x,
-        centerShift_y,
-        backgroundImageElement.width * ratio,
-        backgroundImageElement.height * ratio
-      );
+        ctx.drawImage(
+          backgroundImageElement,
+          0,
+          0,
+          backgroundImageElement.width,
+          backgroundImageElement.height,
+          centerShift_x,
+          centerShift_y,
+          backgroundImageElement.width * ratio,
+          backgroundImageElement.height * ratio
+        );
+      } catch (err) {
+        console.warn("Error drawing background image onto canvas:", err);
+      }
     } else {
       // Grid scratch backdrop
       ctx.fillStyle = "#0F1015";
@@ -243,28 +251,40 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
   useImperativeHandle(ref, () => ({
     getMaskBase64: () => {
       const canvas = drawCanvasRef.current;
-      if (!canvas) return null;
-      // Create black & white mask canvas
-      const maskCanvas = document.createElement("canvas");
-      maskCanvas.width = canvas.width;
-      maskCanvas.height = canvas.height;
-      const maskCtx = maskCanvas.getContext("2d");
-      if (!maskCtx) return null;
+      if (!canvas || canvas.width <= 0 || canvas.height <= 0 || !hasMaskStrokes) {
+        return null;
+      }
+      try {
+        // Create black & white mask canvas
+        const maskCanvas = document.createElement("canvas");
+        maskCanvas.width = canvas.width;
+        maskCanvas.height = canvas.height;
+        const maskCtx = maskCanvas.getContext("2d");
+        if (!maskCtx) return null;
 
-      maskCtx.fillStyle = "#000000";
-      maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+        maskCtx.fillStyle = "#000000";
+        maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
 
-      maskCtx.drawImage(canvas, 0, 0);
-      maskCtx.globalCompositeOperation = "source-in";
-      maskCtx.fillStyle = "#FFFFFF";
-      maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+        maskCtx.drawImage(canvas, 0, 0);
+        maskCtx.globalCompositeOperation = "source-in";
+        maskCtx.fillStyle = "#FFFFFF";
+        maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
 
-      return maskCanvas.toDataURL("image/png");
+        return maskCanvas.toDataURL("image/png");
+      } catch (err) {
+        console.warn("Mask base64 export skipped or failed:", err);
+        return null;
+      }
     },
     getInputImageBase64: () => {
       const canvas = imageCanvasRef.current;
-      if (!canvas) return null;
-      return canvas.toDataURL("image/png");
+      if (!canvas || canvas.width <= 0 || canvas.height <= 0) return null;
+      try {
+        return canvas.toDataURL("image/png");
+      } catch (err) {
+        console.warn("Input image base64 export failed:", err);
+        return null;
+      }
     },
     clearCanvas,
     loadPresetImage,

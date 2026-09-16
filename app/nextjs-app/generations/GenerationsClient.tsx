@@ -709,43 +709,36 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
             </div>
 
             <div className="flex flex-col gap-2 text-xs text-neutral-300">
-              <p>
-                You are deleting generation:{" "}
-                <strong className="text-white line-clamp-2 italic">
-                  "{deleteTarget.generation.prompt}"
-                </strong>
+              <p className="line-clamp-2 italic text-neutral-200 bg-obsidian-950/60 p-2.5 rounded-xl border border-neutral-800/80">
+                "{deleteTarget.generation.prompt}"
               </p>
-              {deleteTarget.mode === "active" ? (
-                <p className="text-neutral-400">
-                  You can move it to the <strong className="text-gold-300">Trash Box</strong> where it can be restored anytime, or choose to <strong className="text-red-400">Delete Permanently</strong> from the database.
-                </p>
-              ) : (
-                <p className="text-red-400">
-                  This will permanently delete this generation record and render from the database. This action cannot be undone.
-                </p>
-              )}
+              <p className="text-neutral-400 text-[11px]">
+                {deleteTarget.mode === "active"
+                  ? "Move to trash (can restore) or delete permanently."
+                  : "This action cannot be undone."}
+              </p>
             </div>
 
-            <div className="flex flex-col gap-2.5 pt-2">
+            <div className="flex flex-col gap-2 pt-1">
               {deleteTarget.mode === "active" ? (
                 <>
                   <button
                     type="button"
                     disabled={isDeleting}
                     onClick={() => handleMoveToTrash(deleteTarget.generation.id)}
-                    className="w-full py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-gold-500/20 transition-all cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-gold-500/20 transition-all cursor-pointer"
                   >
                     {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderArchive className="w-4 h-4" />}
-                    Move to Trash Box (Can Restore)
+                    Move to Trash
                   </button>
 
                   <button
                     type="button"
                     disabled={isDeleting}
                     onClick={() => handlePermanentDelete(deleteTarget.generation.id)}
-                    className="w-full py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                    className="w-full py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4 text-red-400" /> Delete Permanently from Database
+                    <Trash2 className="w-4 h-4 text-red-400" /> Delete Permanently
                   </button>
                 </>
               ) : (
@@ -753,10 +746,10 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
                   type="button"
                   disabled={isDeleting}
                   onClick={() => handlePermanentDelete(deleteTarget.generation.id)}
-                  className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-serif font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all"
+                  className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-red-600/30 transition-all cursor-pointer"
                 >
                   {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  Confirm Permanent Delete
+                  Confirm Delete
                 </button>
               )}
 

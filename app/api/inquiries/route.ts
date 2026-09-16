@@ -2,11 +2,32 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/logger";
+import { InquiryFormSchema, formatZodError } from "@/lib/validations";
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    const body = await request.json();
+    
+    let rawBody: any;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
+    }
+
+    // Strict Zod validation
+    const validationResult = InquiryFormSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: "VALIDATION_FAILED",
+          message: formatZodError(validationResult.error),
+          details: validationResult.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       inquiryType = "QUOTE_REQUEST",
       name,
@@ -14,19 +35,12 @@ export async function POST(request: Request) {
       phone,
       preferredTime,
       message,
-      spaceType = "General Surface",
+      spaceType,
       dimensions,
       designImageUrl,
       productId,
       generationId,
-    } = body;
-
-    if (!name || !email || !message) {
-      return NextResponse.json(
-        { error: "Name, email, and message are required." },
-        { status: 400 }
-      );
-    }
+    } = validationResult.data;
 
     const inquiry = await prisma.lead.create({
       data: {

@@ -61,7 +61,9 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       if (!res.ok) throw new Error(data.error || "Failed to send verification code.");
 
       if (data.devCode) {
-        setSuccessMessage(`${data.message} (Local Demo Code: ${data.devCode})`);
+        setSuccessMessage(
+          `Email is not configured yet. Enter this exact code below: ${data.devCode} (no real email was sent — add SMTP_PASS to .env.local to enable Gmail)`
+        );
       } else {
         setSuccessMessage(data.message || `6-digit code sent to ${email}. Check your email mailbox.`);
       }
@@ -90,7 +92,9 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       if (!res.ok) throw new Error(data.error || "Failed to resend code.");
 
       if (data.devCode) {
-        setSuccessMessage(`New 6-digit code sent to ${email}. Check your email inbox. (Local Demo Code: ${data.devCode})`);
+        setSuccessMessage(
+          `Email is not configured yet. Enter this exact code below: ${data.devCode} (no real email was sent — add SMTP_PASS to .env.local to enable Gmail)`
+        );
       } else {
         setSuccessMessage(`New 6-digit code sent to ${email}. Check your email inbox.`);
       }

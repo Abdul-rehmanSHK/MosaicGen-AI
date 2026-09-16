@@ -9,6 +9,9 @@ import { SpecialistModal } from "./SpecialistModal";
 import { InquiryModal } from "@/components/InquiryModal";
 import { InspirationGallery } from "./InspirationGallery";
 import { MosaicFinderBanner } from "./MosaicFinderBanner";
+import { GenerationWorkingScreen } from "./GenerationWorkingScreen";
+import { UserAccountMenu } from "./UserAccountMenu";
+import { MyGenerationsModal } from "./MyGenerationsModal";
 import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 
@@ -65,15 +68,17 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   const [placement, setPlacement] = useState<string>("Floor Medallion");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [prompt, setPrompt] = useState<string>(
-    "Celestial gold sunburst mosaic medallion with Nero Marquina border and fine Italian marble tesserae."
+    "Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo"
   );
   const [finish, setFinish] = useState<string>("Polished High-Gloss");
   const [groutColor, setGroutColor] = useState<string>("Champagne Gold");
 
-  // OTP Verification State
+  // OTP Verification State & Free Previews Quota
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState("");
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [generationsTrigger, setGenerationsTrigger] = useState(0);
+  const [isMyGenerationsOpen, setIsMyGenerationsOpen] = useState(false);
 
   // Modal State for Result Action Buttons
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -81,8 +86,8 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
   // Room Photo & Inpainting Mask Modal State
   const [isMaskModalOpen, setIsMaskModalOpen] = useState(false);
-  const [roomPhotoUrl, setRoomPhotoUrl] = useState<string | null>(null);
-  const [roomPhotoName, setRoomPhotoName] = useState<string | null>(null);
+  const [roomPhotoUrl, setRoomPhotoUrl] = useState<string | null>("/images/preset-grand-bedroom.jpg");
+  const [roomPhotoName, setRoomPhotoName] = useState<string | null>("Mosaic-Wall-Art-Tropical-theme-1024x737.jpeg");
   const [hasDrawnMask, setHasDrawnMask] = useState(false);
 
   const handleSelectPresetRoom = (preset: { name: string; url: string }) => {
@@ -138,9 +143,29 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     if (searchParams?.get("verified") === "true") {
       setIsOtpVerified(true);
       const urlEmail = searchParams.get("email");
-      if (urlEmail) setVerifiedEmail(urlEmail);
+      if (urlEmail) {
+        setVerifiedEmail(urlEmail);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("mec_verified_email", urlEmail);
+          window.dispatchEvent(new Event("mec_verified_email_updated"));
+        }
+      }
     }
   }, [searchParams]);
+
+  // Sync verified email from localStorage on initial load & updates
+  useEffect(() => {
+    const syncEmail = () => {
+      const stored = typeof window !== "undefined" ? localStorage.getItem("mec_verified_email") : null;
+      if (stored) {
+        setIsOtpVerified(true);
+        setVerifiedEmail(stored);
+      }
+    };
+    syncEmail();
+    window.addEventListener("mec_verified_email_updated", syncEmail);
+    return () => window.removeEventListener("mec_verified_email_updated", syncEmail);
+  }, []);
 
   useEffect(() => {
     if (products.length === 0) {
@@ -187,11 +212,27 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
   const executeGeneration = async () => {
     setIsGenerating(true);
+    setResult(null);
     setError(null);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 80, behavior: "smooth" });
+    }
 
     try {
-      const maskBase64 = isScratch ? null : canvasRef.current?.getMaskBase64();
-      const inputImageBase64 = isScratch ? null : canvasRef.current?.getInputImageBase64();
+      // Only extract mask if not scratch mode AND user actually drew an inpainting mask
+      const maskBase64 = (!isScratch && hasDrawnMask && canvasRef.current?.getMaskBase64)
+        ? canvasRef.current.getMaskBase64()
+        : null;
+
+      // Prefer the direct high-res uploaded photo dataUrl, fallback to canvas snapshot if available
+      let inputImageBase64: string | null = null;
+      if (!isScratch) {
+        if (roomPhotoUrl && roomPhotoUrl.startsWith("data:image")) {
+          inputImageBase64 = roomPhotoUrl;
+        } else if (canvasRef.current?.getInputImageBase64) {
+          inputImageBase64 = canvasRef.current.getInputImageBase64();
+        }
+      }
 
       const response = await fetch("/api/ai/generate", {
         method: "POST",
@@ -204,13 +245,14 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           maskBase64,
           finish,
           groutColor,
+          email: verifiedEmail || undefined,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Generation request failed");
+        throw new Error(data.message || data.error || "Generation request failed");
       }
 
       setResult({
@@ -220,6 +262,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
         estimatedMaterialCost: data.estimatedMaterialCost,
         promptApplied: data.promptApplied,
       });
+      setGenerationsTrigger((prev) => prev + 1);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "An error occurred while generating the design.");
@@ -231,15 +274,56 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   const handleOtpVerified = (emailVerified: string) => {
     setIsOtpVerified(true);
     setVerifiedEmail(emailVerified);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("mec_verified_email", emailVerified);
+      window.dispatchEvent(new Event("mec_verified_email_updated"));
+    }
     // Directly launch into the image generation phase
     executeGeneration();
+  };
+
+  const handleUseDifferentEmail = () => {
+    setIsOtpVerified(false);
+    setVerifiedEmail("");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("mec_verified_email");
+      window.dispatchEvent(new Event("mec_verified_email_updated"));
+    }
+  };
+
+  const handleSelectGeneration = (gen: any) => {
+    setPrompt(gen.prompt);
+    if (gen.placement) setPlacement(gen.placement);
+    setResult({
+      resultImageUrl: gen.resultImageUrl,
+      estimatedSqFt: 64,
+      estimatedTileCount: 9216,
+      estimatedMaterialCost: 5440,
+      promptApplied: gen.prompt,
+    });
+    setTimeout(() => {
+      const el = document.getElementById("ai-mosaic-result");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
   return (
     <div className="w-full max-w-7xl mx-auto flex flex-col gap-10">
-      {isScratch ? (
+      {isGenerating ? (
+        <GenerationWorkingScreen
+          prompt={prompt}
+          placement={placement}
+          roomPhotoUrl={roomPhotoUrl}
+          roomPhotoName={roomPhotoName}
+          finish={finish}
+          groutColor={groutColor}
+          onCancel={() => setIsGenerating(false)}
+        />
+      ) : (
+        <>
+          {isScratch ? (
         /* ==================== IMAGINE FROM SCRATCH MODE ==================== */
         <div className="w-full flex flex-col gap-8">
           {/* Scratch Studio Header */}
@@ -255,8 +339,16 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             </p>
 
             {isOtpVerified && verifiedEmail && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
-                <ShieldCheck className="w-3.5 h-3.5" /> Verified Email: {verifiedEmail}
+              <div className="flex items-center gap-3 mt-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Verified: {verifiedEmail}
+                </div>
+                <UserAccountMenu
+                  email={verifiedEmail}
+                  onUseDifferentEmail={handleUseDifferentEmail}
+                  onSelectGeneration={handleSelectGeneration}
+                  refreshTrigger={generationsTrigger}
+                />
               </div>
             )}
           </div>
@@ -337,8 +429,26 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               </div>
 
               {error && (
-                <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs">
-                  {error}
+                <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex flex-col gap-2.5">
+                  <span>{error}</span>
+                  {error.toLowerCase().includes("limit") && (
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsMyGenerationsOpen(true)}
+                        className="px-3 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs cursor-pointer shadow-md"
+                      >
+                        View My Generations
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleUseDifferentEmail}
+                        className="px-3 py-1.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 text-xs cursor-pointer"
+                      >
+                        Use a Different Email
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -400,8 +510,16 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             </p>
 
             {isOtpVerified && verifiedEmail && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
-                <ShieldCheck className="w-3.5 h-3.5" /> Verified Email: {verifiedEmail}
+              <div className="flex items-center gap-3 mt-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Verified: {verifiedEmail}
+                </div>
+                <UserAccountMenu
+                  email={verifiedEmail}
+                  onUseDifferentEmail={handleUseDifferentEmail}
+                  onSelectGeneration={handleSelectGeneration}
+                  refreshTrigger={generationsTrigger}
+                />
               </div>
             )}
           </div>
@@ -549,9 +667,32 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                     rows={3}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g. Celestial rotunda mosaic medallion with gold leaf tesserae and royal blue lapis lazuli accents..."
+                    placeholder="e.g. Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo..."
                     className="w-full p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-gold-400 transition-all resize-none"
                   />
+                </div>
+
+                {/* TRY SOME INSPIRATION PILLS */}
+                <div className="flex flex-col gap-1.5 pt-0.5">
+                  <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-gold-400" /> Try Some Inspiration:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SCRATCH_INSPIRATIONS.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => setPrompt(item.prompt)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                          prompt === item.prompt
+                            ? "bg-gold-500 text-obsidian-950 border-gold-400 font-bold shadow-sm"
+                            : "bg-obsidian-950 text-neutral-400 border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -587,8 +728,26 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 </div>
 
                 {error && (
-                  <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs">
-                    {error}
+                  <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex flex-col gap-2.5">
+                    <span>{error}</span>
+                    {error.toLowerCase().includes("limit") && (
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsMyGenerationsOpen(true)}
+                          className="px-3 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs cursor-pointer shadow-md"
+                        >
+                          View My Generations
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleUseDifferentEmail}
+                          className="px-3 py-1.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 text-xs cursor-pointer"
+                        >
+                          Use a Different Email
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -618,7 +777,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
       {/* AI Generated Result & Material Breakdown Section */}
       {result && (
-        <div className="p-8 rounded-3xl bg-obsidian-900/90 border border-gold-500/40 shadow-2xl backdrop-blur-2xl flex flex-col gap-8 animate-fadeIn">
+        <div id="ai-mosaic-result" className="p-8 rounded-3xl bg-obsidian-900/90 border border-gold-500/40 shadow-2xl backdrop-blur-2xl flex flex-col gap-8 animate-fadeIn">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gold-500/20 pb-6">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gold-500/10 text-gold-300 text-xs font-semibold uppercase tracking-wider mb-2">
@@ -703,6 +862,8 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           </div>
         </div>
       )}
+        </>
+      )}
 
       {/* Mosaic Finder Teaser Banner */}
       <MosaicFinderBanner />
@@ -751,6 +912,16 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
         onClose={() => setIsSpecialistModalOpen(false)}
         initialData={result ? { resultImageUrl: result.resultImageUrl, prompt, placement } : undefined}
       />
+
+      {/* User My Generations History Modal */}
+      {verifiedEmail && (
+        <MyGenerationsModal
+          isOpen={isMyGenerationsOpen}
+          onClose={() => setIsMyGenerationsOpen(false)}
+          email={verifiedEmail}
+          onSelectGeneration={handleSelectGeneration}
+        />
+      )}
     </div>
   );
 }

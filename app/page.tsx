@@ -1,12 +1,9 @@
-import React from "react";
-import { prisma } from "@/lib/prisma";
+import { getCachedProducts } from "@/lib/cache";
 import { DesignStudio } from "@/components/studio/DesignStudio";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 import { redirect } from "next/navigation";
-
-export const revalidate = 0;
 
 export default async function StudioPage({
   searchParams,
@@ -22,10 +19,7 @@ export default async function StudioPage({
     redirect(`/from-scratch${queryString}`);
   }
 
-  const products = await prisma.product.findMany({
-    where: { isTrashed: false },
-    orderBy: { createdAt: "desc" },
-  });
+  const products = await getCachedProducts();
 
   const initialProductId = searchParams.product;
 

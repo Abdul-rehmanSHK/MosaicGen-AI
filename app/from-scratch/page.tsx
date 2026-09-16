@@ -1,20 +1,14 @@
-import React from "react";
-import { prisma } from "@/lib/prisma";
+import { getCachedProducts } from "@/lib/cache";
 import { DesignStudio } from "@/components/studio/DesignStudio";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-
-export const revalidate = 0;
 
 export default async function FromScratchPage({
   searchParams,
 }: {
   searchParams: { product?: string; prompt?: string; placement?: string; verified?: string };
 }) {
-  const products = await prisma.product.findMany({
-    where: { isTrashed: false },
-    orderBy: { createdAt: "desc" },
-  });
+  const products = await getCachedProducts();
 
   return (
     <main className="min-h-screen bg-obsidian-950 flex flex-col justify-between selection:bg-gold-500 selection:text-obsidian-950">

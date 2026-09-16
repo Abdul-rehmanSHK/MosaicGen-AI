@@ -32,7 +32,7 @@ export function InpaintingMaskModal({
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-obsidian-950/85 backdrop-blur-md transition-all duration-200 ${
-        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none hidden"
+        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none invisible"
       }`}
     >
       <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto p-5 sm:p-7 rounded-3xl bg-obsidian-900 border border-gold-500/40 shadow-2xl flex flex-col gap-4">
