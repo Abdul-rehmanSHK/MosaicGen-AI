@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { CanvasDraw, CanvasDrawRef, PRESET_ROOMS } from "./CanvasDraw";
+import { CanvasDraw, CanvasDrawRef } from "./CanvasDraw";
 import { EmailOtpModal } from "./EmailOtpModal";
 import { InpaintingMaskModal } from "./InpaintingMaskModal";
 import { SpecialistModal } from "./SpecialistModal";
@@ -48,13 +48,129 @@ interface DesignStudioProps {
   onOpenInquiryModal?: (generationData: { resultImageUrl: string; prompt: string; placement: string; estimatedCost: number }) => void;
 }
 
+export interface PlacementInspiration {
+  label: string;
+  prompt: string;
+}
+
+export const PLACEMENT_INSPIRATIONS: Record<string, PlacementInspiration[]> = {
+  "Floor Medallion": [
+    {
+      label: "Calacatta Sunburst",
+      prompt: "Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae"
+    },
+    {
+      label: "Baroque Gold Scroll",
+      prompt: "Baroque golden scrollwork medallion with black Belgian marble border and polished brass inlay accents"
+    },
+    {
+      label: "Starburst Mandala",
+      prompt: "Geometric starburst mandala in Thassos white, Emperador dark marble, and polished 24k gold leaf tesserae"
+    },
+    {
+      label: "Celestial Compass",
+      prompt: "Celestial compass rose floor medallion in French limestone, polished black onyx, and lapis lazuli accents"
+    }
+  ],
+  "Backsplash": [
+    {
+      label: "Moroccan Zellige",
+      prompt: "Warm Moroccan zellige geometric tile pattern in terracotta, saffron, and deep glazed indigo"
+    },
+    {
+      label: "Art Deco Chevron",
+      prompt: "Art Deco fan chevron mosaic in emerald green marble and polished champagne gold brass inlays"
+    },
+    {
+      label: "Herringbone Carrara",
+      prompt: "Herringbone mini-brick mosaic in Carrara white marble with subtle metallic copper grout accents"
+    },
+    {
+      label: "Iridescent Botanical",
+      prompt: "Modern organic botanical vine mosaic in iridescent sea glass with mother-of-pearl accents"
+    }
+  ],
+  "Accent Wall": [
+    {
+      label: "Tropical Emerald Mural",
+      prompt: "Tropical botanical foliage wall mural with cascading monstera leaves and emerald green smalti glass"
+    },
+    {
+      label: "Crimson Mirage Wave",
+      prompt: "Dramatic crimson and gold wave-like abstract mosaic with luminous iridescent glass accents"
+    },
+    {
+      label: "Chinoiserie Pearl Tree",
+      prompt: "Chinoiserie blossoming cherry tree mosaic mural on hand-cut pearl glass background"
+    },
+    {
+      label: "Sapphire Ombre",
+      prompt: "Geometric ombre gradient in deep sapphire, navy, and brushed platinum tesserae"
+    }
+  ],
+  "Pool": [
+    {
+      label: "Starfish & Shells",
+      prompt: "Luxury marine pool medallion featuring starfish, nautilus shells, and golden scrollwork on ocean-blue tile base"
+    },
+    {
+      label: "Mediterranean Sea Glass",
+      prompt: "Iridescent Mediterranean turquoise sea glass mosaic with shimmering aqua and deep cobalt gradients"
+    },
+    {
+      label: "Grecian Dolphin Wave",
+      prompt: "Ancient Grecian wave border with central dolphin motif in vibrant pool-grade vitreous glass"
+    },
+    {
+      label: "Ripple Aqua Ombre",
+      prompt: "Subtle ripple-effect water mosaic with turquoise, azure, and shimmering mother-of-pearl tesserae"
+    }
+  ],
+  "Entryway": [
+    {
+      label: "Grand Calacatta Carpet",
+      prompt: "Grand Calacatta marble entrance 'carpet' with dark granite border and bespoke geometric monogram medallion"
+    },
+    {
+      label: "Roman Rotunda Acanthus",
+      prompt: "Neoclassical circular rotunda mosaic with concentric guilloche border and Roman acanthus leaves"
+    },
+    {
+      label: "Contemporary Slate & Brass",
+      prompt: "Contemporary minimalist marble inlay with asymmetric brass lines and charcoal slate tiles"
+    },
+    {
+      label: "Byzantine Imperial",
+      prompt: "Byzantine imperial geometric entrance floor with gold leaf mosaic inserts and Nero Marquina borders"
+    }
+  ],
+  "Auto-detect": [
+    {
+      label: "Moroccan Zellige",
+      prompt: "Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo"
+    },
+    {
+      label: "Calacatta & Gold",
+      prompt: "Harmonious bespoke mosaic design blending Calacatta marble and 24k gold leaf tesserae tailored to the space"
+    },
+    {
+      label: "Art Deco Monochrome",
+      prompt: "Sleek geometric architectural mosaic in polished monochrome marble with brushed brass accents"
+    },
+    {
+      label: "Onyx & Gold Leaf",
+      prompt: "A dramatic luxury architectural mosaic with polished black onyx, luminous 24k gold leaf tesserae, and subtle brass accents"
+    }
+  ]
+};
+
 const PLACEMENTS = [
-  { id: "Auto-detect", label: "Auto-detect Space" },
-  { id: "Floor Medallion", label: "Floor Medallion" },
-  { id: "Backsplash", label: "Backsplash" },
-  { id: "Accent Wall", label: "Accent Wall" },
-  { id: "Pool", label: "Pool & Wellness" },
-  { id: "Entryway", label: "Entryway & Rotunda" },
+  { id: "Auto-detect", label: "Auto-detect Space", hint: "AI identifies best surface" },
+  { id: "Floor Medallion", label: "Floor Medallion", hint: "Inlays into floor plane" },
+  { id: "Backsplash", label: "Backsplash", hint: "Inlays onto counter/wall" },
+  { id: "Accent Wall", label: "Accent Wall", hint: "Full vertical mural" },
+  { id: "Pool", label: "Pool & Wellness", hint: "Waterline & pool basin" },
+  { id: "Entryway", label: "Entryway & Rotunda", hint: "Foyer entrance threshold" },
 ];
 
 const FINISHES = ["Polished High-Gloss", "Satin Honed", "Antiqued Tumbled", "Textured Matte"];
@@ -86,14 +202,26 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
   // Room Photo & Inpainting Mask Modal State
   const [isMaskModalOpen, setIsMaskModalOpen] = useState(false);
-  const [roomPhotoUrl, setRoomPhotoUrl] = useState<string | null>("/images/preset-grand-bedroom.jpg");
-  const [roomPhotoName, setRoomPhotoName] = useState<string | null>("Mosaic-Wall-Art-Tropical-theme-1024x737.jpeg");
+  const [roomPhotoUrl, setRoomPhotoUrl] = useState<string | null>(null);
+  const [roomPhotoName, setRoomPhotoName] = useState<string | null>(null);
   const [hasDrawnMask, setHasDrawnMask] = useState(false);
 
-  const handleSelectPresetRoom = (preset: { name: string; url: string }) => {
-    setRoomPhotoUrl(preset.url);
-    setRoomPhotoName(preset.name);
-    canvasRef.current?.loadPresetImage(preset.url);
+  const handlePlacementSelect = (selectedId: string) => {
+    setPlacement(selectedId);
+    // Auto-fill primary ready prompt for newly selected placement if user hasn't typed a custom prompt
+    const allKnownPrompts = Object.values(PLACEMENT_INSPIRATIONS)
+      .flat()
+      .map((p) => p.prompt);
+    allKnownPrompts.push(
+      "Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo"
+    );
+
+    if (!prompt.trim() || allKnownPrompts.includes(prompt.trim())) {
+      const primaryForPlacement = PLACEMENT_INSPIRATIONS[selectedId]?.[0]?.prompt;
+      if (primaryForPlacement) {
+        setPrompt(primaryForPlacement);
+      }
+    }
   };
 
   const handleRoomPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -584,33 +712,23 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 </div>
               </div>
             ) : (
-              /* No Image Loaded -> Show Sleek Compact Upload Field + Preset Buttons */
+              /* No Image Loaded -> Show Sleek Upload Field & Mask Trigger */
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-obsidian-950/80 border border-neutral-800 hover:border-gold-500/30 transition-all">
                 <div className="flex flex-wrap items-center gap-3">
-                  <label className="py-2 px-4 rounded-xl text-xs font-semibold bg-gold-500/10 text-gold-300 hover:bg-gold-500/20 border border-gold-500/30 cursor-pointer flex items-center gap-2 transition-all shrink-0">
+                  <label className="py-2 px-4 rounded-xl text-xs font-semibold bg-gold-500/10 text-gold-300 hover:bg-gold-500/20 border border-gold-500/30 cursor-pointer flex items-center gap-2 transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]">
                     <Sparkles className="w-3.5 h-3.5 text-gold-400" />
                     Upload Room Photo
                     <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
                   </label>
-                  <span className="text-xs text-neutral-500 hidden md:inline">or choose preset:</span>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {PRESET_ROOMS.map((p) => (
-                      <button
-                        key={p.name}
-                        type="button"
-                        onClick={() => handleSelectPresetRoom(p)}
-                        className="text-[11px] px-2.5 py-1 rounded-lg bg-obsidian-900 hover:bg-gold-500/20 text-neutral-300 hover:text-gold-300 border border-neutral-800 transition-all"
-                      >
-                        {p.name}
-                      </button>
-                    ))}
-                  </div>
+                  <span className="text-xs text-neutral-400">
+                    Upload room, pool, or patio photo for AI surface detection & mosaic generation
+                  </span>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setIsMaskModalOpen(true)}
-                  className="py-2 px-4 rounded-xl font-serif font-semibold text-xs bg-obsidian-800 hover:bg-obsidian-700 text-gold-300 border border-gold-500/30 flex items-center justify-center gap-1.5 transition-all shrink-0"
+                  className="py-2 px-4 rounded-xl font-serif font-semibold text-xs bg-obsidian-800 hover:bg-obsidian-700 text-gold-300 border border-gold-500/30 flex items-center justify-center gap-1.5 transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Draw Mask Directly ↗
                 </button>
@@ -622,30 +740,35 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full items-stretch">
             {/* Architectural Surface Placement */}
             <div className="p-6 rounded-2xl bg-obsidian-900/80 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col justify-between gap-5">
-              <div className="flex flex-col gap-3">
-                <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">2</span>
-                  Architectural Surface Placement
-                </h2>
-                <p className="text-xs text-neutral-400">Select surface geometry and architectural placement for mosaic alignment</p>
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">2</span>
+                    Architectural Surface Placement
+                  </h2>
+                  <p className="text-xs text-neutral-400">
+                    Select target surface geometry — AI detects this architectural area in your photo to align the mosaic
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
                   {PLACEMENTS.map((item) => (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => setPlacement(item.id)}
-                      className={`p-3.5 rounded-xl text-xs font-medium transition-all duration-200 border text-center flex flex-col items-center justify-center gap-1 ${
+                      onClick={() => handlePlacementSelect(item.id)}
+                      className={`p-3 rounded-xl text-xs font-medium transition-all duration-200 border text-center flex flex-col items-center justify-center gap-0.5 ${
                         placement === item.id
                           ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-lg shadow-gold-500/20 scale-[1.02]"
                           : "bg-obsidian-800/80 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
                       }`}
                     >
                       <span>{item.label}</span>
+                      <span className={`text-[10px] font-normal ${placement === item.id ? "text-obsidian-900/80" : "text-neutral-500"}`}>
+                        {item.hint}
+                      </span>
                     </button>
                   ))}
                 </div>
-              </div>
 
               <div className="p-4 rounded-xl bg-obsidian-950/60 border border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
                 <span>Selected Placement:</span>
@@ -672,17 +795,18 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   />
                 </div>
 
-                {/* TRY SOME INSPIRATION PILLS */}
+                {/* TRY SOME INSPIRATION PILLS - DYNAMIC BASED ON PLACEMENT */}
                 <div className="flex flex-col gap-1.5 pt-0.5">
                   <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-gold-400" /> Try Some Inspiration:
+                    <Sparkles className="w-3 h-3 text-gold-400" /> Recommended Prompts for {placement}:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {SCRATCH_INSPIRATIONS.map((item) => (
+                    {(PLACEMENT_INSPIRATIONS[placement] || PLACEMENT_INSPIRATIONS["Floor Medallion"]).map((item) => (
                       <button
                         key={item.label}
                         type="button"
                         onClick={() => setPrompt(item.prompt)}
+                        title={item.prompt}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
                           prompt === item.prompt
                             ? "bg-gold-500 text-obsidian-950 border-gold-400 font-bold shadow-sm"

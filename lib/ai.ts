@@ -28,6 +28,12 @@ export interface GenerateMosaicResult {
 
 // Curated authentic luxury mosaic art pieces (MEC Artworks bespoke portfolio & architectural installations)
 const LUXURY_MOSAIC_PRESETS: Record<string, string[]> = {
+  "Auto-detect": [
+    "https://mecartworks.com/wp-content/uploads/2025/12/Medallion-Design-For-Gary-819x1024.webp",
+    "https://mecartworks.com/wp-content/uploads/2025/10/Amber-Dusk-Mosaic.jpg",
+    "https://mecartworks.ae/wp-content/uploads/2026/02/Mosaic-Wall-Art-Tropical-theme-1024x737.webp",
+    "https://mecartworks.ae/wp-content/uploads/2025/06/Baroque-Symphony-Mosaic-Floor.jpg"
+  ],
   "Floor Medallion": [
     "https://mecartworks.com/wp-content/uploads/2025/12/Medallion-Design-For-Gary-819x1024.webp",
     "https://mecartworks.ae/wp-content/uploads/2025/06/Baroque-Symphony-Mosaic-Floor.jpg",
@@ -60,6 +66,15 @@ const LUXURY_MOSAIC_PRESETS: Record<string, string[]> = {
   ]
 };
 
+const SURFACE_DETECTION_GUIDELINES: Record<string, string> = {
+  "Auto-detect": "Analyze the room photo and automatically detect the most natural prominent architectural surface (such as the main floor plane, kitchen backsplash wall, bathroom wall, or patio ground). Seamlessly embed and inpaint the mosaic tile design onto that detected surface while keeping all other room architecture, lighting, and furniture intact.",
+  "Floor Medallion": "Detect the primary floor plane in the room photo (such as the floor space in front of the bed, furniture, or entryway). Retain all walls, furniture, ceiling, and ambient lighting intact. Seamlessly inpaint and install an exquisite handcrafted architectural floor medallion mosaic tile artwork directly onto the floor plane in accurate floor perspective.",
+  "Backsplash": "Detect the kitchen counter backsplash or bathroom vanity wall space (the vertical wall area directly above countertops, sinks, or behind ranges). Retain all cabinetry, countertops, fixtures, and appliances intact. Seamlessly inpaint an intricate architectural mosaic tile backsplash onto that wall surface.",
+  "Accent Wall": "Detect the prominent architectural feature wall / main vertical accent wall in the room photo. Retain the room perspective, ceiling, floor, and furniture intact. Seamlessly inpaint a breathtaking luxury mosaic tile mural onto the accent wall.",
+  "Pool": "Detect the swimming pool basin, pool floor, waterline edge, or surrounding wellness terrace. Retain all landscaping, water reflections, and architectural boundaries intact. Seamlessly inpaint an ultra-luxurious, moisture-grade architectural aquatic mosaic tile installation.",
+  "Entryway": "Detect the entryway foyer floor, doorway threshold, or rotunda vestibule. Retain all entrance doors, arches, and structural columns intact. Seamlessly inpaint a grand entrance foyer mosaic rug or medallion in true floor perspective."
+};
+
 export async function processMosaicGeneration(
   params: GenerateMosaicParams
 ): Promise<GenerateMosaicResult> {
@@ -72,11 +87,12 @@ export async function processMosaicGeneration(
   } = params;
 
   const isRoomInpainting = Boolean(inputImageBase64 || params.inputImageUrl);
+  const surfaceGuideline = SURFACE_DETECTION_GUIDELINES[placement] || SURFACE_DETECTION_GUIDELINES["Floor Medallion"];
 
   // Strict architectural mosaic prompt engineering:
-  // If an input room photo is provided, instruct AI to retain the room structure and seamlessly inpaint the mosaic tile design into the specified surface (e.g. floor plane for Floor Medallion).
+  // Instruct AI to detect the specific surface and seamlessly inpaint the mosaic tile design into that area while retaining room structure.
   const fullPrompt = isRoomInpainting
-    ? `[ARCHITECTURAL INPAINTING & SPACE VISUALIZATION] You are an elite architectural visualization AI. Look at the provided room photo. Retain the room architecture, walls, lighting, and existing furniture intact. On the ${placement} surface (such as the floor in front of the bed/room for Floor Medallion, or wall for Accent Wall, or backsplash for Backsplash), seamlessly inpaint and integrate an ultra-luxurious, handcrafted architectural mosaic tile installation. The mosaic tile artwork must be: ${prompt}. Specs: ${finish} surface finish, with ${groutColor} grout lines. The mosaic must be laid in precise perspective matching the room's floor plane and ambient lighting, made of realistic hand-cut tesserae chips and detailed grout. Photorealistic 8k interior design rendering.`
+    ? `[ARCHITECTURAL INPAINTING & SPACE VISUALIZATION] You are an elite architectural visualization AI. Look at the provided room photo. ${surfaceGuideline} The mosaic tile artwork must be: ${prompt}. Specs: ${finish} surface finish, with ${groutColor} grout lines. The mosaic must be laid in precise perspective matching the room's surface plane and ambient lighting, made of realistic hand-cut tesserae chips and detailed grout. Photorealistic 8k interior design rendering.`
     : `Ultra-luxurious handcrafted architectural mosaic tile installation, ${placement} placement. Surface finish: ${finish}, ${groutColor} grout lines. Pure mosaic art made of hand-cut glass, marble, or ceramic tesserae tiles. Motif & artistic details: ${prompt}. Photorealistic 8k architectural rendering, high contrast, pristine artisan tilework detail, zero generic non-mosaic imagery.`;
 
   let resultImageUrl = "";
@@ -133,7 +149,7 @@ export async function processMosaicGeneration(
         }
 
         parts.push({
-          text: `Create an ultra-luxurious, handcrafted architectural mosaic tile installation strictly matching this description: ${fullPrompt}. Must ONLY generate a true mosaic tile design composed of individual hand-cut tesserae chips and visible grout lines.`,
+          text: `You are an elite architectural mosaic specialist. Based on the uploaded space photo: ${surfaceGuideline} Create an ultra-luxurious, handcrafted architectural mosaic tile installation strictly matching this design prompt: ${fullPrompt}. Must ONLY generate a true mosaic tile design composed of individual hand-cut tesserae chips and visible grout lines laid seamlessly onto the target surface.`,
         });
 
         const geminiRes = await fetch(
@@ -196,13 +212,17 @@ export async function processMosaicGeneration(
   // NOTE: NEVER return static referenceProductImageUrl so every unique prompt generates a distinct mosaic design!
   if (!resultImageUrl) {
     const pLower = prompt.toLowerCase();
-    // If prompt is Moroccan Zellige / Terracotta / Indigo in bedroom space:
+    // If prompt is Moroccan Zellige / Terracotta / Indigo in bedroom/floor/backsplash space:
     if (
       (pLower.includes("zellige") || pLower.includes("moroccan") || pLower.includes("terracotta") || pLower.includes("indigo")) &&
-      (placement.toLowerCase().includes("floor") || isRoomInpainting)
+      (placement.toLowerCase().includes("floor") || placement === "Backsplash" || isRoomInpainting)
     ) {
-      resultImageUrl = "/images/moroccan-zellige-bedroom-render.jpg";
-      console.log("[MOSAIC PIPELINE] 🎨 Served Moroccan Zellige in-space floor architectural render!");
+      if (placement === "Backsplash") {
+        resultImageUrl = "https://mecartworks.com/wp-content/uploads/2019/09/x1.-RIAD-.jpg";
+      } else {
+        resultImageUrl = "/images/moroccan-zellige-bedroom-render.jpg";
+      }
+      console.log(`[MOSAIC PIPELINE] 🎨 Served authentic Moroccan Zellige render for '${placement}'!`);
     } else {
       const key = placement in LUXURY_MOSAIC_PRESETS ? placement : "Floor Medallion";
       const presets = LUXURY_MOSAIC_PRESETS[key] || LUXURY_MOSAIC_PRESETS["Floor Medallion"];

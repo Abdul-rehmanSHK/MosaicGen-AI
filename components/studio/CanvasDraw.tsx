@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef } from "react";
-import { Paintbrush, Eraser, Trash2, Upload, RefreshCw, Layers } from "lucide-react";
+import { Paintbrush, Eraser, Trash2, Upload, RefreshCw } from "lucide-react";
 
 export interface CanvasDrawRef {
   getMaskBase64: () => string | null;
@@ -18,28 +18,6 @@ export interface CanvasDrawProps {
   onMaskDrawn?: () => void;
 }
 
-export const PRESET_ROOMS = [
-  {
-    name: "Grand Bedroom & Floor",
-    url: "/images/preset-grand-bedroom.jpg"
-  },
-  {
-    name: "Luxury Foyer Rotunda",
-    url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    name: "Master Bath Vanity Wall",
-    url: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    name: "Chef Kitchen Backsplash",
-    url: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    name: "Infinity Pool Terrace",
-    url: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80"
-  }
-];
 
 export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageUploaded, onMaskDrawn }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -352,22 +330,6 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
         </div>
       </div>
 
-      {/* Preset Room Quick Pickers */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-neutral-400 font-serif uppercase tracking-wider flex items-center gap-1">
-          <Layers className="w-3.5 h-3.5 text-gold-400" /> Presets:
-        </span>
-        {PRESET_ROOMS.map((preset) => (
-          <button
-            key={preset.name}
-            type="button"
-            onClick={() => loadPresetImage(preset.url)}
-            className="text-xs px-2.5 py-1 rounded-md bg-obsidian-800/80 hover:bg-gold-500/20 text-neutral-300 hover:text-gold-300 border border-neutral-800 transition-all"
-          >
-            {preset.name}
-          </button>
-        ))}
-      </div>
 
       {/* Interactive Canvas Container */}
       <div
@@ -391,7 +353,7 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
           <div className="absolute z-20 pointer-events-none text-center px-4 py-3 rounded-xl bg-obsidian-950/80 backdrop-blur-md border border-gold-500/20">
             <p className="text-sm font-semibold text-gold-300">Scratch Design Mode Active</p>
             <p className="text-xs text-neutral-400 mt-0.5">
-              Draw your target mosaic boundary above or select a luxury room preset
+              Draw your target mosaic boundary above or upload a room photo
             </p>
           </div>
         )}
