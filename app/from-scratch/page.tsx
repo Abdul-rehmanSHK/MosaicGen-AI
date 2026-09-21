@@ -1,4 +1,4 @@
-import { getCachedProducts } from "@/lib/cache";
+import { getCachedPageProducts } from "@/lib/cache";
 import { DesignStudio } from "@/components/studio/DesignStudio";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -8,7 +8,7 @@ export default async function FromScratchPage({
 }: {
   searchParams: { product?: string; prompt?: string; placement?: string; verified?: string };
 }) {
-  const products = await getCachedProducts();
+  const products = await getCachedPageProducts("from-scratch");
 
   return (
     <main className="min-h-screen bg-obsidian-950 flex flex-col justify-between selection:bg-gold-500 selection:text-obsidian-950">

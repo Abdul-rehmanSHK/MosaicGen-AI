@@ -56,8 +56,8 @@ async function main() {
       category: 'Kitchen Backsplash',
       sampleImageUrl: 'https://mecartworks.com/wp-content/uploads/2025/10/Amber-Dusk-Mosaic.jpg',
       pricePerSqFt: 135.0,
-      description: 'A warm kitchen backsplash featuring sunset-inspired mosaic tiles in shades of red, orange, and gold, paired with natural wood shelves and stoneware decor.',
-      specs: JSON.stringify({ material: 'Glass & Ceramic Tesserae', finish: 'Glossy & Textured Blend', origin: 'MEC Artworks Studio', application: 'Backsplash, Accent Walls' })
+      description: 'A warm kitchen backsplash featuring sunset-inspired mosaic tiles in shades of red, orange, and gold, paired with natural wood accents.',
+      specs: JSON.stringify({ material: 'Glass & Ceramic Tesserae', finish: 'Glossy & Textured Blend', origin: 'Artisan Studio', application: 'Backsplash, Accent Walls' })
     },
     {
       title: 'Starfish Pool Mosaic Medallion',
@@ -66,10 +66,10 @@ async function main() {
       sampleImageUrl: 'https://mecartworks.com/wp-content/uploads/2026/01/Starfish-Pool-Mosaic-Medallion-565x1024.webp',
       pricePerSqFt: 160.0,
       description: 'Luxury marine pool mosaic featuring a circular medallion with shells, starfish, scrollwork, and gold accents on an ocean-blue tile base ideal for villas and resorts.',
-      specs: JSON.stringify({ material: 'Pool-Grade Glass & Gold Foil', finish: 'Slip-Resistant Polished', origin: 'MEC Artworks Studio', application: 'Pool Floors, Spa Centers, Luxury Villas' })
+      specs: JSON.stringify({ material: 'Pool-Grade Glass & Gold Foil', finish: 'Slip-Resistant Polished', origin: 'Artisan Studio', application: 'Pool Floors, Spa Centers, Luxury Villas' })
     },
     {
-      title: 'Lobby Medallion Feature (Gary Thompson Medallion)',
+      title: 'Grand Calacatta Lobby Medallion',
       slug: 'custom-mosaic-floor-medallion',
       category: 'Marble Floor Medallion',
       sampleImageUrl: 'https://mecartworks.com/wp-content/uploads/2025/12/Medallion-Design-For-Gary-819x1024.webp',
@@ -84,7 +84,7 @@ async function main() {
       sampleImageUrl: 'https://mecartworks.com/wp-content/uploads/2025/10/Crimson-Mirage-Mosaic-796x1024.jpg',
       pricePerSqFt: 140.0,
       description: 'A stunning wall mosaic featuring cascading red and beige tones, creating a dramatic wave-like pattern that adds warmth and depth to any modern interior space.',
-      specs: JSON.stringify({ material: 'Natural Stone & Smalti Glass', finish: 'Matte & Iridescent', origin: 'MEC Artworks Studio', application: 'Bathroom Niche, Powder Room, Feature Wall' })
+      specs: JSON.stringify({ material: 'Natural Stone & Smalti Glass', finish: 'Matte & Iridescent', origin: 'Artisan Studio', application: 'Bathroom Niche, Powder Room, Feature Wall' })
     },
     {
       title: 'Custom Mosaic Portrait in Tile',
@@ -93,16 +93,16 @@ async function main() {
       sampleImageUrl: 'https://mecartworks.ae/wp-content/uploads/2025/06/A-Mosaic-Portrait-1.webp',
       pricePerSqFt: 210.0,
       description: 'An emotional tribute brought to life through mosaic—this handcrafted portrait captures depth, memory, and character in every tile for a truly personal masterpiece.',
-      specs: JSON.stringify({ material: 'Hand-cut Micro Tesserae & Gold Glass', finish: 'Fine Art Hand-carved', origin: 'MEC GCC Atelier', application: 'Private Art Collection, Gallery Wall, Estate Feature' })
+      specs: JSON.stringify({ material: 'Hand-cut Micro Tesserae & Gold Glass', finish: 'Fine Art Hand-carved', origin: 'Artisan Atelier', application: 'Private Art Collection, Gallery Wall, Estate Feature' })
     },
     {
-      title: 'Marble Mosaic for Juniper Table',
+      title: 'Bespoke Marble Entrance Medallion',
       slug: 'mosaic-juniper-table-palm-springs',
-      category: 'Commercial Hospitality Floor',
+      category: 'Marble Floor Medallion',
       sampleImageUrl: 'https://mecartworks.com/wp-content/uploads/2025/05/juniper-table-marble-mosaic-entrance-banner.jpg',
       pricePerSqFt: 155.0,
-      description: 'Custom bespoke marble entrance threshold mosaic designed and built for Juniper Table inside Kimpton Rowan Palm Springs, featuring custom hospitality logo inlays.',
-      specs: JSON.stringify({ material: 'Commercial Marble & Limestone', finish: 'Honed High-Traffic', origin: 'MEC Artworks Studio', application: 'Hotel Entrance, Restaurant Threshold, Retail Lobby' })
+      description: 'Custom bespoke marble entrance threshold mosaic handcrafted from honed Italian marble tesserae with classical architectural borders.',
+      specs: JSON.stringify({ material: 'Commercial Marble & Limestone', finish: 'Honed High-Traffic', origin: 'Artisan Studio', application: 'Hotel Entrance, Restaurant Threshold, Retail Lobby' })
     },
     {
       title: 'Emerald Wildlife Mosaic Wall',
@@ -111,7 +111,7 @@ async function main() {
       sampleImageUrl: 'https://mecartworks.com/wp-content/uploads/2026/02/Emerald-Wildlife-Mosaic-Wall-1-1024x1024.webp',
       pricePerSqFt: 175.0,
       description: 'Emerald Canopy Wildlife Mosaic is a UV-stable, non-porous tropical mural with flamingo and palm motifs ideal for luxury pool walls and spa spaces.',
-      specs: JSON.stringify({ material: 'UV-Stable Smalti & Glass', finish: 'Non-Porous Moisture-Proof', origin: 'MEC Artworks Studio', application: 'Indoor Pool, Steam Room, Solarium Feature Wall' })
+      specs: JSON.stringify({ material: 'UV-Stable Smalti & Glass', finish: 'Non-Porous Moisture-Proof', origin: 'Artisan Studio', application: 'Indoor Pool, Steam Room, Solarium Feature Wall' })
     },
     {
       title: 'Riad Moroccan Zellige Tile Wall',
@@ -120,7 +120,7 @@ async function main() {
       sampleImageUrl: 'https://mecartworks.com/wp-content/uploads/2019/09/x1.-RIAD-.jpg',
       pricePerSqFt: 125.0,
       description: 'Riad Zellige Tile: Moroccan geometric star and cross patterns in teal and black. Textured handmade finish delivering rich cultural elegance.',
-      specs: JSON.stringify({ material: 'Handmade Glazed Terracotta', finish: 'Traditional Chiseled Enamel', origin: 'Fez, Morocco & MEC Studio', application: 'Courtyard Wall, Kitchen Splash, Bath Enclosure' })
+      specs: JSON.stringify({ material: 'Handmade Glazed Terracotta', finish: 'Traditional Chiseled Enamel', origin: 'Fez, Morocco & Atelier', application: 'Courtyard Wall, Kitchen Splash, Bath Enclosure' })
     },
     {
       title: 'Baroque Symphony Mosaic Floor',
@@ -129,16 +129,16 @@ async function main() {
       sampleImageUrl: 'https://mecartworks.ae/wp-content/uploads/2025/06/Baroque-Symphony-Mosaic-Floor.jpg',
       pricePerSqFt: 190.0,
       description: 'Elegant mosaic floor with intricate golden and bronze patterns, creating a warm, luxurious ambiance perfect for grand interiors or sophisticated living spaces.',
-      specs: JSON.stringify({ material: 'Imperial Gold Marble & Bronze Inlay', finish: 'High Polish Mirror Finish', origin: 'MEC Artworks GCC', application: 'Palace Ballroom, Grand Rotunda, Dining Salon' })
+      specs: JSON.stringify({ material: 'Imperial Gold Marble & Bronze Inlay', finish: 'High Polish Mirror Finish', origin: 'Artisan Atelier', application: 'Palace Ballroom, Grand Rotunda, Dining Salon' })
     },
     {
-      title: 'Tropical-Inspired Mosaics (MC Luxury)',
+      title: 'Botanical Foliage Mosaic Mural',
       slug: 'custom-tropical-mosaic-wall-murals',
       category: 'Handcrafted Wall Mural',
       sampleImageUrl: 'https://mecartworks.ae/wp-content/uploads/2026/02/Mosaic-Wall-Art-Tropical-theme-1024x737.webp',
       pricePerSqFt: 165.0,
-      description: 'Handcrafted bespoke mosaic murals combining tropical botanical foliage designs and careful Italian craftsmanship for luxury private residences.',
-      specs: JSON.stringify({ material: 'Vitreous Glass & Marble Chips', finish: 'Semi-Gloss Hand-Set', origin: 'MEC Artworks Atelier', application: 'Master Suite Headboard, Dining Room, Conservatory' })
+      description: 'Handcrafted bespoke mosaic murals combining tropical botanical foliage designs and fine Italian vitreous glass craftsmanship.',
+      specs: JSON.stringify({ material: 'Vitreous Glass & Marble Chips', finish: 'Semi-Gloss Hand-Set', origin: 'Artisan Atelier', application: 'Master Suite Headboard, Dining Room, Conservatory' })
     }
   ];
 
@@ -151,45 +151,7 @@ async function main() {
   }
   console.log(`${products.length} products seeded.`);
 
-  // 3. Create Dynamic CMS Pages
-  const pages = [
-    {
-      title: 'Classic Architectural Mosaic Collection',
-      slug: 'classic-collection',
-      templateType: 'classic_grid',
-      heading: 'Timeless Stone & Mosaic Catalog',
-      bodyText: 'Explore our master-curated selection of Italian marble medallions, Byzantine gold glass tesserae, and precision waterjet floor carpets engineered for luxury estates.',
-      heroImageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80',
-      secondaryText: 'Filter by placement, material tier, or custom mosaic tile dimensions.',
-    },
-    {
-      title: 'Grand Rotunda & Medallions Showcase',
-      slug: 'grand-medallions',
-      templateType: 'hero_showcase',
-      heading: 'The Art of the Floor Medallion',
-      bodyText: 'Transform entry halls and rotundas into breathtaking architectural centerpieces. Each medallion is individually waterjet cut, hand-assembled in Italy, and digitally test-fitted using AI preview rendering.',
-      heroImageUrl: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1800&q=80',
-      secondaryText: 'Custom radii, bespoke brass inlays, and 3D architectural rendering available upon request.',
-    },
-    {
-      title: 'Bespoke AI Studio Experience',
-      slug: 'bespoke-studio-experience',
-      templateType: 'split_gallery',
-      heading: 'Interactive Surface & Floor Design Studio',
-      bodyText: 'Upload your floor plans or room photos and sketch custom mask boundaries. Our neural surface pipeline renders photorealistic mosaic textures live onto your space.',
-      heroImageUrl: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1600&q=80',
-      secondaryText: 'Get instant material cost breakdowns, chip counts, and sample shipments delivered to your design office.',
-    }
-  ];
 
-  for (const page of pages) {
-    await prisma.page.upsert({
-      where: { slug: page.slug },
-      update: page,
-      create: page,
-    });
-  }
-  console.log(`${pages.length} CMS Pages seeded.`);
 
   // 4. Create Initial AI Generations & Leads
   const sampleProduct = await prisma.product.findFirst({ where: { slug: 'calacatta-celestial-medallion' } });

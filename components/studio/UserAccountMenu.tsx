@@ -71,7 +71,7 @@ export function UserAccountMenu({
         {initials}
       </button>
 
-      {/* Popover Dropdown Card matching MEC AI Studio screenshot */}
+      {/* Popover Dropdown Card */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-3xl bg-obsidian-900 border border-gold-500/30 shadow-2xl shadow-black/80 backdrop-blur-2xl p-5 z-50 flex flex-col gap-4 animate-fadeIn">
           {/* Top Section: Signed In As */}

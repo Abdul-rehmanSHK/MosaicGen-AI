@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/logger";
@@ -93,6 +94,12 @@ export async function PUT(request: Request) {
       userEmail: adminUser.email,
       details: { pageId: id, title, slug: cleanSlug, templateType },
     });
+
+    revalidateTag("products");
+    revalidateTag("pages");
+    revalidatePath("/");
+    revalidatePath("/from-scratch");
+    if (page.slug) revalidatePath(`/${page.slug}`);
 
     return NextResponse.json({ success: true, page });
   } catch (error: any) {

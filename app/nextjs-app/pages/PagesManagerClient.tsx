@@ -301,7 +301,7 @@ export function PagesManagerClient({
                   isActive ? "bg-obsidian-950/20 text-obsidian-950 font-bold" : "bg-obsidian-800 text-neutral-400"
                 }`}
               >
-                /{pg.slug}
+                {pg.slug === "customize-space" ? "/" : `/${pg.slug}`}
               </span>
             </button>
           );
@@ -556,7 +556,7 @@ export function PagesManagerClient({
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-serif font-bold text-white">{currentPage.title}</h2>
                   <span className="text-[11px] font-mono text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">
-                    /{currentPage.slug}
+                    {currentPage.slug === "customize-space" ? "/" : `/${currentPage.slug}`}
                   </span>
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -567,7 +567,7 @@ export function PagesManagerClient({
 
             <div className="flex items-center gap-2.5">
               <Link
-                href={`/${currentPage.slug}`}
+                href={currentPage.slug === "customize-space" ? "/" : `/${currentPage.slug}`}
                 target="_blank"
                 className="px-3 py-2 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-medium flex items-center gap-1.5 transition-all"
                 title="View live page on website"
@@ -575,14 +575,16 @@ export function PagesManagerClient({
                 <Eye className="w-3.5 h-3.5 text-gold-400" /> View Live Page <ExternalLink className="w-3 h-3 text-neutral-500" />
               </Link>
 
-              <button
-                type="button"
-                onClick={() => handleDeletePage(currentPage.id)}
-                className="p-2 rounded-xl bg-obsidian-800 hover:bg-red-950/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors"
-                title="Delete this page"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              {currentPage.slug !== "customize-space" && currentPage.slug !== "from-scratch" && (
+                <button
+                  type="button"
+                  onClick={() => handleDeletePage(currentPage.id)}
+                  className="p-2 rounded-xl bg-obsidian-800 hover:bg-red-950/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors"
+                  title="Delete this page"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
 
               <button
                 type="button"

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/logger";
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
   try {
     const adminUser = await verifyEditorOrAdmin();
     const body = await request.json();
-    const { title, slug, description, category, sampleImageUrl, pricePerSqFt, specs } = body;
+    const { title, slug, description, category, sampleImageUrl, pricePerSqFt, specs, showOnCustomize, showOnFromScratch } = body;
 
     if (!title || !slug || !category || !sampleImageUrl || !pricePerSqFt) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -68,6 +69,8 @@ export async function POST(request: Request) {
         sampleImageUrl,
         pricePerSqFt: parseFloat(pricePerSqFt),
         specs: typeof specs === "string" ? specs : JSON.stringify(specs || {}),
+        showOnCustomize: showOnCustomize !== undefined ? Boolean(showOnCustomize) : true,
+        showOnFromScratch: showOnFromScratch !== undefined ? Boolean(showOnFromScratch) : true,
         isTrashed: false,
       },
     });
@@ -78,6 +81,11 @@ export async function POST(request: Request) {
       userEmail: adminUser.email,
       details: { productId: product.id, title, category, pricePerSqFt },
     });
+
+    revalidateTag("products");
+    revalidateTag("pages");
+    revalidatePath("/");
+    revalidatePath("/from-scratch");
 
     return NextResponse.json({ success: true, product });
   } catch (error: any) {
@@ -146,7 +154,7 @@ export async function PUT(request: Request) {
     }
 
     // Action: Update product details
-    const { title, slug, description, category, sampleImageUrl, pricePerSqFt, specs } = body;
+    const { title, slug, description, category, sampleImageUrl, pricePerSqFt, specs, showOnCustomize, showOnFromScratch } = body;
 
     const product = await prisma.product.update({
       where: { id },
@@ -158,6 +166,8 @@ export async function PUT(request: Request) {
         sampleImageUrl,
         pricePerSqFt: parseFloat(pricePerSqFt),
         specs: typeof specs === "string" ? specs : JSON.stringify(specs || {}),
+        showOnCustomize: showOnCustomize !== undefined ? Boolean(showOnCustomize) : undefined,
+        showOnFromScratch: showOnFromScratch !== undefined ? Boolean(showOnFromScratch) : undefined,
       },
     });
 
@@ -167,6 +177,11 @@ export async function PUT(request: Request) {
       userEmail: adminUser.email,
       details: { productId: id, title, category },
     });
+
+    revalidateTag("products");
+    revalidateTag("pages");
+    revalidatePath("/");
+    revalidatePath("/from-scratch");
 
     return NextResponse.json({ success: true, product });
   } catch (error: any) {

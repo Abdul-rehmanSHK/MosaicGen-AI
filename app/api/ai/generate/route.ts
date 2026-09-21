@@ -44,14 +44,20 @@ export async function POST(request: Request) {
       prompt,
       placement,
       productId,
-      inputImageBase64,
+      referenceProductImageUrl,
+      referenceProductTitle,
+      referenceProductCategory,
+      inputImageBase64: rawInputImageBase64,
       maskBase64,
       inputImageUrl: validatedInputImageUrl,
       maskUrl: validatedMaskUrl,
       finish,
       groutColor,
+      surfaceDetection,
       email: bodyEmail,
     } = validationResult.data;
+
+    let inputImageBase64 = rawInputImageBase64;
 
     if (!userEmail && bodyEmail) {
       userEmail = bodyEmail;
@@ -158,7 +164,21 @@ export async function POST(request: Request) {
     let inputImageUrl: string | null = validatedInputImageUrl || null;
     let maskUrl: string | null = validatedMaskUrl || null;
 
-    if (inputImageBase64 && inputImageBase64.startsWith("data:image")) {
+    // If inputImageUrl is provided (e.g. from an inspiration space photo) and inputImageBase64 is not, convert to base64
+    if (!inputImageBase64 && inputImageUrl && (inputImageUrl.startsWith("http://") || inputImageUrl.startsWith("https://"))) {
+      try {
+        const fetchRes = await fetch(inputImageUrl);
+        if (fetchRes.ok) {
+          const arrBuf = await fetchRes.arrayBuffer();
+          const mime = fetchRes.headers.get("content-type") || "image/jpeg";
+          inputImageBase64 = `data:${mime};base64,${Buffer.from(arrBuf).toString("base64")}`;
+        }
+      } catch (e) {
+        console.warn("Could not fetch remote inputImageUrl to base64:", e);
+      }
+    }
+
+    if (inputImageBase64 && inputImageBase64.startsWith("data:image") && !inputImageUrl) {
       const base64Data = inputImageBase64.split(",")[1];
       const buffer = Buffer.from(base64Data, "base64");
       inputImageUrl = await uploadImageToStorage(buffer, `input_${Date.now()}.png`);
@@ -176,15 +196,16 @@ export async function POST(request: Request) {
     const aiResult = await processMosaicGeneration({
       prompt,
       placement,
-      referenceProductTitle: product?.title,
-      referenceProductCategory: product?.category,
-      referenceProductImageUrl: product?.sampleImageUrl,
+      referenceProductTitle: referenceProductTitle || product?.title,
+      referenceProductCategory: referenceProductCategory || product?.category,
+      referenceProductImageUrl: referenceProductImageUrl || product?.sampleImageUrl,
       inputImageUrl: inputImageUrl || undefined,
       maskUrl: maskUrl || undefined,
       inputImageBase64: inputImageBase64 || undefined,
       maskBase64: maskBase64 || undefined,
       finish,
       groutColor,
+      surfaceDetection: surfaceDetection || undefined,
     });
 
     // -------------------------------------------------------------------------

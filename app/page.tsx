@@ -1,4 +1,4 @@
-import { getCachedProducts } from "@/lib/cache";
+import { getCachedPageProducts } from "@/lib/cache";
 import { DesignStudio } from "@/components/studio/DesignStudio";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -19,7 +19,7 @@ export default async function StudioPage({
     redirect(`/from-scratch${queryString}`);
   }
 
-  const products = await getCachedProducts();
+  const products = await getCachedPageProducts("customize-space");
 
   const initialProductId = searchParams.product;
 

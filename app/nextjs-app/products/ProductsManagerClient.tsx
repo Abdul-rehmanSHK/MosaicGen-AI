@@ -32,6 +32,8 @@ export interface Product {
   sampleImageUrl: string;
   pricePerSqFt: number;
   specs: string;
+  showOnCustomize?: boolean;
+  showOnFromScratch?: boolean;
   isTrashed?: boolean;
   trashedAt?: string | Date | null;
   createdAt?: string | Date;
@@ -166,6 +168,8 @@ export function ProductsManagerClient({ initialProducts }: { initialProducts: Pr
   const [pricePerSqFt, setPricePerSqFt] = useState<number | string>(125);
   const [material, setMaterial] = useState("Italian Marble");
   const [finish, setFinish] = useState("Polished");
+  const [showOnCustomize, setShowOnCustomize] = useState<boolean>(true);
+  const [showOnFromScratch, setShowOnFromScratch] = useState<boolean>(true);
 
   // Form image upload & media picker state
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -198,6 +202,8 @@ export function ProductsManagerClient({ initialProducts }: { initialProducts: Pr
     setPricePerSqFt(135);
     setMaterial("Calacatta Gold Marble");
     setFinish("Polished & Honed");
+    setShowOnCustomize(true);
+    setShowOnFromScratch(true);
     setError(null);
     setUploadSuccessNote(null);
     setEditorState("create");
@@ -212,6 +218,8 @@ export function ProductsManagerClient({ initialProducts }: { initialProducts: Pr
     setCategory(prod.category);
     setSampleImageUrl(prod.sampleImageUrl);
     setPricePerSqFt(prod.pricePerSqFt);
+    setShowOnCustomize(prod.showOnCustomize !== false);
+    setShowOnFromScratch(prod.showOnFromScratch !== false);
     setError(null);
     setUploadSuccessNote(null);
 
@@ -321,6 +329,8 @@ export function ProductsManagerClient({ initialProducts }: { initialProducts: Pr
           sampleImageUrl,
           pricePerSqFt,
           specs: specsJson,
+          showOnCustomize,
+          showOnFromScratch,
         }),
       });
 
@@ -601,6 +611,50 @@ export function ProductsManagerClient({ initialProducts }: { initialProducts: Pr
                       className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Display on Client Pages (Post Object Target) */}
+              <div className="p-6 rounded-3xl bg-obsidian-900 border border-neutral-800 shadow-xl flex flex-col gap-4 text-xs">
+                <div className="border-b border-neutral-800 pb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Layers className="w-4 h-4 text-gold-400" />
+                    <h3 className="font-serif font-bold text-white text-base">Display on Client Pages (Post Object)</h3>
+                  </div>
+                  <span className="text-[11px] font-mono text-gold-400">
+                    Target Pages
+                  </span>
+                </div>
+                <p className="text-neutral-400">
+                  Select which studio pages will showcase this mosaic piece in their bottom inspiration gallery:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-obsidian-950 border border-neutral-800 hover:border-gold-500/40 cursor-pointer transition-all">
+                    <input
+                      type="checkbox"
+                      checked={showOnCustomize}
+                      onChange={(e) => setShowOnCustomize(e.target.checked)}
+                      className="w-4 h-4 accent-gold-500 rounded cursor-pointer"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-white">Customize your space</span>
+                      <span className="text-[10px] font-mono text-neutral-400">Main Studio (/)</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-obsidian-950 border border-neutral-800 hover:border-gold-500/40 cursor-pointer transition-all">
+                    <input
+                      type="checkbox"
+                      checked={showOnFromScratch}
+                      onChange={(e) => setShowOnFromScratch(e.target.checked)}
+                      className="w-4 h-4 accent-gold-500 rounded cursor-pointer"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-white">Imagine from scratch</span>
+                      <span className="text-[10px] font-mono text-neutral-400">Scratch Studio (/from-scratch)</span>
+                    </div>
+                  </label>
                 </div>
               </div>
 
@@ -972,6 +1026,18 @@ export function ProductsManagerClient({ initialProducts }: { initialProducts: Pr
                               <div>
                                 <span className="font-serif font-bold text-white block">{prod.title}</span>
                                 <span className="text-[10px] text-neutral-500 font-mono">{prod.slug}</span>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  {prod.showOnCustomize !== false && (
+                                    <span className="text-[9px] font-mono font-medium text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                      Customize Space
+                                    </span>
+                                  )}
+                                  {prod.showOnFromScratch !== false && (
+                                    <span className="text-[9px] font-mono font-medium text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
+                                      From Scratch
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="p-4 font-medium text-gold-300">{prod.category}</td>

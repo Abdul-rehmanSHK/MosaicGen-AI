@@ -1,6 +1,6 @@
-# MEC AI Mosaic Surface & Floor Design Studio 🏛️✨
+# Zakiah Mosaics AI Surface & Floor Studio 🏛️✨
 
-> **Production-Ready, Full-Stack Architectural Surface & Floor Design Application** inspired by elite bespoke luxury surface design houses (e.g., ai.mecartworks.com). Built with Next.js (App Router), TypeScript, Tailwind CSS, Prisma ORM, Auth.js (v5), and AI Image Inpainting Integration.
+> **Production-Ready, Full-Stack Architectural Surface & Floor Design Application** for Zakiah Mosaics Studio. Built with Next.js (App Router), TypeScript, Tailwind CSS, Prisma ORM, Auth.js (v5), and AI Image Inpainting Integration.
 
 ---
 
@@ -111,4 +111,4 @@ Navigate to `http://localhost:3000` to launch the app!
 ---
 
 ## 📄 License
-© 2026 MEC Artworks Studio. All Rights Reserved.
+© 2026 Zakiah Mosaics Studio. All Rights Reserved.

@@ -26,7 +26,7 @@ export function Navbar() {
   const role = session?.user?.role;
 
   const [appearance, setAppearance] = useState({
-    headerBrandName: "MEC AI MOSAIC",
+    headerBrandName: "Zakiah Mosaics",
     headerTagline: "Bespoke Surface Studio",
     headerLogoUrl: null as string | null,
     headerMenu: [
@@ -41,12 +41,18 @@ export function Navbar() {
 
   useEffect(() => {
     const syncEmail = () => {
-      const stored = typeof window !== "undefined" ? localStorage.getItem("mec_verified_email") : null;
+      const stored = typeof window !== "undefined"
+        ? localStorage.getItem("zm_verified_email") || localStorage.getItem("mec_verified_email")
+        : null;
       setVerifiedEmail(stored);
     };
     syncEmail();
     window.addEventListener("mec_verified_email_updated", syncEmail);
-    return () => window.removeEventListener("mec_verified_email_updated", syncEmail);
+    window.addEventListener("zm_verified_email_updated", syncEmail);
+    return () => {
+      window.removeEventListener("mec_verified_email_updated", syncEmail);
+      window.removeEventListener("zm_verified_email_updated", syncEmail);
+    };
   }, []);
 
   useEffect(() => {
@@ -62,7 +68,7 @@ export function Navbar() {
           }
 
           setAppearance({
-            headerBrandName: data.appearance.headerBrandName || "MEC AI MOSAIC",
+            headerBrandName: data.appearance.headerBrandName || "Zakiah Mosaics",
             headerTagline: data.appearance.headerTagline || "Bespoke Surface Studio",
             headerLogoUrl: data.appearance.headerLogoUrl || null,
             headerMenu: menu.length > 0 ? menu : [
@@ -95,7 +101,7 @@ export function Navbar() {
             </div>
           ) : (
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 via-amber-500 to-amber-700 flex items-center justify-center text-obsidian-950 font-serif font-bold text-xl shadow-[0_0_15px_rgba(245,158,11,0.2)] group-hover:scale-105 transition-transform">
-              {appearance.headerBrandName ? appearance.headerBrandName[0].toUpperCase() : "M"}
+              {appearance.headerBrandName ? appearance.headerBrandName[0].toUpperCase() : "Z"}
             </div>
           )}
           <div className="flex flex-col">

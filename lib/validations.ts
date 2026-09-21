@@ -42,6 +42,9 @@ export const AIGenerationRequestSchema = z.object({
     .default("Floor Medallion"),
   
   productId: z.string().optional().nullable(),
+  referenceProductImageUrl: z.string().optional().nullable(),
+  referenceProductTitle: z.string().optional().nullable(),
+  referenceProductCategory: z.string().optional().nullable(),
   
   email: z
     .string()
@@ -50,20 +53,22 @@ export const AIGenerationRequestSchema = z.object({
     .optional()
     .nullable(),
 
-  finish: z
-    .enum(["Polished", "Honed", "Tumbled", "Antiqued", "Brushed"])
-    .default("Polished"),
+  finish: z.string().default("Polished High-Gloss"),
 
-  groutColor: z
-    .enum([
-      "Champagne Gold",
-      "Charcoal Noir",
-      "Silver Frost",
-      "Warm Sand",
-      "Pure White",
-      "Antique Bronze",
-    ])
-    .default("Champagne Gold"),
+  groutColor: z.string().default("Champagne Gold"),
+
+  surfaceDetection: z
+    .object({
+      detected: z.boolean().optional(),
+      surfaceName: z.string().optional(),
+      box_2d: z.array(z.number()).optional(),
+      polygon: z.array(z.array(z.number())).optional(),
+      description: z.string().optional(),
+      confidence: z.number().optional(),
+      architecturalGuideline: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
 
   maskUrl: z
     .string()

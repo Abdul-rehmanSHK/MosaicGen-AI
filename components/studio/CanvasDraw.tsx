@@ -11,6 +11,10 @@ export interface CanvasDrawRef {
   loadCustomImage?: (dataUrl: string) => void;
   resizeCanvas?: () => void;
   hasDrawnMask?: () => boolean;
+  applyDetectedSurfaceMask?: (
+    box_2d: [number, number, number, number],
+    polygon?: [number, number][]
+  ) => void;
 }
 
 export interface CanvasDrawProps {
@@ -120,6 +124,9 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
   const loadCustomImage = (dataUrl: string) => {
     const img = new Image();
+    if (!dataUrl.startsWith("data:")) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       setBackgroundImageElement(img);
       setHasBackgroundImage(true);
@@ -269,6 +276,60 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
     loadCustomImage,
     resizeCanvas: updateCanvasSize,
     hasDrawnMask: () => hasMaskStrokes,
+    applyDetectedSurfaceMask: (
+      box_2d: [number, number, number, number],
+      polygon?: [number, number][]
+    ) => {
+      const canvas = drawCanvasRef.current;
+      if (!canvas || canvas.width <= 0 || canvas.height <= 0) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Clear any previous mask strokes
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(203, 167, 65, 0.72)"; // Luxurious gold mask overlay
+      ctx.strokeStyle = "rgba(235, 199, 90, 0.95)";
+      ctx.lineWidth = 2.5;
+
+      if (polygon && polygon.length >= 3) {
+        ctx.beginPath();
+        const startX = (polygon[0][0] / 1000) * canvas.width;
+        const startY = (polygon[0][1] / 1000) * canvas.height;
+        ctx.moveTo(startX, startY);
+
+        for (let i = 1; i < polygon.length; i++) {
+          const ptX = (polygon[i][0] / 1000) * canvas.width;
+          const ptY = (polygon[i][1] / 1000) * canvas.height;
+          ctx.lineTo(ptX, ptY);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (box_2d && box_2d.length === 4) {
+        const [ymin, xmin, ymax, xmax] = box_2d;
+        const x = (xmin / 1000) * canvas.width;
+        const y = (ymin / 1000) * canvas.height;
+        const w = ((xmax - xmin) / 1000) * canvas.width;
+        const h = ((ymax - ymin) / 1000) * canvas.height;
+
+        ctx.beginPath();
+        const radius = Math.min(12, w / 4, h / 4);
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(x, y, w, h, radius);
+        } else {
+          ctx.rect(x, y, w, h);
+        }
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.restore();
+      setHasMaskStrokes(true);
+      if (onMaskDrawn) onMaskDrawn();
+    },
   }));
 
   return (

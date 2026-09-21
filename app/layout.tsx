@@ -3,9 +3,9 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "MEC AI Mosaic | Bespoke Architectural Surface & Floor Studio",
-  description: "Luxury AI-powered mosaic surface and floor design studio. Render custom Italian marble medallions, Byzantine gold glass, and waterjet patterns live in architectural spaces.",
-  keywords: "mosaic design, AI mosaic generator, floor medallion, Italian marble, waterjet mosaic, architectural surfaces",
+  title: "Zakiah Mosaics | Bespoke Architectural Surface & Floor Studio",
+  description: "Luxury handcrafted mosaic surface and floor design studio. Visualize bespoke Italian marble medallions, Byzantine gold glass, and artisanal tesserae live in your architectural spaces.",
+  keywords: "Zakiah Mosaics, luxury mosaic, architectural surface studio, floor medallion, Italian marble mosaic, bespoke mosaic art",
 };
 
 export default function RootLayout({

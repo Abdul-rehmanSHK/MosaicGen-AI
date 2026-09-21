@@ -7,12 +7,12 @@ import { EmailOtpModal } from "./EmailOtpModal";
 import { InpaintingMaskModal } from "./InpaintingMaskModal";
 import { SpecialistModal } from "./SpecialistModal";
 import { InquiryModal } from "@/components/InquiryModal";
-import { InspirationGallery } from "./InspirationGallery";
+import { InspirationGallery, GalleryItem } from "./InspirationGallery";
 import { MosaicFinderBanner } from "./MosaicFinderBanner";
 import { GenerationWorkingScreen } from "./GenerationWorkingScreen";
 import { UserAccountMenu } from "./UserAccountMenu";
 import { MyGenerationsModal } from "./MyGenerationsModal";
-import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck } from "lucide-react";
+import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check } from "lucide-react";
 import Image from "next/image";
 
 const SCRATCH_INSPIRATIONS = [
@@ -161,8 +161,155 @@ export const PLACEMENT_INSPIRATIONS: Record<string, PlacementInspiration[]> = {
       label: "Onyx & Gold Leaf",
       prompt: "A dramatic luxury architectural mosaic with polished black onyx, luminous 24k gold leaf tesserae, and subtle brass accents"
     }
+  ],
+  "Door Back": [
+    {
+      label: "Florentine Inlaid Panel",
+      prompt: "Neoclassical Italian Florentine inlaid marble panel for vertical door frame, featuring 24k gold leaf borders, antiqued marble acanthus scrollwork, and rich bronze framing."
+    },
+    {
+      label: "Art Deco Chevron",
+      prompt: "Art Deco vertical chevron mosaic panel in polished Nero Marquina black marble, emerald green glass, and lustrous champagne gold brass inlays."
+    },
+    {
+      label: "Baroque Arabesque",
+      prompt: "Intricate Baroque golden scrollwork arabesque panel inlay set into dark charcoal micro-tesserae, designed flush for door panel architecture."
+    },
+    {
+      label: "Onyx & Honey Inlay",
+      prompt: "Sleek contemporary vertical linear inlay in honey onyx, Calacatta marble chips, and polished brass geometric bands."
+    }
+  ],
+  "Kitchen Island": [
+    {
+      label: "Calacatta Waterfall",
+      prompt: "Cascading Calacatta gold marble mosaic waterfall island facade with bookmatched geometric vein patterns and micro-tesserae chips."
+    },
+    {
+      label: "Moroccan Zellige Facade",
+      prompt: "Handcrafted Moroccan zellige glazed emerald and terracotta tile facade with subtle iridescent glaze and warm texture."
+    },
+    {
+      label: "Fluted Brass & Slate",
+      prompt: "Fluted vertical charcoal slate mosaic island surround with inlaid brushed brass accent bands and satin honed finish."
+    },
+    {
+      label: "Venetian Terrazzo",
+      prompt: "Venetian artisan micro-mosaic island front with mother-of-pearl, tumbled Thassos chips, and champagne gold metallic grout."
+    }
+  ],
+  "Fireplace": [
+    {
+      label: "Nero Marquina Hearth",
+      prompt: "Dramatic bookmatched Nero Marquina black marble mosaic fireplace surround with fine white veining and high-gloss polish."
+    },
+    {
+      label: "Antiqued Roman Surround",
+      prompt: "Classical French limestone and antiqued tumbled Roman mosaic fireplace surround with carved egg-and-dart border."
+    },
+    {
+      label: "Gilded Sunburst Mantle",
+      prompt: "Luminous 24k gold smalti glass sunburst mosaic hearth face with brushed bronze trim and heat-resistant glass grout."
+    },
+    {
+      label: "Rustic Terracotta Herringbone",
+      prompt: "Rustic artisanal terracotta herringbone mosaic with textured matte finish and charcoal slate grout lines."
+    }
+  ],
+  "Shower Niche": [
+    {
+      label: "Mother-of-Pearl Herringbone",
+      prompt: "Luminous iridescent mother-of-pearl herringbone mosaic niche with waterproof champagne gold epoxy grout lines."
+    },
+    {
+      label: "Cobalt Blue Smalti",
+      prompt: "Deep Mediterranean cobalt blue Venetian smalti glass mosaic with water-resistant glossy finish and sparkling turquoise highlights."
+    },
+    {
+      label: "Emerald Fish Scale",
+      prompt: "Moroccan scallop fan fish scale tiles in deep forest emerald glaze with high-gloss polished finish and pure white grout."
+    },
+    {
+      label: "Pure Thassos & Brass",
+      prompt: "Minimalist Pure Thassos white marble micro-mosaic with recessed warm brass trim and pristine high-gloss finish."
+    }
+  ],
+  "Ceiling": [
+    {
+      label: "Byzantine Imperial Dome",
+      prompt: "Byzantine imperial celestial dome mosaic with 24k gold leaf tesserae, concentric geometric borders, and lapis lazuli stars."
+    },
+    {
+      label: "Roman Coffered Rosette",
+      prompt: "Classical Roman coffered ceiling medallion with concentric acanthus rosettes in antiqued marble and satin honed finish."
+    },
+    {
+      label: "Celestial Zodiac",
+      prompt: "Midnight navy and gilded celestial constellation star chart with iridescent mother-of-pearl inlays in true ceiling perspective."
+    },
+    {
+      label: "Venetian Cloud Fresco",
+      prompt: "Soft Renaissance fresco-inspired cloudscape mosaic in ethereal pastel smalti glass and delicate champagne gold grout."
+    }
   ]
 };
+
+export function getInspirationsForPlacement(placementName: string): PlacementInspiration[] {
+  if (PLACEMENT_INSPIRATIONS[placementName]) {
+    return PLACEMENT_INSPIRATIONS[placementName];
+  }
+
+  const pLower = placementName.toLowerCase();
+  if (pLower.includes("door")) {
+    return PLACEMENT_INSPIRATIONS["Door Back"];
+  }
+  if (pLower.includes("island") || pLower.includes("kitchen")) {
+    return PLACEMENT_INSPIRATIONS["Kitchen Island"];
+  }
+  if (pLower.includes("fire") || pLower.includes("hearth")) {
+    return PLACEMENT_INSPIRATIONS["Fireplace"];
+  }
+  if (pLower.includes("shower") || pLower.includes("niche") || pLower.includes("bath")) {
+    return PLACEMENT_INSPIRATIONS["Shower Niche"];
+  }
+  if (pLower.includes("ceiling") || pLower.includes("dome")) {
+    return PLACEMENT_INSPIRATIONS["Ceiling"];
+  }
+  if (pLower.includes("backsplash") || pLower.includes("counter")) {
+    return PLACEMENT_INSPIRATIONS["Backsplash"];
+  }
+  if (pLower.includes("wall") || pLower.includes("mural")) {
+    return PLACEMENT_INSPIRATIONS["Accent Wall"];
+  }
+  if (pLower.includes("pool") || pLower.includes("water") || pLower.includes("spa")) {
+    return PLACEMENT_INSPIRATIONS["Pool"];
+  }
+  if (pLower.includes("entry") || pLower.includes("foyer") || pLower.includes("rotunda")) {
+    return PLACEMENT_INSPIRATIONS["Entryway"];
+  }
+  if (pLower.includes("floor") || pLower.includes("ground") || pLower.includes("rug")) {
+    return PLACEMENT_INSPIRATIONS["Floor Medallion"];
+  }
+
+  return [
+    {
+      label: "Artisan Marble Inlay",
+      prompt: `Bespoke luxury mosaic installation tailored for ${placementName}, handcrafted from Italian Calacatta gold marble, Nero Marquina accents, and polished brass geometric inlays.`
+    },
+    {
+      label: "Gold Leaf Tesserae",
+      prompt: `Luminous 24k gold leaf and smalti glass mosaic artwork crafted specifically for ${placementName} with intricate classical scrollwork borders.`
+    },
+    {
+      label: "Art Deco Geometry",
+      prompt: `Architectural Art Deco geometric chevron pattern for ${placementName} in polished emerald green marble and champagne gold metallic grout.`
+    },
+    {
+      label: "Moroccan Zellige",
+      prompt: `Handmade terracotta Moroccan zellige geometric mosaic design tailored to fit ${placementName} in rich indigo, saffron, and glazed ivory tones.`
+    }
+  ];
+}
 
 const PLACEMENTS = [
   { id: "Auto-detect", label: "Auto-detect Space", hint: "AI identifies best surface" },
@@ -183,6 +330,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
   const [placement, setPlacement] = useState<string>("Floor Medallion");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedDesignItem, setSelectedDesignItem] = useState<GalleryItem | null>(null);
   const [prompt, setPrompt] = useState<string>(
     "Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo"
   );
@@ -206,21 +354,158 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   const [roomPhotoName, setRoomPhotoName] = useState<string | null>(null);
   const [hasDrawnMask, setHasDrawnMask] = useState(false);
 
+  // Dynamic Custom Placements & AI Surface Detection State
+  const [customPlacements, setCustomPlacements] = useState<Array<{ id: string; label: string; hint: string }>>([]);
+  const [isCustomInputOpen, setIsCustomInputOpen] = useState(false);
+  const [customInputText, setCustomInputText] = useState("");
+  const [isDetectingSurface, setIsDetectingSurface] = useState(false);
+  const [detectedSurface, setDetectedSurface] = useState<{
+    detected: boolean;
+    surfaceName: string;
+    box_2d: [number, number, number, number];
+    polygon?: [number, number][];
+    description: string;
+    confidence: number;
+    perspectiveType?: string;
+    architecturalGuideline?: string;
+  } | null>(null);
+
+  const SUGGESTED_CUSTOM_SURFACES = [
+    { label: "Door Back", hint: "Vertical door panel & frame" },
+    { label: "Kitchen Island", hint: "Waterfall counter / island facade" },
+    { label: "Fireplace", hint: "Hearth surround & chimney breast" },
+    { label: "Shower Niche", hint: "Recessed waterproof feature wall" },
+    { label: "Ceiling", hint: "Overhead dome or coffered ceiling" },
+  ];
+
+  const triggerSurfaceDetection = async (targetSurfaceName: string, imageBase64Data?: string) => {
+    const photoToScan = imageBase64Data || roomPhotoUrl;
+    if (!photoToScan) {
+      return;
+    }
+
+    setIsDetectingSurface(true);
+    try {
+      const res = await fetch("/api/ai/detect-surface", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: photoToScan,
+          targetSurface: targetSurfaceName,
+          designPrompt: prompt,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.detection) {
+          setDetectedSurface(data.detection);
+          if (canvasRef.current?.applyDetectedSurfaceMask && data.detection.box_2d) {
+            canvasRef.current.applyDetectedSurfaceMask(data.detection.box_2d, data.detection.polygon);
+            setHasDrawnMask(true);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("AI Surface Detection request failed:", err);
+    } finally {
+      setIsDetectingSurface(false);
+    }
+  };
+
   const handlePlacementSelect = (selectedId: string) => {
     setPlacement(selectedId);
-    // Auto-fill primary ready prompt for newly selected placement if user hasn't typed a custom prompt
-    const allKnownPrompts = Object.values(PLACEMENT_INSPIRATIONS)
-      .flat()
-      .map((p) => p.prompt);
-    allKnownPrompts.push(
-      "Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo"
+    triggerSurfaceDetection(selectedId);
+
+    // Auto-fill primary bespoke prompt for the newly selected placement
+    const primaryForPlacement = getInspirationsForPlacement(selectedId)[0]?.prompt;
+    if (primaryForPlacement) {
+      setPrompt(primaryForPlacement);
+    }
+  };
+
+  const handleAddCustomPlacement = (nameToAdd?: string) => {
+    const name = (nameToAdd || customInputText).trim();
+    if (!name) return;
+
+    const existing = [...PLACEMENTS, ...customPlacements].find(
+      (p) => p.id.toLowerCase() === name.toLowerCase() || p.label.toLowerCase() === name.toLowerCase()
     );
 
-    if (!prompt.trim() || allKnownPrompts.includes(prompt.trim())) {
-      const primaryForPlacement = PLACEMENT_INSPIRATIONS[selectedId]?.[0]?.prompt;
-      if (primaryForPlacement) {
-        setPrompt(primaryForPlacement);
-      }
+    if (!existing) {
+      const newPlacement = {
+        id: name,
+        label: name,
+        hint: "Bespoke custom surface",
+      };
+      setCustomPlacements((prev) => [...prev, newPlacement]);
+    }
+
+    setPlacement(name);
+    const primaryForPlacement = getInspirationsForPlacement(name)[0]?.prompt;
+    if (primaryForPlacement) {
+      setPrompt(primaryForPlacement);
+    }
+    setCustomInputText("");
+    setIsCustomInputOpen(false);
+    triggerSurfaceDetection(name);
+  };
+
+  const handleSelectDesign = (item: GalleryItem) => {
+    // 1. Set prompt
+    const newPrompt = item.desc || item.title;
+    setPrompt(newPrompt);
+
+    // 2. Set product & design item
+    if (item.id) {
+      setSelectedProductId(item.id);
+    }
+    setSelectedDesignItem(item);
+
+    // 3. Auto-detect placement from category and title
+    const titleAndCat = `${item.title} ${item.category || ""}`.toLowerCase();
+    let targetPlacement = "Floor Medallion";
+
+    if (titleAndCat.includes("pool") || titleAndCat.includes("spa")) {
+      targetPlacement = "Pool";
+    } else if (titleAndCat.includes("backsplash") || titleAndCat.includes("kitchen")) {
+      targetPlacement = "Backsplash";
+    } else if (titleAndCat.includes("wall") || titleAndCat.includes("mural") || titleAndCat.includes("portrait") || titleAndCat.includes("zellige")) {
+      targetPlacement = "Accent Wall";
+    } else if (titleAndCat.includes("door")) {
+      targetPlacement = "Door Back";
+    } else if (titleAndCat.includes("fireplace") || titleAndCat.includes("hearth")) {
+      targetPlacement = "Fireplace";
+    } else if (titleAndCat.includes("ceiling") || titleAndCat.includes("dome")) {
+      targetPlacement = "Ceiling";
+    } else if (titleAndCat.includes("island")) {
+      targetPlacement = "Kitchen Island";
+    } else if (titleAndCat.includes("entry") || titleAndCat.includes("foyer") || titleAndCat.includes("rotunda")) {
+      targetPlacement = "Entryway";
+    } else {
+      targetPlacement = "Floor Medallion";
+    }
+
+    setPlacement(targetPlacement);
+
+    // 4. In Customize Mode: Load this inspiration space photo into Section 1 & Canvas!
+    if (!isScratch && item.image) {
+      setRoomPhotoUrl(item.image);
+      setRoomPhotoName(`${item.title} (Inspiration Space)`);
+      setHasDrawnMask(false);
+      setDetectedSurface(null);
+
+      // Stream into canvas through proxy to prevent cross-origin canvas tainting
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(item.image)}`;
+      canvasRef.current?.loadCustomImage?.(proxyUrl);
+
+      // Trigger AI surface detection on the new space photo
+      triggerSurfaceDetection(targetPlacement, proxyUrl);
+    }
+
+    // Scroll smoothly to top
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -233,6 +518,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       setRoomPhotoUrl(dataUrl);
       setRoomPhotoName(file.name);
       canvasRef.current?.loadCustomImage?.(dataUrl);
+      triggerSurfaceDetection(placement, dataUrl);
     };
     reader.readAsDataURL(file);
   };
@@ -241,6 +527,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     setRoomPhotoUrl(null);
     setRoomPhotoName(null);
     setHasDrawnMask(false);
+    setDetectedSurface(null);
     canvasRef.current?.clearCanvas();
   };
 
@@ -274,7 +561,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       if (urlEmail) {
         setVerifiedEmail(urlEmail);
         if (typeof window !== "undefined") {
+          localStorage.setItem("zm_verified_email", urlEmail);
           localStorage.setItem("mec_verified_email", urlEmail);
+          window.dispatchEvent(new Event("zm_verified_email_updated"));
           window.dispatchEvent(new Event("mec_verified_email_updated"));
         }
       }
@@ -284,15 +573,21 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   // Sync verified email from localStorage on initial load & updates
   useEffect(() => {
     const syncEmail = () => {
-      const stored = typeof window !== "undefined" ? localStorage.getItem("mec_verified_email") : null;
+      const stored = typeof window !== "undefined"
+        ? localStorage.getItem("zm_verified_email") || localStorage.getItem("mec_verified_email")
+        : null;
       if (stored) {
         setIsOtpVerified(true);
         setVerifiedEmail(stored);
       }
     };
     syncEmail();
+    window.addEventListener("zm_verified_email_updated", syncEmail);
     window.addEventListener("mec_verified_email_updated", syncEmail);
-    return () => window.removeEventListener("mec_verified_email_updated", syncEmail);
+    return () => {
+      window.removeEventListener("zm_verified_email_updated", syncEmail);
+      window.removeEventListener("mec_verified_email_updated", syncEmail);
+    };
   }, []);
 
   useEffect(() => {
@@ -354,11 +649,14 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
       // Prefer the direct high-res uploaded photo dataUrl, fallback to canvas snapshot if available
       let inputImageBase64: string | null = null;
+      let inputImageUrl: string | null = null;
       if (!isScratch) {
         if (roomPhotoUrl && roomPhotoUrl.startsWith("data:image")) {
           inputImageBase64 = roomPhotoUrl;
         } else if (canvasRef.current?.getInputImageBase64) {
           inputImageBase64 = canvasRef.current.getInputImageBase64();
+        } else if (roomPhotoUrl && (roomPhotoUrl.startsWith("http://") || roomPhotoUrl.startsWith("https://"))) {
+          inputImageUrl = roomPhotoUrl;
         }
       }
 
@@ -368,11 +666,16 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
         body: JSON.stringify({
           prompt,
           placement,
-          productId: selectedProductId,
+          productId: selectedProductId || selectedDesignItem?.id || undefined,
+          referenceProductImageUrl: selectedDesignItem?.image || selectedProduct?.sampleImageUrl || undefined,
+          referenceProductTitle: selectedDesignItem?.title || selectedProduct?.title || undefined,
+          referenceProductCategory: selectedDesignItem?.category || selectedProduct?.category || undefined,
           inputImageBase64,
+          inputImageUrl,
           maskBase64,
           finish,
           groutColor,
+          surfaceDetection: detectedSurface || undefined,
           email: verifiedEmail || undefined,
         }),
       });
@@ -403,7 +706,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     setIsOtpVerified(true);
     setVerifiedEmail(emailVerified);
     if (typeof window !== "undefined") {
+      localStorage.setItem("zm_verified_email", emailVerified);
       localStorage.setItem("mec_verified_email", emailVerified);
+      window.dispatchEvent(new Event("zm_verified_email_updated"));
       window.dispatchEvent(new Event("mec_verified_email_updated"));
     }
     // Directly launch into the image generation phase
@@ -414,7 +719,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     setIsOtpVerified(false);
     setVerifiedEmail("");
     if (typeof window !== "undefined") {
+      localStorage.removeItem("zm_verified_email");
       localStorage.removeItem("mec_verified_email");
+      window.dispatchEvent(new Event("zm_verified_email_updated"));
       window.dispatchEvent(new Event("mec_verified_email_updated"));
     }
   };
@@ -457,13 +764,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           {/* Scratch Studio Header */}
           <div className="text-center flex flex-col items-center gap-3">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-300 text-xs font-semibold uppercase tracking-widest shadow-lg shadow-gold-500/5">
-              <Sparkles className="w-3.5 h-3.5" /> Imagine from scratch
+              <Sparkles className="w-3.5 h-3.5" /> Zakiah Mosaics • Generative Concept Studio
             </div>
             <h1 className="text-3xl md:text-5xl font-serif font-light tracking-tight text-white drop-shadow-md">
-              AI Mosaic Studio
+              Generative Architectural Mosaic Studio
             </h1>
             <p className="text-sm md:text-base text-neutral-400 max-w-xl">
-              Describe a vision — we&apos;ll render a one-of-a-kind mosaic concept.
+              Articulate your architectural vision — our studio synthesizes bespoke, artisan-grade mosaic concepts in authentic Italian marble, Venetian smalti, and 24k gold leaf.
             </p>
 
             {isOtpVerified && verifiedEmail && (
@@ -484,16 +791,51 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           {/* Unified Luxury Prompt Card (No photo upload / No canvas) */}
           <div className="w-full rounded-2xl border border-gold-500/30 bg-obsidian-900/90 shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col transition-all">
             <div className="p-6 sm:p-8 flex flex-col gap-6">
+              {/* Active Inspiration Reference Design Badge if chosen */}
+              {selectedDesignItem && (
+                <div className="p-3.5 rounded-xl bg-obsidian-950/90 border border-gold-500/40 flex items-center justify-between gap-3 shadow-lg">
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-gold-500/40 shrink-0 bg-obsidian-900">
+                      <img
+                        src={selectedDesignItem.image}
+                        alt={selectedDesignItem.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-gold-400 font-semibold flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-gold-400" /> Active Inspiration Design Reference
+                      </span>
+                      <span className="text-sm font-serif font-bold text-white line-clamp-1">
+                        {selectedDesignItem.title}
+                      </span>
+                      {selectedDesignItem.category && (
+                        <span className="text-[11px] text-neutral-400">
+                          {selectedDesignItem.category}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDesignItem(null)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-mono text-neutral-400 hover:text-red-300 hover:bg-red-950/30 border border-neutral-800 transition-colors"
+                  >
+                    Clear Reference
+                  </button>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2.5">
                 <label className="text-xs font-medium text-neutral-300 uppercase tracking-wider font-mono flex items-center justify-between">
-                  <span>Describe your mosaic concept</span>
-                  <span className="text-gold-400/80 lowercase text-[11px] font-sans">pure AI generation from vision</span>
+                  <span>Artistic Vision & Mosaic Specifications</span>
+                  <span className="text-gold-400/80 uppercase text-[11px] font-mono">Bespoke Generative Synthesis</span>
                 </label>
                 <textarea
                   rows={4}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="A Mediterranean kitchen backsplash in hand-cut gold and ivory glass with subtle copper veins..."
+                  placeholder="e.g. Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae..."
                   className="w-full p-4 rounded-xl bg-obsidian-950/80 border border-neutral-800 text-sm sm:text-base text-white placeholder-neutral-500 focus:outline-none focus:border-gold-400 transition-all resize-none leading-relaxed font-light"
                   autoFocus
                 />
@@ -505,7 +847,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   {/* Left: Where should it go? (col-span-7) */}
                   <div className="lg:col-span-7 flex flex-col gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
-                      Where should it go?
+                      Architectural Surface Placement
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {PLACEMENTS.map((item) => (
@@ -528,7 +870,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   {/* Right: The 2 Select Fields Covering Up the Empty Space (col-span-5) */}
                   <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-medium text-neutral-400">Surface Finish</label>
+                      <label className="text-[11px] font-medium text-neutral-400">Artisanal Surface Finish</label>
                       <select
                         value={finish}
                         onChange={(e) => setFinish(e.target.value)}
@@ -541,7 +883,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-medium text-neutral-400">Grout Accent</label>
+                      <label className="text-[11px] font-medium text-neutral-400">Architectural Grout Accent</label>
                       <select
                         value={groutColor}
                         onChange={(e) => setGroutColor(e.target.value)}
@@ -595,7 +937,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 text-obsidian-950 fill-obsidian-950" />
-                      Generate AI Mosaic Surface
+                      Render Bespoke Mosaic Concept
                     </>
                   )}
                 </button>
@@ -605,7 +947,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             {/* Quick Inspiration Pills Strip */}
             <div className="bg-obsidian-950 px-6 py-4 border-t border-neutral-800/80 flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-gold-400 flex items-center gap-1.5 shrink-0">
-                <Sparkles className="w-3.5 h-3.5" /> Try some inspiration:
+                <Sparkles className="w-3.5 h-3.5" /> Curated Studio Directions:
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {SCRATCH_INSPIRATIONS.map((insp, i) => (
@@ -628,13 +970,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           {/* Studio Header Banner */}
           <div className="text-center flex flex-col items-center gap-2">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-300 text-xs font-semibold uppercase tracking-widest shadow-lg shadow-gold-500/5">
-              <Sparkles className="w-3.5 h-3.5" /> Bespoke AI Surface Studio
+              <Sparkles className="w-3.5 h-3.5" /> Zakiah Mosaics • Architectural Surface Studio
             </div>
             <h1 className="text-2xl md:text-4xl font-serif font-bold tracking-tight text-white drop-shadow-md">
-              AI Mosaic Surface & Floor Designer
+              Architectural Mosaic Space Visualizer
             </h1>
             <p className="text-xs md:text-sm text-neutral-400 max-w-2xl">
-              Upload room photography and target your space boundary to generate photorealistic luxury mosaic surfaces tailored for elite spaces.
+              Upload architectural photography and define target surface boundaries to render authentic, high-precision luxury mosaics aligned with your space geometry.
             </p>
 
             {isOtpVerified && verifiedEmail && (
@@ -657,9 +999,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             <div className="flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-serif font-semibold text-white flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">1</span>
-                Room Photo & Inpainting Mask
+                Architectural Photography & Surface Masking
               </h2>
-              <span className="text-xs text-neutral-400">Target exact surface area with mask</span>
+              <span className="text-xs text-neutral-400">Define precise surface boundaries for architectural integration</span>
             </div>
 
             {roomPhotoUrl ? (
@@ -679,17 +1021,37 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                     </span>
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
-                        hasDrawnMask
+                        detectedSurface
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : hasDrawnMask
+                          ? "bg-gold-500/20 text-gold-300 border border-gold-500/40"
+                          : selectedDesignItem?.image === roomPhotoUrl
                           ? "bg-gold-500/20 text-gold-300 border border-gold-500/40"
                           : "bg-neutral-800 text-neutral-400"
                       }`}>
-                        {hasDrawnMask ? "✓ Inpainting Mask Active" : "Full Space Selected"}
+                        {detectedSurface
+                          ? `✓ AI Detected: ${detectedSurface.surfaceName}`
+                          : hasDrawnMask
+                          ? "✓ Inpainting Mask Active"
+                          : selectedDesignItem?.image === roomPhotoUrl
+                          ? "✓ Inspiration Space Loaded"
+                          : "Full Space Selected"}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => triggerSurfaceDetection(placement)}
+                    disabled={isDetectingSurface}
+                    className="py-2.5 px-3 rounded-xl text-xs font-semibold bg-obsidian-800 hover:bg-gold-500/20 text-gold-300 hover:text-gold-200 border border-gold-500/30 transition-all flex items-center gap-1.5"
+                    title="Detect surface on photo with AI Vision"
+                  >
+                    {isDetectingSurface ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Scan className="w-3.5 h-3.5" />}
+                    AI Detect
+                  </button>
                   <button
                     type="button"
                     onClick={() => setIsMaskModalOpen(true)}
@@ -717,11 +1079,11 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="py-2 px-4 rounded-xl text-xs font-semibold bg-gold-500/10 text-gold-300 hover:bg-gold-500/20 border border-gold-500/30 cursor-pointer flex items-center gap-2 transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]">
                     <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-                    Upload Room Photo
+                    Upload Architectural Photo
                     <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
                   </label>
                   <span className="text-xs text-neutral-400">
-                    Upload room, pool, or patio photo for AI surface detection & mosaic generation
+                    Upload interior, pool, facade, or rotunda photography for automatic surface detection
                   </span>
                 </div>
 
@@ -730,7 +1092,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   onClick={() => setIsMaskModalOpen(true)}
                   className="py-2 px-4 rounded-xl font-serif font-semibold text-xs bg-obsidian-800 hover:bg-obsidian-700 text-gold-300 border border-gold-500/30 flex items-center justify-center gap-1.5 transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  Draw Mask Directly ↗
+                  Precision Mask Editor ↗
                 </button>
               </div>
             )}
@@ -740,39 +1102,182 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full items-stretch">
             {/* Architectural Surface Placement */}
             <div className="p-6 rounded-2xl bg-obsidian-900/80 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col justify-between gap-5">
-                <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
                   <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">2</span>
                     Architectural Surface Placement
                   </h2>
-                  <p className="text-xs text-neutral-400">
-                    Select target surface geometry — AI detects this architectural area in your photo to align the mosaic
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomInputOpen((prev) => !prev)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 flex items-center gap-1 transition-all"
+                  >
+                    <Plus className="w-3 h-3" /> Custom Surface
+                  </button>
                 </div>
+                <p className="text-xs text-neutral-400">
+                  Select target surface geometry — AI scans perspective planes and aligns tesserae to your space
+                </p>
+              </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
-                  {PLACEMENTS.map((item) => (
+              {/* Dynamic Custom Surface Entry Bar */}
+              {isCustomInputOpen && (
+                <div className="p-3.5 rounded-xl bg-obsidian-950 border border-gold-500/30 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={customInputText}
+                      onChange={(e) => setCustomInputText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCustomPlacement();
+                        }
+                      }}
+                      placeholder="e.g. Door Back, Kitchen Island, Fireplace..."
+                      className="flex-1 p-2 rounded-lg bg-obsidian-900 border border-neutral-700 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-gold-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddCustomPlacement()}
+                      disabled={!customInputText.trim()}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-gold-500 hover:bg-gold-400 text-obsidian-950 disabled:opacity-50 transition-all flex items-center gap-1 shrink-0"
+                    >
+                      <Scan className="w-3.5 h-3.5" /> Add & Detect
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] text-neutral-400 font-mono">Quick Suggestions:</span>
+                    {SUGGESTED_CUSTOM_SURFACES.map((sug) => (
+                      <button
+                        key={sug.label}
+                        type="button"
+                        onClick={() => handleAddCustomPlacement(sug.label)}
+                        className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-obsidian-900 text-neutral-300 border border-neutral-800 hover:border-gold-500/40 hover:text-gold-300 transition-all"
+                      >
+                        + {sug.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Surface Option Buttons */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
+                {[...PLACEMENTS, ...customPlacements].map((item) => {
+                  const isSelected = placement === item.id;
+                  return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => handlePlacementSelect(item.id)}
                       className={`p-3 rounded-xl text-xs font-medium transition-all duration-200 border text-center flex flex-col items-center justify-center gap-0.5 ${
-                        placement === item.id
+                        isSelected
                           ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-lg shadow-gold-500/20 scale-[1.02]"
                           : "bg-obsidian-800/80 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
                       }`}
                     >
                       <span>{item.label}</span>
-                      <span className={`text-[10px] font-normal ${placement === item.id ? "text-obsidian-900/80" : "text-neutral-500"}`}>
+                      <span className={`text-[10px] font-normal ${isSelected ? "text-obsidian-900/80" : "text-neutral-500"}`}>
                         {item.hint}
                       </span>
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+
+              {/* Selected Placement & AI Surface Scanner Feedback */}
+              <div className="flex flex-col gap-2">
+                <div className="p-3.5 rounded-xl bg-obsidian-950/60 border border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
+                  <span>Selected Placement:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gold-400 font-semibold font-mono">{placement}</span>
+                    {roomPhotoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => triggerSurfaceDetection(placement)}
+                        disabled={isDetectingSurface}
+                        className="p-1 rounded-md bg-obsidian-800 hover:bg-gold-500/20 text-neutral-400 hover:text-gold-300 transition-colors"
+                        title="Re-scan surface on photo"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isDetectingSurface ? "animate-spin text-gold-400" : ""}`} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-              <div className="p-4 rounded-xl bg-obsidian-950/60 border border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
-                <span>Selected Placement:</span>
-                <span className="text-gold-400 font-semibold font-mono">{placement}</span>
+                {/* AI Multimodal Vision Detection Status Card */}
+                {roomPhotoUrl ? (
+                  isDetectingSurface ? (
+                    <div className="p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/40 flex items-center justify-between gap-3 animate-pulse">
+                      <div className="flex items-center gap-2.5">
+                        <Loader2 className="w-4 h-4 text-gold-400 animate-spin shrink-0" />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-gold-300">AI Multimodal Vision Scanning...</span>
+                          <span className="text-[10px] text-neutral-400">Locating &ldquo;{placement}&rdquo; architectural plane on your photo</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-gold-400/80">Gemini 3.5</span>
+                    </div>
+                  ) : detectedSurface ? (
+                    <div className="p-3.5 rounded-xl bg-obsidian-950/90 border border-gold-500/30 flex flex-col gap-2 shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+                          <span className="text-xs font-semibold text-white">
+                            AI Detected: <span className="text-gold-300 font-mono">{detectedSurface.surfaceName}</span>
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                            {Math.round((detectedSurface.confidence || 0.95) * 100)}% match
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => triggerSurfaceDetection(placement)}
+                          disabled={isDetectingSurface}
+                          className="text-[10px] font-mono text-neutral-400 hover:text-gold-300 flex items-center gap-1 transition-colors"
+                          title="Re-scan surface"
+                        >
+                          <RefreshCw className="w-2.5 h-2.5" /> Re-scan
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-neutral-300 line-clamp-2">
+                        {detectedSurface.description}
+                      </p>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800 text-[10px] text-neutral-400">
+                        <span className="text-emerald-400 font-mono flex items-center gap-1">
+                          ✓ Gold Mask Auto-Aligned on Surface
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsMaskModalOpen(true)}
+                          className="text-gold-400 hover:text-gold-300 font-semibold underline underline-offset-2 flex items-center gap-0.5 transition-colors"
+                        >
+                          Preview / Adjust Mask ↗
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center justify-between text-xs">
+                      <span className="text-neutral-400 text-[11px] flex items-center gap-1.5">
+                        <Scan className="w-3.5 h-3.5 text-gold-400" /> AI Vision surface detection ready
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => triggerSurfaceDetection(placement)}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 transition-all"
+                      >
+                        Detect Surface
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center gap-2 text-[11px] text-neutral-400">
+                    <Sparkles className="w-3.5 h-3.5 text-gold-400 shrink-0" />
+                    <span>Upload a room photo in Section 1 to enable real-time AI surface detection & auto-masking.</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -781,11 +1286,60 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               <div className="flex flex-col gap-4">
                 <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">3</span>
-                  Mosaic Prompt & Finish Specs
+                  Design Direction & Artisan Specifications
                 </h2>
 
+                {/* Active Inspiration Reference Design Card */}
+                {selectedDesignItem && (
+                  <div className="p-3.5 rounded-xl bg-obsidian-950/90 border border-gold-500/40 flex items-center justify-between gap-3 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gold-500/40 shrink-0 bg-obsidian-900">
+                        <img
+                          src={selectedDesignItem.image}
+                          alt={selectedDesignItem.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-gold-400 font-semibold flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-gold-400" /> Active Inspiration Design Reference
+                        </span>
+                        <span className="text-xs font-serif font-bold text-white line-clamp-1">
+                          {selectedDesignItem.title}
+                        </span>
+                        {selectedDesignItem.category && (
+                          <span className="text-[10px] text-neutral-400">
+                            {selectedDesignItem.category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDesignItem(null)}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-mono text-neutral-400 hover:text-red-300 hover:bg-red-950/30 border border-neutral-800 transition-colors"
+                      title="Clear reference design"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-neutral-300">Design Vision & Prompt</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-neutral-300">Artistic Vision & Mosaic Prompt</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const enhanced = `Ultra-luxurious bespoke architectural mosaic artwork for ${placement}. ${prompt.trim().replace(/\.+$/, "")}. Handcrafted by Zakiah Mosaics from authentic Italian marble tesserae and Venetian smalti in ${finish.toLowerCase()} finish with luminous ${groutColor.toLowerCase()} grout lines, scaled in true architectural perspective.`;
+                        setPrompt(enhanced);
+                      }}
+                      className="text-[11px] font-mono text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors group"
+                      title="Enrich prompt with architectural specs"
+                    >
+                      <Sparkles className="w-3 h-3 text-gold-400 group-hover:rotate-12 transition-transform" /> AI Enhance Prompt
+                    </button>
+                  </div>
                   <textarea
                     rows={3}
                     value={prompt}
@@ -798,10 +1352,10 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 {/* TRY SOME INSPIRATION PILLS - DYNAMIC BASED ON PLACEMENT */}
                 <div className="flex flex-col gap-1.5 pt-0.5">
                   <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-gold-400" /> Recommended Prompts for {placement}:
+                    <Sparkles className="w-3 h-3 text-gold-400" /> Artisan Directions for {placement}:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {(PLACEMENT_INSPIRATIONS[placement] || PLACEMENT_INSPIRATIONS["Floor Medallion"]).map((item) => (
+                    {getInspirationsForPlacement(placement).map((item) => (
                       <button
                         key={item.label}
                         type="button"
@@ -821,7 +1375,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-neutral-400">Surface Finish</label>
+                    <label className="text-[11px] font-medium text-neutral-400">Artisanal Surface Finish</label>
                     <select
                       value={finish}
                       onChange={(e) => setFinish(e.target.value)}
@@ -836,7 +1390,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-neutral-400">Grout Accent</label>
+                    <label className="text-[11px] font-medium text-neutral-400">Architectural Grout Accent</label>
                     <select
                       value={groutColor}
                       onChange={(e) => setGroutColor(e.target.value)}
@@ -885,12 +1439,12 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 {isGenerating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-obsidian-950" />
-                    Rendering Mosaic Pipeline...
+                    Synthesizing Mosaic Architecture...
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 text-obsidian-950 fill-obsidian-950" />
-                    Generate AI Mosaic Surface
+                    Render Bespoke Mosaic Surface
                   </>
                 )}
               </button>
@@ -905,9 +1459,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gold-500/20 pb-6">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gold-500/10 text-gold-300 text-xs font-semibold uppercase tracking-wider mb-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-gold-400" /> High Precision Surface Render Complete
+                <CheckCircle2 className="w-3.5 h-3.5 text-gold-400" /> Artisan Architectural Surface Render Complete
               </div>
-              <h2 className="text-2xl font-serif font-bold text-white">Generated Architectural Surface</h2>
+              <h2 className="text-2xl font-serif font-bold text-white">Bespoke Mosaic Surface Visualization</h2>
             </div>
 
             {/* TWO FRONTEND ACTION BUTTONS: Quote Request & Talk to Specialist */}
@@ -917,7 +1471,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 onClick={() => setIsQuoteModalOpen(true)}
                 className="px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-gold-500/20"
               >
-                <Send className="w-4 h-4" /> Request Quote & Sample Box
+                <Send className="w-4 h-4" /> Request Sample Box & Specification
               </button>
 
               <button
@@ -925,7 +1479,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 onClick={() => setIsSpecialistModalOpen(true)}
                 className="px-5 py-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 border border-gold-500/40 text-gold-300 font-serif font-bold text-xs flex items-center gap-2 transition-all"
               >
-                <PhoneCall className="w-4 h-4 text-gold-400" /> Talk to Specialist
+                <PhoneCall className="w-4 h-4 text-gold-400" /> Speak with a Surface Specialist
               </button>
             </div>
           </div>
@@ -940,7 +1494,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               />
               <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-obsidian-950/80 backdrop-blur-md border border-gold-500/20">
                 <p className="text-xs text-neutral-300 font-mono line-clamp-2">
-                  <span className="text-gold-400 font-bold">Prompt:</span> {result.promptApplied}
+                  <span className="text-gold-400 font-bold">Artisan Specification:</span> {result.promptApplied}
                 </p>
               </div>
             </div>
@@ -964,7 +1518,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 <div className="p-4 rounded-xl bg-obsidian-900 border border-gold-500/30 col-span-2">
                   <span className="text-xs text-gold-400 font-medium block mb-1">Estimated Material Cost</span>
                   <span className="text-3xl font-serif font-bold text-white">${result.estimatedMaterialCost.toLocaleString()}</span>
-                  <span className="text-[10px] text-neutral-400 block mt-1">*Includes custom waterjet mesh mounting & sealed crates.</span>
+                  <span className="text-[10px] text-neutral-400 block mt-1">*Includes precision waterjet cut tesserae, fiberglass mesh mounting, and bespoke wooden crating.</span>
                 </div>
               </div>
 
@@ -995,6 +1549,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       {/* Inspiration Masonry Gallery - dynamically loaded from Catalog products */}
       <InspirationGallery 
         products={initialProducts} 
+        onSelectDesign={handleSelectDesign}
         onSelectPrompt={(newPrompt, prodId) => {
           setPrompt(newPrompt);
           if (prodId) setSelectedProductId(prodId);

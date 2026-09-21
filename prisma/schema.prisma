@@ -41,6 +41,8 @@ model Product {
   sampleImageUrl String
   pricePerSqFt   Float
   specs          String
+  showOnCustomize   Boolean        @default(true)
+  showOnFromScratch Boolean        @default(true)
   isTrashed      Boolean        @default(false)
   trashedAt      DateTime?
   createdAt      DateTime       @default(now())
@@ -172,18 +174,18 @@ model FinderResult {
 
 model SiteAppearance {
   id                 String   @id @default("default")
-  headerBrandName    String   @default("MEC AI MOSAIC")
+  headerBrandName    String   @default("Zakiah Mosaics")
   headerTagline      String   @default("Bespoke Surface Studio")
   headerLogoUrl      String?
   headerMenuJson     String   @default("[{\"label\":\"Customize your space\",\"url\":\"/\"},{\"label\":\"Imagine from scratch\",\"url\":\"/from-scratch\"},{\"label\":\"Find your aesthetic\",\"url\":\"/finder\"},{\"label\":\"Contact Us\",\"url\":\"https://zakiahmarble.com/contact-us/\",\"external\":true}]")
 
-  footerBrandName    String   @default("MEC AI MOSAIC STUDIO")
-  footerDescription  String   @default("Pioneering luxury architectural surface design with AI-powered inpainting, custom waterjet mesh manufacturing, and Italian marble artistry.")
+  footerBrandName    String   @default("Zakiah Mosaics Studio")
+  footerDescription  String   @default("Bespoke architectural mosaic design house crafting handcrafted Italian marble, Venetian smalti, and 24k gold leaf tesserae for elite architectural projects worldwide.")
   footerLogoUrl      String?
-  footerCopyright    String   @default("© 2026 MEC Artworks Studio. All Rights Reserved.")
-  footerContactEmail String?  @default("concierge@mecartworks.com")
+  footerCopyright    String   @default("© 2026 Zakiah Mosaics Studio. All Rights Reserved.")
+  footerContactEmail String?  @default("concierge@zakiahmarble.com")
   footerContactPhone String?  @default("+1 (800) 555-MOSAIC")
-  footerAddress      String?  @default("Carrara, Italy & NY, USA")
+  footerAddress      String?  @default("Carrara, Italy • Dubai, UAE • New York, USA")
   footerLinksJson    String   @default("[{\"label\":\"Customize your space\",\"url\":\"/\"},{\"label\":\"Imagine from scratch\",\"url\":\"/from-scratch\"},{\"label\":\"Find your aesthetic\",\"url\":\"/finder\"},{\"label\":\"Contact Us\",\"url\":\"https://zakiahmarble.com/contact-us/\",\"external\":true}]")
   socialLinksJson    String?  @default("{\"instagram\":\"https://instagram.com\",\"pinterest\":\"https://pinterest.com\",\"linkedin\":\"https://linkedin.com\"}")
 

@@ -16,6 +16,15 @@ export interface GenerateMosaicParams {
   maskBase64?: string;
   finish?: string;
   groutColor?: string;
+  surfaceDetection?: {
+    detected?: boolean;
+    surfaceName?: string;
+    box_2d?: [number, number, number, number] | number[];
+    polygon?: [number, number][] | number[][];
+    description?: string;
+    confidence?: number;
+    architecturalGuideline?: string;
+  };
 }
 
 export interface GenerateMosaicResult {
@@ -26,7 +35,7 @@ export interface GenerateMosaicResult {
   promptApplied: string;
 }
 
-// Curated authentic luxury mosaic art pieces (MEC Artworks bespoke portfolio & architectural installations)
+// Curated authentic luxury mosaic art pieces (Zakiah Mosaics bespoke portfolio & architectural installations)
 const LUXURY_MOSAIC_PRESETS: Record<string, string[]> = {
   "Auto-detect": [
     "https://mecartworks.com/wp-content/uploads/2025/12/Medallion-Design-For-Gary-819x1024.webp",
@@ -75,6 +84,194 @@ const SURFACE_DETECTION_GUIDELINES: Record<string, string> = {
   "Entryway": "Detect the entryway foyer floor, doorway threshold, or rotunda vestibule. Retain all entrance doors, arches, and structural columns intact. Seamlessly inpaint a grand entrance foyer mosaic rug or medallion in true floor perspective."
 };
 
+export const FINISH_ARCHITECTURAL_SPECS: Record<string, string> = {
+  "Polished High-Gloss": "Ultra-reflective mirror polish, specular light highlights glistening on individual hand-cut tesserae chips, luminous glass and polished marble depth with reflective glaze.",
+  "Satin Honed": "Soft-diffused elegant satin luster, zero glare, smooth velvety honed stone touch, refined matte architectural sheen that diffuses ambient room lighting smoothly.",
+  "Antiqued Tumbled": "Weathered artisan edges, softened distressed corners, classical Roman tumbled texture with rich historical patina and slight textural height variations between tesserae.",
+  "Textured Matte": "Natural tactile stone relief, cleft texture with rustic organic depth, non-reflective authentic artisan tilework with raw earthy appeal."
+};
+
+export const GROUT_ARCHITECTURAL_SPECS: Record<string, { promptSpec: string; hexColor: string; borderColor: string; highlightColor: string; opacity: number }> = {
+  "Champagne Gold": {
+    promptSpec: "Metallic luminous champagne gold grout lines with subtle warm glimmer framing each individual tile chip.",
+    hexColor: "#D4AF37",
+    borderColor: "#E5C378",
+    highlightColor: "rgba(255, 235, 150, 0.45)",
+    opacity: 0.95
+  },
+  "Pure Thassos White": {
+    promptSpec: "Crisp, ultra-clean pure white minimalist grout lines providing sharp graphic definition and luminous high-contrast clarity.",
+    hexColor: "#FFFFFF",
+    borderColor: "#F0F4F8",
+    highlightColor: "rgba(255, 255, 255, 0.65)",
+    opacity: 0.98
+  },
+  "Charcoal Slate": {
+    promptSpec: "Deep dramatic charcoal noir shadow grout joints creating dramatic depth, architectural shadow lines, and graphic delineation.",
+    hexColor: "#1E2028",
+    borderColor: "#2C303B",
+    highlightColor: "rgba(90, 100, 120, 0.35)",
+    opacity: 0.95
+  },
+  "Platinum Silver": {
+    promptSpec: "Cool shimmering metallic silver grout joints reflecting ambient light with modern architectural elegance and subtle pearl iridescence.",
+    hexColor: "#B0BEC5",
+    borderColor: "#CFD8DC",
+    highlightColor: "rgba(220, 230, 245, 0.55)",
+    opacity: 0.92
+  }
+};
+
+async function compositeMosaicOntoRoomPhoto(params: {
+  inputImageBase64: string;
+  placement: string;
+  prompt: string;
+  finish: string;
+  groutColor: string;
+  box_2d?: [number, number, number, number] | number[];
+  referenceProductImageUrl?: string;
+}): Promise<string | null> {
+  try {
+    const sharp = (await import("sharp")).default;
+    const base64Data = params.inputImageBase64.includes(",")
+      ? params.inputImageBase64.split(",")[1]
+      : params.inputImageBase64;
+    const imageBuffer = Buffer.from(base64Data, "base64");
+    const metadata = await sharp(imageBuffer).metadata();
+    if (!metadata.width || !metadata.height) return null;
+
+    const box = params.box_2d || [380, 200, 750, 800];
+    const top = Math.max(0, Math.round((box[0] / 1000) * metadata.height));
+    const left = Math.max(0, Math.round((box[1] / 1000) * metadata.width));
+    const height = Math.max(20, Math.round(((box[2] - box[0]) / 1000) * metadata.height));
+    const width = Math.max(20, Math.round(((box[3] - box[1]) / 1000) * metadata.width));
+
+    const pLower = params.prompt.toLowerCase();
+    const isMoroccan = pLower.includes("zellige") || pLower.includes("moroccan") || pLower.includes("terracotta") || pLower.includes("indigo");
+    const isGold = pLower.includes("gold") || pLower.includes("calacatta") || pLower.includes("baroque") || pLower.includes("sunburst");
+    const isGreen = pLower.includes("emerald") || pLower.includes("deco") || pLower.includes("botanical");
+
+    const tileColor1 = isMoroccan ? "#C86D51" : isGold ? "#D4AF37" : isGreen ? "#1B4D3E" : "#8A7968";
+    const tileColor2 = isMoroccan ? "#264653" : isGold ? "#F3E5AB" : isGreen ? "#2E8B57" : "#4A5568";
+    const tileColor3 = isMoroccan ? "#E9C46A" : isGold ? "#996515" : isGreen ? "#0D2818" : "#EDF2F7";
+
+    // Surface finish styling parameters
+    const finishKey = params.finish in FINISH_ARCHITECTURAL_SPECS ? params.finish : "Polished High-Gloss";
+    const isHighGloss = finishKey === "Polished High-Gloss";
+    const isTumbled = finishKey === "Antiqued Tumbled";
+    const isMatte = finishKey === "Textured Matte";
+
+    // Grout configuration
+    const groutConfig = GROUT_ARCHITECTURAL_SPECS[params.groutColor] || GROUT_ARCHITECTURAL_SPECS["Champagne Gold"];
+    const grout = groutConfig.hexColor;
+    const groutBorder = groutConfig.borderColor;
+    const groutHighlight = groutConfig.highlightColor;
+    const groutOpacity = groutConfig.opacity;
+
+    // Specular highlight opacity based on finish
+    const specularOpacity = isHighGloss ? 0.65 : isTumbled ? 0.2 : isMatte ? 0.08 : 0.35;
+    const tileRadius = isTumbled ? 4 : isMatte ? 1 : 2;
+
+    let mosaicBuffer: Buffer = Buffer.alloc(0);
+    let usedRealImage = false;
+
+    // If a reference product mosaic artwork is provided, composite the actual authentic mosaic!
+    if (params.referenceProductImageUrl) {
+      try {
+        let refBuffer: Buffer | null = null;
+        if (params.referenceProductImageUrl.startsWith("data:image")) {
+          refBuffer = Buffer.from(params.referenceProductImageUrl.split(",")[1], "base64");
+        } else if (params.referenceProductImageUrl.startsWith("http")) {
+          const res = await fetch(params.referenceProductImageUrl);
+          if (res.ok) {
+            refBuffer = Buffer.from(await res.arrayBuffer());
+          }
+        }
+        if (refBuffer) {
+          const resizedRef = await sharp(refBuffer)
+            .resize(width, height, { fit: "cover" })
+            .png()
+            .toBuffer();
+
+          const overlaySvg = `
+          <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="vignette" cx="45%" cy="45%" r="55%">
+                <stop offset="0%" stop-color="#FFFFFF" stop-opacity="${isHighGloss ? '0.35' : '0.1'}" />
+                <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.0" />
+                <stop offset="100%" stop-color="#000000" stop-opacity="${isHighGloss ? '0.35' : '0.2'}" />
+              </radialGradient>
+            </defs>
+            <rect width="${width}" height="${height}" rx="6" fill="url(#vignette)" style="mix-blend-mode: overlay;" />
+            <rect width="${width}" height="${height}" rx="6" fill="none" stroke="${groutBorder}" stroke-width="2.5" opacity="0.85" />
+          </svg>
+          `;
+          const overlayBuffer = await sharp(Buffer.from(overlaySvg)).resize(width, height).png().toBuffer();
+
+          mosaicBuffer = await sharp(resizedRef)
+            .composite([{ input: overlayBuffer, blend: "over" }])
+            .png()
+            .toBuffer();
+          usedRealImage = true;
+        }
+      } catch (err) {
+        console.warn("[COMPOSITOR REAL IMAGE COMPOSITE NOTICE]:", err);
+      }
+    }
+
+    if (!usedRealImage) {
+      const svgPattern = `
+      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="tesserae" width="32" height="32" patternUnits="userSpaceOnUse">
+            <rect width="32" height="32" fill="${grout}" opacity="${groutOpacity}" />
+            <rect x="2" y="2" width="13" height="13" rx="${tileRadius}" fill="${tileColor1}" stroke="${groutBorder}" stroke-width="0.75" />
+            <rect x="17" y="2" width="13" height="13" rx="${tileRadius}" fill="${tileColor2}" stroke="${groutBorder}" stroke-width="0.75" />
+            <rect x="2" y="17" width="13" height="13" rx="${tileRadius}" fill="${tileColor3}" stroke="${groutBorder}" stroke-width="0.75" />
+            <rect x="17" y="17" width="13" height="13" rx="${tileRadius}" fill="${tileColor1}" stroke="${groutBorder}" stroke-width="0.75" />
+            ${specularOpacity > 0.1 ? `
+            <circle cx="6" cy="6" r="2.5" fill="#FFF" opacity="${specularOpacity}" />
+            <circle cx="21" cy="21" r="2.5" fill="#FFF" opacity="${specularOpacity}" />
+            <line x1="2" y1="2" x2="15" y2="2" stroke="${groutHighlight}" stroke-width="0.75" opacity="0.8" />
+            ` : ''}
+          </pattern>
+          <radialGradient id="vignette" cx="45%" cy="45%" r="55%">
+            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="${isHighGloss ? '0.45' : '0.15'}" />
+            <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.0" />
+            <stop offset="100%" stop-color="#000000" stop-opacity="${isHighGloss ? '0.4' : '0.25'}" />
+          </radialGradient>
+        </defs>
+        <rect width="${width}" height="${height}" rx="6" fill="url(#tesserae)" />
+        <rect width="${width}" height="${height}" rx="6" fill="url(#vignette)" style="mix-blend-mode: overlay;" />
+        <rect width="${width}" height="${height}" rx="6" fill="none" stroke="${groutBorder}" stroke-width="3" opacity="0.9" />
+      </svg>
+      `;
+
+      mosaicBuffer = await sharp(Buffer.from(svgPattern))
+        .resize(width, height)
+        .png()
+        .toBuffer();
+    }
+
+    const composited = await sharp(imageBuffer)
+      .composite([
+        {
+          input: mosaicBuffer,
+          top,
+          left,
+          blend: "over",
+        },
+      ])
+      .jpeg({ quality: 92 })
+      .toBuffer();
+
+    return `data:image/jpeg;base64,${composited.toString("base64")}`;
+  } catch (err) {
+    console.warn("[COMPOSITOR ERROR]:", err);
+    return null;
+  }
+}
+
 export async function processMosaicGeneration(
   params: GenerateMosaicParams
 ): Promise<GenerateMosaicResult> {
@@ -87,13 +284,20 @@ export async function processMosaicGeneration(
   } = params;
 
   const isRoomInpainting = Boolean(inputImageBase64 || params.inputImageUrl);
-  const surfaceGuideline = SURFACE_DETECTION_GUIDELINES[placement] || SURFACE_DETECTION_GUIDELINES["Floor Medallion"];
+  const detectedGuideline = params.surfaceDetection?.architecturalGuideline
+    ? `${params.surfaceDetection.description || ""}. ${params.surfaceDetection.architecturalGuideline}`
+    : null;
+  const surfaceGuideline = detectedGuideline || SURFACE_DETECTION_GUIDELINES[placement] || `Target and identify the ${placement} architectural feature in the room. Seamlessly inpaint the mosaic tile design into that area while retaining room structure.`;
+
+  const finishDetail = FINISH_ARCHITECTURAL_SPECS[finish] || `${finish} finish`;
+  const groutConfig = GROUT_ARCHITECTURAL_SPECS[groutColor] || GROUT_ARCHITECTURAL_SPECS["Champagne Gold"];
+  const groutDetail = groutConfig.promptSpec;
 
   // Strict architectural mosaic prompt engineering:
   // Instruct AI to detect the specific surface and seamlessly inpaint the mosaic tile design into that area while retaining room structure.
   const fullPrompt = isRoomInpainting
-    ? `[ARCHITECTURAL INPAINTING & SPACE VISUALIZATION] You are an elite architectural visualization AI. Look at the provided room photo. ${surfaceGuideline} The mosaic tile artwork must be: ${prompt}. Specs: ${finish} surface finish, with ${groutColor} grout lines. The mosaic must be laid in precise perspective matching the room's surface plane and ambient lighting, made of realistic hand-cut tesserae chips and detailed grout. Photorealistic 8k interior design rendering.`
-    : `Ultra-luxurious handcrafted architectural mosaic tile installation, ${placement} placement. Surface finish: ${finish}, ${groutColor} grout lines. Pure mosaic art made of hand-cut glass, marble, or ceramic tesserae tiles. Motif & artistic details: ${prompt}. Photorealistic 8k architectural rendering, high contrast, pristine artisan tilework detail, zero generic non-mosaic imagery.`;
+    ? `[ARCHITECTURAL INPAINTING & SPACE VISUALIZATION] You are an elite architectural visualization AI. Look at the provided room photo. ${surfaceGuideline} The mosaic tile artwork must be: ${prompt}. Surface Finish Specification: ${finish} (${finishDetail}). Grout Line Specification: ${groutColor} (${groutDetail}). The mosaic must be laid in precise perspective matching the room's surface plane and ambient lighting, made of realistic hand-cut tesserae chips and detailed grout. Photorealistic 8k interior design rendering.`
+    : `Ultra-luxurious handcrafted architectural mosaic tile installation, ${placement} placement. Surface finish: ${finish} (${finishDetail}). Grout Accent: ${groutColor} (${groutDetail}). Pure mosaic art made of hand-cut glass, marble, or ceramic tesserae tiles. Motif & artistic details: ${prompt}. Photorealistic 8k architectural rendering, high contrast, pristine artisan tilework detail, zero generic non-mosaic imagery.`;
 
   let resultImageUrl = "";
 
@@ -125,7 +329,7 @@ export async function processMosaicGeneration(
           }
         );
 
-        const imagenData = await imagenRes.json();
+        const imagenData: any = await imagenRes.json();
         if (imagenRes.ok && imagenData.predictions?.[0]?.bytesBase64Encoded) {
           resultImageUrl = `data:image/png;base64,${imagenData.predictions[0].bytesBase64Encoded}`;
           console.log("[IMAGEN SUCCESS] ✅ Live Imagen 3 Mosaic Render Generated successfully!");
@@ -166,7 +370,7 @@ export async function processMosaicGeneration(
           }
         );
 
-        const geminiData = await geminiRes.json();
+        const geminiData: any = await geminiRes.json();
 
         if (geminiRes.ok && geminiData.candidates?.[0]?.content?.parts) {
           const imagePart = geminiData.candidates[0].content.parts.find(
@@ -208,8 +412,30 @@ export async function processMosaicGeneration(
     }
   }
 
-  // 3. Fallback: Curated authentic mosaic tile artworks based strictly on the user's prompt & placement
-  // NOTE: NEVER return static referenceProductImageUrl so every unique prompt generates a distinct mosaic design!
+  // 3. Fallback: If user uploaded a room photo, composite the bespoke mosaic into the detected surface boundary of their room
+  if (!resultImageUrl && isRoomInpainting && inputImageBase64) {
+    const composited = await compositeMosaicOntoRoomPhoto({
+      inputImageBase64,
+      placement,
+      prompt,
+      finish,
+      groutColor,
+      box_2d: params.surfaceDetection?.box_2d,
+      referenceProductImageUrl: params.referenceProductImageUrl,
+    });
+    if (composited) {
+      resultImageUrl = composited;
+      console.log(`[MOSAIC PIPELINE] 🎨 Composited bespoke mosaic onto detected "${placement}" surface of user room photo!`);
+    }
+  }
+
+  // 4. Fallback: If user selected an authentic reference mosaic design, serve that design!
+  if (!resultImageUrl && params.referenceProductImageUrl) {
+    resultImageUrl = params.referenceProductImageUrl;
+    console.log(`[MOSAIC PIPELINE] 🎨 Served selected authentic mosaic design '${params.referenceProductTitle || params.placement}'!`);
+  }
+
+  // 5. Fallback: Curated authentic mosaic tile artworks based strictly on the user's prompt & placement
   if (!resultImageUrl) {
     const pLower = prompt.toLowerCase();
     // If prompt is Moroccan Zellige / Terracotta / Indigo in bedroom/floor/backsplash space:

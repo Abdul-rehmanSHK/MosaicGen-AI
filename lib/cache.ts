@@ -12,10 +12,10 @@ export const getCachedProducts = unstable_cache(
       orderBy: { createdAt: "desc" },
     });
   },
-  ["cached-products-catalog"],
+  ["cached-products-catalog-v2"],
   {
     tags: ["products"],
-    revalidate: 3600, // Revalidate in background every hour if no manual tag purge occurred
+    revalidate: 60, // Revalidate every minute
   }
 );
 
@@ -29,10 +29,10 @@ export const getCachedPages = unstable_cache(
       orderBy: { createdAt: "desc" },
     });
   },
-  ["cached-dynamic-pages"],
+  ["cached-dynamic-pages-v2"],
   {
     tags: ["pages"],
-    revalidate: 3600,
+    revalidate: 60,
   }
 );
 
@@ -50,6 +50,56 @@ export async function getCachedPageBySlug(slug: string) {
     {
       tags: ["pages", `page-${slug}`],
       revalidate: 3600,
+    }
+  )();
+}
+
+/**
+ * 4. Cached Page-Specific Products (Dynamic Post Object Selection)
+ * Allows "Customize your space" (/) and "Imagine from scratch" (/from-scratch)
+ * to showcase distinct, admin-selected products.
+ */
+export async function getCachedPageProducts(pageSlug: "customize-space" | "from-scratch") {
+  return unstable_cache(
+    async () => {
+      // 1. Check if the page has explicitly selected featured products (Post Object method)
+      const page = await prisma.page.findUnique({
+        where: { slug: pageSlug },
+        select: { featuredProductIds: true },
+      });
+
+      if (page?.featuredProductIds) {
+        try {
+          const ids: string[] = JSON.parse(page.featuredProductIds);
+          if (Array.isArray(ids) && ids.length > 0) {
+            const products = await prisma.product.findMany({
+              where: { id: { in: ids }, isTrashed: false },
+            });
+            // Preserve the specific order selected in the Post Object selector
+            const map = new Map(products.map((p) => [p.id, p]));
+            const ordered = ids.map((id) => map.get(id)).filter(Boolean) as typeof products;
+            if (ordered.length > 0) return ordered;
+          }
+        } catch (e) {
+          console.error("Error parsing featuredProductIds for", pageSlug, e);
+        }
+      }
+
+      // 2. Fallback to product-level assignment flags
+      const whereFilter =
+        pageSlug === "customize-space"
+          ? { isTrashed: false, showOnCustomize: true }
+          : { isTrashed: false, showOnFromScratch: true };
+
+      return prisma.product.findMany({
+        where: whereFilter,
+        orderBy: { createdAt: "desc" },
+      });
+    },
+    [`cached-page-products-${pageSlug}`],
+    {
+      tags: ["products", "pages", `page-${pageSlug}`],
+      revalidate: 60,
     }
   )();
 }

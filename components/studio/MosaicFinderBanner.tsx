@@ -34,22 +34,22 @@ export function MosaicFinderBanner() {
         {/* Content Box */}
         <div className="relative z-10 flex flex-col items-center max-w-xl mx-auto gap-3">
           <p className="text-[11px] font-mono uppercase tracking-[0.32em] text-gold-400 font-semibold drop-shadow-sm">
-            Not sure where to start?
+            Curated Architectural Design
           </p>
 
           <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light tracking-tight text-white drop-shadow-md">
-            Try the <em className="italic font-serif text-gold-400 font-normal">Mosaic Finder</em>
+            Discover Your <em className="italic font-serif text-gold-400 font-normal">Signature Aesthetic</em>
           </h3>
 
           <p className="mt-2 max-w-md text-xs sm:text-sm leading-relaxed text-neutral-300 drop-shadow-sm">
-            Five quick questions and we&apos;ll generate a one-of-a-kind design tailored to your taste.
+            Answer five concise design preferences and our studio curator will formulate an original bespoke mosaic concept tailored to your architectural space.
           </p>
 
           <Link
             href="/finder"
             className="mt-6 inline-flex h-11 items-center gap-2 rounded-full border border-gold-400/40 bg-obsidian-950/80 hover:bg-gold-500 text-gold-300 hover:text-obsidian-950 px-7 text-[12px] uppercase tracking-[0.18em] font-bold backdrop-blur-md transition-all duration-300 shadow-lg shadow-gold-500/10 hover:shadow-gold-500/30 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>Start the finder</span>
+            <span>Start the Aesthetic Finder</span>
             <ArrowUpRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>
