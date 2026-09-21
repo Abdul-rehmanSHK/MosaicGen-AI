@@ -53,262 +53,31 @@ export interface PlacementInspiration {
   prompt: string;
 }
 
+export const FIXED_ARTISAN_DIRECTIONS: PlacementInspiration[] = [
+  {
+    label: "Calacatta Sunburst",
+    prompt: "Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae"
+  },
+  {
+    label: "Baroque Gold Scroll",
+    prompt: "Baroque golden scrollwork medallion with black Belgian marble border and polished brass inlay accents"
+  },
+  {
+    label: "Starburst Mandala",
+    prompt: "Geometric starburst mandala in Thassos white, Emperador dark marble, and polished 24k gold leaf tesserae"
+  },
+  {
+    label: "Celestial Compass",
+    prompt: "Celestial compass rose floor medallion in French limestone, polished black onyx, and lapis lazuli accents"
+  }
+];
+
 export const PLACEMENT_INSPIRATIONS: Record<string, PlacementInspiration[]> = {
-  "Floor Medallion": [
-    {
-      label: "Calacatta Sunburst",
-      prompt: "Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae"
-    },
-    {
-      label: "Baroque Gold Scroll",
-      prompt: "Baroque golden scrollwork medallion with black Belgian marble border and polished brass inlay accents"
-    },
-    {
-      label: "Starburst Mandala",
-      prompt: "Geometric starburst mandala in Thassos white, Emperador dark marble, and polished 24k gold leaf tesserae"
-    },
-    {
-      label: "Celestial Compass",
-      prompt: "Celestial compass rose floor medallion in French limestone, polished black onyx, and lapis lazuli accents"
-    }
-  ],
-  "Backsplash": [
-    {
-      label: "Moroccan Zellige",
-      prompt: "Warm Moroccan zellige geometric tile pattern in terracotta, saffron, and deep glazed indigo"
-    },
-    {
-      label: "Art Deco Chevron",
-      prompt: "Art Deco fan chevron mosaic in emerald green marble and polished champagne gold brass inlays"
-    },
-    {
-      label: "Herringbone Carrara",
-      prompt: "Herringbone mini-brick mosaic in Carrara white marble with subtle metallic copper grout accents"
-    },
-    {
-      label: "Iridescent Botanical",
-      prompt: "Modern organic botanical vine mosaic in iridescent sea glass with mother-of-pearl accents"
-    }
-  ],
-  "Accent Wall": [
-    {
-      label: "Tropical Emerald Mural",
-      prompt: "Tropical botanical foliage wall mural with cascading monstera leaves and emerald green smalti glass"
-    },
-    {
-      label: "Crimson Mirage Wave",
-      prompt: "Dramatic crimson and gold wave-like abstract mosaic with luminous iridescent glass accents"
-    },
-    {
-      label: "Chinoiserie Pearl Tree",
-      prompt: "Chinoiserie blossoming cherry tree mosaic mural on hand-cut pearl glass background"
-    },
-    {
-      label: "Sapphire Ombre",
-      prompt: "Geometric ombre gradient in deep sapphire, navy, and brushed platinum tesserae"
-    }
-  ],
-  "Pool": [
-    {
-      label: "Starfish & Shells",
-      prompt: "Luxury marine pool medallion featuring starfish, nautilus shells, and golden scrollwork on ocean-blue tile base"
-    },
-    {
-      label: "Mediterranean Sea Glass",
-      prompt: "Iridescent Mediterranean turquoise sea glass mosaic with shimmering aqua and deep cobalt gradients"
-    },
-    {
-      label: "Grecian Dolphin Wave",
-      prompt: "Ancient Grecian wave border with central dolphin motif in vibrant pool-grade vitreous glass"
-    },
-    {
-      label: "Ripple Aqua Ombre",
-      prompt: "Subtle ripple-effect water mosaic with turquoise, azure, and shimmering mother-of-pearl tesserae"
-    }
-  ],
-  "Entryway": [
-    {
-      label: "Grand Calacatta Carpet",
-      prompt: "Grand Calacatta marble entrance 'carpet' with dark granite border and bespoke geometric monogram medallion"
-    },
-    {
-      label: "Roman Rotunda Acanthus",
-      prompt: "Neoclassical circular rotunda mosaic with concentric guilloche border and Roman acanthus leaves"
-    },
-    {
-      label: "Contemporary Slate & Brass",
-      prompt: "Contemporary minimalist marble inlay with asymmetric brass lines and charcoal slate tiles"
-    },
-    {
-      label: "Byzantine Imperial",
-      prompt: "Byzantine imperial geometric entrance floor with gold leaf mosaic inserts and Nero Marquina borders"
-    }
-  ],
-  "Auto-detect": [
-    {
-      label: "Moroccan Zellige",
-      prompt: "Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo"
-    },
-    {
-      label: "Calacatta & Gold",
-      prompt: "Harmonious bespoke mosaic design blending Calacatta marble and 24k gold leaf tesserae tailored to the space"
-    },
-    {
-      label: "Art Deco Monochrome",
-      prompt: "Sleek geometric architectural mosaic in polished monochrome marble with brushed brass accents"
-    },
-    {
-      label: "Onyx & Gold Leaf",
-      prompt: "A dramatic luxury architectural mosaic with polished black onyx, luminous 24k gold leaf tesserae, and subtle brass accents"
-    }
-  ],
-  "Door Back": [
-    {
-      label: "Florentine Inlaid Panel",
-      prompt: "Neoclassical Italian Florentine inlaid marble panel for vertical door frame, featuring 24k gold leaf borders, antiqued marble acanthus scrollwork, and rich bronze framing."
-    },
-    {
-      label: "Art Deco Chevron",
-      prompt: "Art Deco vertical chevron mosaic panel in polished Nero Marquina black marble, emerald green glass, and lustrous champagne gold brass inlays."
-    },
-    {
-      label: "Baroque Arabesque",
-      prompt: "Intricate Baroque golden scrollwork arabesque panel inlay set into dark charcoal micro-tesserae, designed flush for door panel architecture."
-    },
-    {
-      label: "Onyx & Honey Inlay",
-      prompt: "Sleek contemporary vertical linear inlay in honey onyx, Calacatta marble chips, and polished brass geometric bands."
-    }
-  ],
-  "Kitchen Island": [
-    {
-      label: "Calacatta Waterfall",
-      prompt: "Cascading Calacatta gold marble mosaic waterfall island facade with bookmatched geometric vein patterns and micro-tesserae chips."
-    },
-    {
-      label: "Moroccan Zellige Facade",
-      prompt: "Handcrafted Moroccan zellige glazed emerald and terracotta tile facade with subtle iridescent glaze and warm texture."
-    },
-    {
-      label: "Fluted Brass & Slate",
-      prompt: "Fluted vertical charcoal slate mosaic island surround with inlaid brushed brass accent bands and satin honed finish."
-    },
-    {
-      label: "Venetian Terrazzo",
-      prompt: "Venetian artisan micro-mosaic island front with mother-of-pearl, tumbled Thassos chips, and champagne gold metallic grout."
-    }
-  ],
-  "Fireplace": [
-    {
-      label: "Nero Marquina Hearth",
-      prompt: "Dramatic bookmatched Nero Marquina black marble mosaic fireplace surround with fine white veining and high-gloss polish."
-    },
-    {
-      label: "Antiqued Roman Surround",
-      prompt: "Classical French limestone and antiqued tumbled Roman mosaic fireplace surround with carved egg-and-dart border."
-    },
-    {
-      label: "Gilded Sunburst Mantle",
-      prompt: "Luminous 24k gold smalti glass sunburst mosaic hearth face with brushed bronze trim and heat-resistant glass grout."
-    },
-    {
-      label: "Rustic Terracotta Herringbone",
-      prompt: "Rustic artisanal terracotta herringbone mosaic with textured matte finish and charcoal slate grout lines."
-    }
-  ],
-  "Shower Niche": [
-    {
-      label: "Mother-of-Pearl Herringbone",
-      prompt: "Luminous iridescent mother-of-pearl herringbone mosaic niche with waterproof champagne gold epoxy grout lines."
-    },
-    {
-      label: "Cobalt Blue Smalti",
-      prompt: "Deep Mediterranean cobalt blue Venetian smalti glass mosaic with water-resistant glossy finish and sparkling turquoise highlights."
-    },
-    {
-      label: "Emerald Fish Scale",
-      prompt: "Moroccan scallop fan fish scale tiles in deep forest emerald glaze with high-gloss polished finish and pure white grout."
-    },
-    {
-      label: "Pure Thassos & Brass",
-      prompt: "Minimalist Pure Thassos white marble micro-mosaic with recessed warm brass trim and pristine high-gloss finish."
-    }
-  ],
-  "Ceiling": [
-    {
-      label: "Byzantine Imperial Dome",
-      prompt: "Byzantine imperial celestial dome mosaic with 24k gold leaf tesserae, concentric geometric borders, and lapis lazuli stars."
-    },
-    {
-      label: "Roman Coffered Rosette",
-      prompt: "Classical Roman coffered ceiling medallion with concentric acanthus rosettes in antiqued marble and satin honed finish."
-    },
-    {
-      label: "Celestial Zodiac",
-      prompt: "Midnight navy and gilded celestial constellation star chart with iridescent mother-of-pearl inlays in true ceiling perspective."
-    },
-    {
-      label: "Venetian Cloud Fresco",
-      prompt: "Soft Renaissance fresco-inspired cloudscape mosaic in ethereal pastel smalti glass and delicate champagne gold grout."
-    }
-  ]
+  "Floor Medallion": FIXED_ARTISAN_DIRECTIONS,
 };
 
-export function getInspirationsForPlacement(placementName: string): PlacementInspiration[] {
-  if (PLACEMENT_INSPIRATIONS[placementName]) {
-    return PLACEMENT_INSPIRATIONS[placementName];
-  }
-
-  const pLower = placementName.toLowerCase();
-  if (pLower.includes("door")) {
-    return PLACEMENT_INSPIRATIONS["Door Back"];
-  }
-  if (pLower.includes("island") || pLower.includes("kitchen")) {
-    return PLACEMENT_INSPIRATIONS["Kitchen Island"];
-  }
-  if (pLower.includes("fire") || pLower.includes("hearth")) {
-    return PLACEMENT_INSPIRATIONS["Fireplace"];
-  }
-  if (pLower.includes("shower") || pLower.includes("niche") || pLower.includes("bath")) {
-    return PLACEMENT_INSPIRATIONS["Shower Niche"];
-  }
-  if (pLower.includes("ceiling") || pLower.includes("dome")) {
-    return PLACEMENT_INSPIRATIONS["Ceiling"];
-  }
-  if (pLower.includes("backsplash") || pLower.includes("counter")) {
-    return PLACEMENT_INSPIRATIONS["Backsplash"];
-  }
-  if (pLower.includes("wall") || pLower.includes("mural")) {
-    return PLACEMENT_INSPIRATIONS["Accent Wall"];
-  }
-  if (pLower.includes("pool") || pLower.includes("water") || pLower.includes("spa")) {
-    return PLACEMENT_INSPIRATIONS["Pool"];
-  }
-  if (pLower.includes("entry") || pLower.includes("foyer") || pLower.includes("rotunda")) {
-    return PLACEMENT_INSPIRATIONS["Entryway"];
-  }
-  if (pLower.includes("floor") || pLower.includes("ground") || pLower.includes("rug")) {
-    return PLACEMENT_INSPIRATIONS["Floor Medallion"];
-  }
-
-  return [
-    {
-      label: "Artisan Marble Inlay",
-      prompt: `Bespoke luxury mosaic installation tailored for ${placementName}, handcrafted from Italian Calacatta gold marble, Nero Marquina accents, and polished brass geometric inlays.`
-    },
-    {
-      label: "Gold Leaf Tesserae",
-      prompt: `Luminous 24k gold leaf and smalti glass mosaic artwork crafted specifically for ${placementName} with intricate classical scrollwork borders.`
-    },
-    {
-      label: "Art Deco Geometry",
-      prompt: `Architectural Art Deco geometric chevron pattern for ${placementName} in polished emerald green marble and champagne gold metallic grout.`
-    },
-    {
-      label: "Moroccan Zellige",
-      prompt: `Handmade terracotta Moroccan zellige geometric mosaic design tailored to fit ${placementName} in rich indigo, saffron, and glazed ivory tones.`
-    }
-  ];
+export function getInspirationsForPlacement(_placementName?: string): PlacementInspiration[] {
+  return FIXED_ARTISAN_DIRECTIONS;
 }
 
 const PLACEMENTS = [
@@ -332,7 +101,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedDesignItem, setSelectedDesignItem] = useState<GalleryItem | null>(null);
   const [prompt, setPrompt] = useState<string>(
-    "Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo"
+    "Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae"
   );
   const [finish, setFinish] = useState<string>("Polished High-Gloss");
   const [groutColor, setGroutColor] = useState<string>("Champagne Gold");
@@ -416,12 +185,6 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   const handlePlacementSelect = (selectedId: string) => {
     setPlacement(selectedId);
     triggerSurfaceDetection(selectedId);
-
-    // Auto-fill primary bespoke prompt for the newly selected placement
-    const primaryForPlacement = getInspirationsForPlacement(selectedId)[0]?.prompt;
-    if (primaryForPlacement) {
-      setPrompt(primaryForPlacement);
-    }
   };
 
   const handleAddCustomPlacement = (nameToAdd?: string) => {
@@ -442,10 +205,6 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     }
 
     setPlacement(name);
-    const primaryForPlacement = getInspirationsForPlacement(name)[0]?.prompt;
-    if (primaryForPlacement) {
-      setPrompt(primaryForPlacement);
-    }
     setCustomInputText("");
     setIsCustomInputOpen(false);
     triggerSurfaceDetection(name);
@@ -1276,19 +1035,19 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   />
                 </div>
 
-                {/* TRY SOME INSPIRATION PILLS - DYNAMIC BASED ON PLACEMENT */}
+                {/* FIXED ARTISAN DIRECTIONS - Kept constant across all surface selections */}
                 <div className="flex flex-col gap-1.5 pt-0.5">
                   <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-gold-400" /> Artisan Directions for {placement}:
+                    <Sparkles className="w-3 h-3 text-gold-400" /> Artisan Directions:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {getInspirationsForPlacement(placement).map((item) => (
+                    {FIXED_ARTISAN_DIRECTIONS.map((item) => (
                       <button
                         key={item.label}
                         type="button"
                         onClick={() => setPrompt(item.prompt)}
                         title={item.prompt}
-                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all cursor-pointer ${
                           prompt === item.prompt
                             ? "bg-gold-500 text-obsidian-950 border-gold-400 font-bold shadow-sm"
                             : "bg-obsidian-950 text-neutral-400 border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
