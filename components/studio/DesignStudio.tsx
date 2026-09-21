@@ -12,7 +12,7 @@ import { MosaicFinderBanner } from "./MosaicFinderBanner";
 import { GenerationWorkingScreen } from "./GenerationWorkingScreen";
 import { UserAccountMenu } from "./UserAccountMenu";
 import { MyGenerationsModal } from "./MyGenerationsModal";
-import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check } from "lucide-react";
+import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check, Download } from "lucide-react";
 import Image from "next/image";
 
 const SCRATCH_INSPIRATIONS = [
@@ -533,8 +533,33 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isWorkingScreenOpen, setIsWorkingScreenOpen] = useState<boolean>(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDownloadImage = async (url: string, filename?: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename || `zakiah-mosaic-${placement.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `zakiah-mosaic-${placement.toLowerCase().replace(/[^a-z0-9]/g, "-")}.png`;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
 
   // Sync prompt, placement, and verified status from URL search parameters (e.g., from Finder wizard)
   useEffect(() => {
@@ -634,6 +659,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   };
 
   const executeGeneration = async () => {
+    setIsWorkingScreenOpen(true);
     setIsGenerating(true);
     setResult(null);
     setError(null);
@@ -697,6 +723,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     } catch (err: any) {
       console.error(err);
       setError(err.message || "An error occurred while generating the design.");
+      setIsWorkingScreenOpen(false);
     } finally {
       setIsGenerating(false);
     }
@@ -746,7 +773,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
   return (
     <div className="w-full max-w-7xl mx-auto flex flex-col gap-10">
-      {isGenerating ? (
+      {isWorkingScreenOpen ? (
         <GenerationWorkingScreen
           prompt={prompt}
           placement={placement}
@@ -754,7 +781,23 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           roomPhotoName={roomPhotoName}
           finish={finish}
           groutColor={groutColor}
-          onCancel={() => setIsGenerating(false)}
+          isGenerating={isGenerating}
+          result={result}
+          onCancel={() => {
+            setIsGenerating(false);
+            setIsWorkingScreenOpen(false);
+          }}
+          onDownload={() => {
+            if (result?.resultImageUrl) {
+              handleDownloadImage(
+                result.resultImageUrl,
+                `zakiah-mosaic-${placement.toLowerCase().replace(/[^a-z0-9]/g, "-")}.png`
+              );
+            }
+          }}
+          onRequestQuote={() => setIsQuoteModalOpen(true)}
+          onRequestSpecialist={() => setIsSpecialistModalOpen(true)}
+          onBackToStudio={() => setIsWorkingScreenOpen(false)}
         />
       ) : (
         <>
@@ -841,60 +884,26 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 />
               </div>
 
-              {/* Surface Placement & Finishing Specs (2-column layout to cover empty space) */}
-              <div className="pt-2 border-t border-neutral-800/80">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                  {/* Left: Where should it go? (col-span-7) */}
-                  <div className="lg:col-span-7 flex flex-col gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
-                      Architectural Surface Placement
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {PLACEMENTS.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setPlacement(item.id)}
-                          className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-medium transition-all border ${
-                            placement === item.id
-                              ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-md shadow-gold-500/20 scale-[1.02]"
-                              : "bg-obsidian-950 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-white"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Right: The 2 Select Fields Covering Up the Empty Space (col-span-5) */}
-                  <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-medium text-neutral-400">Artisanal Surface Finish</label>
-                      <select
-                        value={finish}
-                        onChange={(e) => setFinish(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
-                      >
-                        {FINISHES.map((f) => (
-                          <option key={f} value={f}>{f}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[11px] font-medium text-neutral-400">Architectural Grout Accent</label>
-                      <select
-                        value={groutColor}
-                        onChange={(e) => setGroutColor(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
-                      >
-                        {GROUT_COLORS.map((g) => (
-                          <option key={g} value={g}>{g}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+              {/* Surface Placement Selector */}
+              <div className="pt-2 border-t border-neutral-800/80 flex flex-col gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
+                  Architectural Surface Placement
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {PLACEMENTS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setPlacement(item.id)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all border cursor-pointer ${
+                        placement === item.id
+                          ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-md shadow-gold-500/20 scale-[1.02]"
+                          : "bg-obsidian-950 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-white"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1164,7 +1173,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               )}
 
               {/* Surface Option Buttons */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-1">
                 {[...PLACEMENTS, ...customPlacements].map((item) => {
                   const isSelected = placement === item.id;
                   return (
@@ -1172,112 +1181,23 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                       key={item.id}
                       type="button"
                       onClick={() => handlePlacementSelect(item.id)}
-                      className={`p-3 rounded-xl text-xs font-medium transition-all duration-200 border text-center flex flex-col items-center justify-center gap-0.5 ${
+                      className={`py-2.5 px-3 rounded-xl text-xs font-medium transition-all duration-200 border text-center flex items-center justify-center truncate cursor-pointer ${
                         isSelected
-                          ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-lg shadow-gold-500/20 scale-[1.02]"
+                          ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-md shadow-gold-500/20 scale-[1.02]"
                           : "bg-obsidian-800/80 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
                       }`}
+                      title={item.label}
                     >
-                      <span>{item.label}</span>
-                      <span className={`text-[10px] font-normal ${isSelected ? "text-obsidian-900/80" : "text-neutral-500"}`}>
-                        {item.hint}
-                      </span>
+                      <span className="truncate">{item.label}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Selected Placement & AI Surface Scanner Feedback */}
-              <div className="flex flex-col gap-2">
-                <div className="p-3.5 rounded-xl bg-obsidian-950/60 border border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
-                  <span>Selected Placement:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gold-400 font-semibold font-mono">{placement}</span>
-                    {roomPhotoUrl && (
-                      <button
-                        type="button"
-                        onClick={() => triggerSurfaceDetection(placement)}
-                        disabled={isDetectingSurface}
-                        className="p-1 rounded-md bg-obsidian-800 hover:bg-gold-500/20 text-neutral-400 hover:text-gold-300 transition-colors"
-                        title="Re-scan surface on photo"
-                      >
-                        <RefreshCw className={`w-3 h-3 ${isDetectingSurface ? "animate-spin text-gold-400" : ""}`} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* AI Multimodal Vision Detection Status Card */}
-                {roomPhotoUrl ? (
-                  isDetectingSurface ? (
-                    <div className="p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/40 flex items-center justify-between gap-3 animate-pulse">
-                      <div className="flex items-center gap-2.5">
-                        <Loader2 className="w-4 h-4 text-gold-400 animate-spin shrink-0" />
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold text-gold-300">AI Multimodal Vision Scanning...</span>
-                          <span className="text-[10px] text-neutral-400">Locating &ldquo;{placement}&rdquo; architectural plane on your photo</span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono text-gold-400/80">Gemini 3.5</span>
-                    </div>
-                  ) : detectedSurface ? (
-                    <div className="p-3.5 rounded-xl bg-obsidian-950/90 border border-gold-500/30 flex flex-col gap-2 shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-                          <span className="text-xs font-semibold text-white">
-                            AI Detected: <span className="text-gold-300 font-mono">{detectedSurface.surfaceName}</span>
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
-                            {Math.round((detectedSurface.confidence || 0.95) * 100)}% match
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => triggerSurfaceDetection(placement)}
-                          disabled={isDetectingSurface}
-                          className="text-[10px] font-mono text-neutral-400 hover:text-gold-300 flex items-center gap-1 transition-colors"
-                          title="Re-scan surface"
-                        >
-                          <RefreshCw className="w-2.5 h-2.5" /> Re-scan
-                        </button>
-                      </div>
-                      <p className="text-[11px] text-neutral-300 line-clamp-2">
-                        {detectedSurface.description}
-                      </p>
-                      <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800 text-[10px] text-neutral-400">
-                        <span className="text-emerald-400 font-mono flex items-center gap-1">
-                          ✓ Gold Mask Auto-Aligned on Surface
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setIsMaskModalOpen(true)}
-                          className="text-gold-400 hover:text-gold-300 font-semibold underline underline-offset-2 flex items-center gap-0.5 transition-colors"
-                        >
-                          Preview / Adjust Mask ↗
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-3 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center justify-between text-xs">
-                      <span className="text-neutral-400 text-[11px] flex items-center gap-1.5">
-                        <Scan className="w-3.5 h-3.5 text-gold-400" /> AI Vision surface detection ready
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => triggerSurfaceDetection(placement)}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 transition-all"
-                      >
-                        Detect Surface
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <div className="p-2.5 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center gap-2 text-[11px] text-neutral-400">
-                    <Sparkles className="w-3.5 h-3.5 text-gold-400 shrink-0" />
-                    <span>Upload a room photo in Section 1 to enable real-time AI surface detection & auto-masking.</span>
-                  </div>
-                )}
+              {/* Selected Placement Indicator */}
+              <div className="p-3 rounded-xl bg-obsidian-950/60 border border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
+                <span>Selected Placement:</span>
+                <span className="text-gold-400 font-semibold font-mono">{placement}</span>
               </div>
             </div>
 
@@ -1373,37 +1293,77 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-neutral-400">Artisanal Surface Finish</label>
-                    <select
-                      value={finish}
-                      onChange={(e) => setFinish(e.target.value)}
-                      className="w-full p-2 rounded-lg bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
-                    >
-                      {FINISHES.map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
-                    </select>
+                {/* AI Multimodal Vision Detection Status Card (Now positioned in Module 3 with Prompt) */}
+                {roomPhotoUrl ? (
+                  isDetectingSurface ? (
+                    <div className="p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/40 flex items-center justify-between gap-3 animate-pulse">
+                      <div className="flex items-center gap-2.5">
+                        <Loader2 className="w-4 h-4 text-gold-400 animate-spin shrink-0" />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-gold-300">AI Multimodal Vision Scanning...</span>
+                          <span className="text-[10px] text-neutral-400">Locating &ldquo;{placement}&rdquo; architectural plane on your photo</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-gold-400/80">Gemini 3.5</span>
+                    </div>
+                  ) : detectedSurface ? (
+                    <div className="p-3 rounded-xl bg-obsidian-950/90 border border-gold-500/30 flex flex-col gap-2 shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+                          <span className="text-xs font-semibold text-white">
+                            AI Detected: <span className="text-gold-300 font-mono">{detectedSurface.surfaceName}</span>
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                            {Math.round((detectedSurface.confidence || 0.95) * 100)}% match
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => triggerSurfaceDetection(placement)}
+                          disabled={isDetectingSurface}
+                          className="text-[10px] font-mono text-neutral-400 hover:text-gold-300 flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Re-scan surface"
+                        >
+                          <RefreshCw className="w-2.5 h-2.5" /> Re-scan
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-neutral-300 line-clamp-2">
+                        {detectedSurface.description}
+                      </p>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800 text-[10px] text-neutral-400">
+                        <span className="text-emerald-400 font-mono flex items-center gap-1">
+                          ✓ Gold Mask Auto-Aligned on Surface
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsMaskModalOpen(true)}
+                          className="text-gold-400 hover:text-gold-300 font-semibold underline underline-offset-2 flex items-center gap-0.5 transition-colors cursor-pointer"
+                        >
+                          Preview / Adjust Mask ↗
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center justify-between text-xs">
+                      <span className="text-neutral-400 text-[11px] flex items-center gap-1.5">
+                        <Scan className="w-3.5 h-3.5 text-gold-400" /> AI Vision surface detection ready for &ldquo;{placement}&rdquo;
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => triggerSurfaceDetection(placement)}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 transition-all cursor-pointer"
+                      >
+                        Detect Surface
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center gap-2 text-[11px] text-neutral-400">
+                    <Sparkles className="w-3.5 h-3.5 text-gold-400 shrink-0" />
+                    <span>Upload an architectural photo in Section 1 to enable AI surface detection & auto-masking.</span>
                   </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-neutral-400">Architectural Grout Accent</label>
-                    <select
-                      value={groutColor}
-                      onChange={(e) => setGroutColor(e.target.value)}
-                      className="w-full p-2 rounded-lg bg-obsidian-950 border border-neutral-800 text-xs text-neutral-200 focus:outline-none focus:border-gold-400"
-                    >
-                      {GROUT_COLORS.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                )}
 
                 {error && (
                   <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex flex-col gap-2.5">
@@ -1464,12 +1424,27 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               <h2 className="text-2xl font-serif font-bold text-white">Bespoke Mosaic Surface Visualization</h2>
             </div>
 
-            {/* TWO FRONTEND ACTION BUTTONS: Quote Request & Talk to Specialist */}
+            {/* FRONTEND ACTION BUTTONS: Download, Quote Request & Talk to Specialist */}
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
+                onClick={() => {
+                  if (result?.resultImageUrl) {
+                    handleDownloadImage(
+                      result.resultImageUrl,
+                      `zakiah-mosaic-${placement.toLowerCase().replace(/[^a-z0-9]/g, "-")}.png`
+                    );
+                  }
+                }}
+                className="px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-gold-500/20 cursor-pointer"
+              >
+                <Download className="w-4 h-4" /> Download High-Res Image
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsQuoteModalOpen(true)}
-                className="px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-gold-500/20"
+                className="px-5 py-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 border border-gold-500/40 text-gold-300 font-serif font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" /> Request Sample Box & Specification
               </button>
@@ -1477,7 +1452,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               <button
                 type="button"
                 onClick={() => setIsSpecialistModalOpen(true)}
-                className="px-5 py-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 border border-gold-500/40 text-gold-300 font-serif font-bold text-xs flex items-center gap-2 transition-all"
+                className="px-5 py-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 border border-neutral-700 text-neutral-300 hover:text-white font-serif font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
               >
                 <PhoneCall className="w-4 h-4 text-gold-400" /> Speak with a Surface Specialist
               </button>
