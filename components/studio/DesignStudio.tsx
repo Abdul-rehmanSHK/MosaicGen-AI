@@ -798,6 +798,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           onRequestQuote={() => setIsQuoteModalOpen(true)}
           onRequestSpecialist={() => setIsSpecialistModalOpen(true)}
           onBackToStudio={() => setIsWorkingScreenOpen(false)}
+          onSelectPlacement={(newPlacement) => {
+            setPlacement(newPlacement);
+            triggerSurfaceDetection(newPlacement);
+          }}
+          onReplacePhoto={() => {
+            setIsWorkingScreenOpen(false);
+          }}
         />
       ) : (
         <>
