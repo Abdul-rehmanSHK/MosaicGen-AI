@@ -31,6 +31,18 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
     return () => clearInterval(timer);
   }, [step, timeLeft]);
 
+  // Reset state whenever modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setStep("email");
+      setEmail("");
+      setOtpCode("");
+      setError(null);
+      setSuccessMessage(null);
+      setTimeLeft(300);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const formatTimer = (seconds: number) => {
@@ -133,6 +145,9 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       if (!res.ok) throw new Error(data.error || "Verification failed.");
 
       // Success -> Enter AI image generation phase
+      if (data.verifiedToken && typeof window !== "undefined") {
+        localStorage.setItem("zm_verified_token", data.verifiedToken);
+      }
       onVerified(data.verifiedEmail);
       onClose();
     } catch (err: any) {

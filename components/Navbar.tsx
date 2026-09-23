@@ -44,7 +44,13 @@ export function Navbar() {
       const stored = typeof window !== "undefined"
         ? localStorage.getItem("zm_verified_email") || localStorage.getItem("mec_verified_email")
         : null;
-      setVerifiedEmail(stored);
+      if (stored) {
+        setVerifiedEmail(stored);
+      } else if (session?.user?.email) {
+        setVerifiedEmail(session.user.email.toLowerCase().trim());
+      } else {
+        setVerifiedEmail(null);
+      }
     };
     syncEmail();
     window.addEventListener("mec_verified_email_updated", syncEmail);
@@ -53,7 +59,7 @@ export function Navbar() {
       window.removeEventListener("mec_verified_email_updated", syncEmail);
       window.removeEventListener("zm_verified_email_updated", syncEmail);
     };
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     fetch("/api/appearance")
@@ -165,8 +171,13 @@ export function Navbar() {
             <UserAccountMenu
               email={verifiedEmail}
               onUseDifferentEmail={() => {
+                localStorage.removeItem("zm_verified_email");
                 localStorage.removeItem("mec_verified_email");
+                localStorage.removeItem("zm_verified_token");
+                document.cookie = "zm_verified_token=; path=/; max-age=0";
+                document.cookie = "zm_verified_email=; path=/; max-age=0";
                 setVerifiedEmail(null);
+                window.dispatchEvent(new Event("zm_verified_email_updated"));
                 window.dispatchEvent(new Event("mec_verified_email_updated"));
               }}
             />

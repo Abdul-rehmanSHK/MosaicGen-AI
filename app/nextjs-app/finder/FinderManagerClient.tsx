@@ -59,6 +59,16 @@ interface Product {
   specs: string;
 }
 
+interface GenerationRecord {
+  id: string;
+  resultImageUrl: string;
+  prompt: string;
+  placement: string;
+  userEmail?: string | null;
+  createdAt: string | Date;
+  status?: string;
+}
+
 interface FinderResultRecord {
   id: string;
   userEmail?: string | null;
@@ -73,10 +83,12 @@ interface FinderResultRecord {
 export function FinderManagerClient({
   initialSteps,
   availableProducts = [],
+  availableGenerations = [],
   initialResults = [],
 }: {
   initialSteps: StepRecord[];
   availableProducts?: Product[];
+  availableGenerations?: GenerationRecord[];
   initialResults?: FinderResultRecord[];
 }) {
   // Main view switcher: "steps" vs "results"
@@ -534,7 +546,7 @@ export function FinderManagerClient({
           </div>
 
           {/* ========================================================================= */}
-          {/* STEP 5 RESULT: SELECT PRODUCTS TO SHOWCASE AT BOTTOM OF RESULT */}
+          {/* STEP 5 RESULT: SELECT AI GENERATED IMAGES TO SHOWCASE AT BOTTOM OF RESULT */}
           {/* ========================================================================= */}
           {isStepFiveResult ? (
             <div className="p-6 rounded-3xl bg-obsidian-900 border border-gold-500/30 shadow-xl flex flex-col gap-5">
@@ -543,66 +555,85 @@ export function FinderManagerClient({
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-gold-400" />
                     <h3 className="font-serif font-bold text-white text-base">
-                      Curated Mosaic Products at Bottom of Result
+                      AI Generated Mosaic Results Showcase
                     </h3>
                   </div>
                   <p className="text-[11px] text-neutral-400 mt-0.5">
-                    Select the actual mosaic products from your catalog to showcase at the bottom of the gold result card instead of hardcoding.
+                    Showcase the actual AI generated mosaic images created in the Studio at the bottom of the quiz result instead of static catalog products.
                   </p>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 font-mono text-xs">
-                  {currentFeaturedProductIds.length} Products Selected
+                  {currentFeaturedProductIds.length} Generations Selected
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 max-h-96 overflow-y-auto p-1">
-                {availableProducts.map((prod) => {
-                  const isSelected = currentFeaturedProductIds.includes(prod.id);
-                  const selectedIndex = currentFeaturedProductIds.indexOf(prod.id);
+              {availableGenerations.length === 0 ? (
+                <div className="p-10 text-center flex flex-col items-center justify-center gap-3 rounded-2xl bg-obsidian-950 border border-neutral-800 text-neutral-400">
+                  <Sparkles className="w-8 h-8 text-gold-400/60" />
+                  <p className="text-sm font-serif font-semibold text-white">No Studio Generated Images Yet</p>
+                  <p className="text-xs text-neutral-400 max-w-md leading-relaxed">
+                    When visitors or editors create mosaic designs in the AI Studio, their generated images will appear here for you to showcase at the bottom of the quiz result.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 max-h-96 overflow-y-auto p-1">
+                  {availableGenerations.map((gen) => {
+                    const isSelected = currentFeaturedProductIds.includes(gen.id);
+                    const selectedIndex = currentFeaturedProductIds.indexOf(gen.id);
 
-                  return (
-                    <div
-                      key={prod.id}
-                      onClick={() => handleToggleProductSelection(prod.id)}
-                      className={`group relative rounded-2xl bg-obsidian-950 border overflow-hidden cursor-pointer transition-all flex flex-col ${
-                        isSelected
-                          ? "border-gold-400 ring-2 ring-gold-500/40 shadow-lg scale-[1.02]"
-                          : "border-neutral-800 hover:border-neutral-700 opacity-60 hover:opacity-100"
-                      }`}
-                    >
-                      <div className="relative aspect-square w-full bg-obsidian-900">
-                        <Image src={prod.sampleImageUrl} alt={prod.title} fill className="object-cover" />
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-gold-500 text-obsidian-950 flex items-center gap-1 font-bold text-[10px] shadow">
-                            <Check className="w-3 h-3" /> #{selectedIndex + 1}
+                    return (
+                      <div
+                        key={gen.id}
+                        onClick={() => handleToggleProductSelection(gen.id)}
+                        className={`group relative rounded-2xl bg-obsidian-950 border overflow-hidden cursor-pointer transition-all flex flex-col ${
+                          isSelected
+                            ? "border-gold-400 ring-2 ring-gold-500/40 shadow-lg scale-[1.02]"
+                            : "border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <div className="relative aspect-square w-full bg-obsidian-900 overflow-hidden">
+                          <img
+                            src={gen.resultImageUrl}
+                            alt={gen.prompt}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-obsidian-950/85 backdrop-blur-md border border-gold-500/30 text-gold-300 font-mono text-[9px] uppercase font-bold tracking-wider">
+                            {gen.placement || "Bespoke"}
+                          </span>
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-gold-500 text-obsidian-950 flex items-center gap-1 font-bold text-[10px] shadow">
+                              <Check className="w-3 h-3 stroke-[3]" /> #{selectedIndex + 1}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-2.5 flex flex-col gap-1">
+                          <span className="font-serif font-bold text-white line-clamp-2 text-xs leading-snug" title={gen.prompt}>
+                            {gen.prompt}
+                          </span>
+                          <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t border-neutral-800/60">
+                            <span className="text-gold-400/90">{new Date(gen.createdAt).toLocaleDateString()}</span>
+                            <span className="truncate max-w-[80px]">{gen.userEmail ? gen.userEmail.split("@")[0] : "Studio"}</span>
                           </div>
-                        )}
-                      </div>
-                      <div className="p-2.5 flex flex-col gap-0.5">
-                        <span className="font-serif font-bold text-white truncate text-xs">{prod.title}</span>
-                        <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
-                          <span className="text-gold-400">${prod.pricePerSqFt}/sq.ft</span>
-                          <span className="truncate max-w-[60px]">{prod.category}</span>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
                 <span className="text-xs text-neutral-400">
                   {currentFeaturedProductIds.length > 0
-                    ? `Displaying these ${currentFeaturedProductIds.length} chosen products on the live result page.`
-                    : "No specific products checked — will automatically display top active catalog products."}
+                    ? `Displaying these ${currentFeaturedProductIds.length} chosen AI generations on the live quiz result page.`
+                    : "No specific generations checked — will automatically display the latest AI generated studio designs."}
                 </span>
                 <button
                   type="button"
                   onClick={handleSaveStep}
                   disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2"
+                  className="px-5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-gold-500/20 active:scale-[0.98]"
                 >
-                  <Save className="w-3.5 h-3.5" /> Save Result Products
+                  <Save className="w-3.5 h-3.5" /> Save Result Generations
                 </button>
               </div>
             </div>

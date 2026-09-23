@@ -53,6 +53,8 @@ export const AIGenerationRequestSchema = z.object({
     .optional()
     .nullable(),
 
+  verifiedToken: z.string().optional().nullable(),
+
   finish: z.string().default("Polished High-Gloss"),
 
   groutColor: z.string().default("Champagne Gold"),

@@ -60,11 +60,32 @@ export default async function FinderPage() {
     }
   }
 
-  // Fetch active products from catalog for result recommendations
+  // Fetch active products from catalog for fallback
   const products = await prisma.product.findMany({
     where: { isTrashed: false },
     orderBy: { createdAt: "desc" },
   });
+
+  // Fetch AI generated mosaic designs from studio
+  const rawGenerations = await prisma.aIGeneration.findMany({
+    where: { isTrashed: false },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      resultImageUrl: true,
+      prompt: true,
+      placement: true,
+      userEmail: true,
+      createdAt: true,
+      status: true,
+    },
+  });
+
+  const serializedGenerations = rawGenerations.map((g) => ({
+    ...g,
+    createdAt: g.createdAt.toISOString(),
+  }));
 
   return (
     <div className="min-h-screen bg-obsidian-950 text-white flex flex-col justify-between selection:bg-gold-500 selection:text-obsidian-950 relative overflow-hidden">
@@ -77,7 +98,11 @@ export default async function FinderPage() {
 
       {/* Main Finder Wizard Area */}
       <main className="flex-1 py-8 sm:py-12 relative z-10">
-        <AestheticFinderWizard initialSteps={steps} availableProducts={products} />
+        <AestheticFinderWizard 
+          initialSteps={steps} 
+          availableProducts={products} 
+          availableGenerations={serializedGenerations}
+        />
       </main>
 
       {/* Sitewide Footer */}

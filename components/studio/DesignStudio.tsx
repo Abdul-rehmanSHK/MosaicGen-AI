@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { CanvasDraw, CanvasDrawRef } from "./CanvasDraw";
 import { EmailOtpModal } from "./EmailOtpModal";
 import { InpaintingMaskModal } from "./InpaintingMaskModal";
@@ -10,8 +11,8 @@ import { InquiryModal } from "@/components/InquiryModal";
 import { InspirationGallery, GalleryItem } from "./InspirationGallery";
 import { MosaicFinderBanner } from "./MosaicFinderBanner";
 import { GenerationWorkingScreen } from "./GenerationWorkingScreen";
-import { UserAccountMenu } from "./UserAccountMenu";
 import { MyGenerationsModal } from "./MyGenerationsModal";
+import { LimitReachedModal } from "./LimitReachedModal";
 import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check, Download } from "lucide-react";
 import Image from "next/image";
 
@@ -94,6 +95,7 @@ const GROUT_COLORS = ["Champagne Gold", "Pure Thassos White", "Charcoal Slate", 
 
 export function DesignStudio({ initialProducts = [], startFromScratch = false, initialSelectedProductId, onOpenInquiryModal }: DesignStudioProps) {
   const canvasRef = useRef<CanvasDrawRef>(null);
+  const { data: session } = useSession();
   const searchParams = useSearchParams();
   const isScratch = startFromScratch || searchParams?.get("mode") === "scratch";
 
@@ -112,6 +114,8 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [generationsTrigger, setGenerationsTrigger] = useState(0);
   const [isMyGenerationsOpen, setIsMyGenerationsOpen] = useState(false);
+  const [isLimitReachedModalOpen, setIsLimitReachedModalOpen] = useState(false);
+  const [limitModalEmail, setLimitModalEmail] = useState("");
 
   // Modal State for Result Action Buttons
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -354,7 +358,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     }
   }, [searchParams]);
 
-  // Sync verified email from localStorage on initial load & updates
+  // Sync verified email from localStorage & active session on initial load & updates
   useEffect(() => {
     const syncEmail = () => {
       const stored = typeof window !== "undefined"
@@ -363,6 +367,16 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       if (stored) {
         setIsOtpVerified(true);
         setVerifiedEmail(stored);
+      } else if (session?.user?.email) {
+        const sessEmail = session.user.email.toLowerCase().trim();
+        setIsOtpVerified(true);
+        setVerifiedEmail(sessEmail);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("zm_verified_email", sessEmail);
+        }
+      } else {
+        setIsOtpVerified(false);
+        setVerifiedEmail("");
       }
     };
     syncEmail();
@@ -372,7 +386,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       window.removeEventListener("zm_verified_email_updated", syncEmail);
       window.removeEventListener("mec_verified_email_updated", syncEmail);
     };
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     if (products.length === 0) {
@@ -417,7 +431,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     executeGeneration();
   };
 
-  const executeGeneration = async () => {
+  const executeGeneration = async (overrideEmail?: string) => {
     setIsWorkingScreenOpen(true);
     setIsGenerating(true);
     setResult(null);
@@ -425,6 +439,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 80, behavior: "smooth" });
     }
+
+    const emailToSend =
+      overrideEmail ||
+      verifiedEmail ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("zm_verified_email") || localStorage.getItem("mec_verified_email") || undefined
+        : undefined);
 
     try {
       // Only extract mask if not scratch mode AND user actually drew an inpainting mask
@@ -447,7 +468,12 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
 
       const response = await fetch("/api/ai/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(typeof window !== "undefined" && localStorage.getItem("zm_verified_token")
+            ? { "x-verified-token": localStorage.getItem("zm_verified_token")! }
+            : {}),
+        },
         body: JSON.stringify({
           prompt,
           placement,
@@ -461,13 +487,28 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           finish,
           groutColor,
           surfaceDetection: detectedSurface || undefined,
-          email: verifiedEmail || undefined,
+          email: emailToSend,
+          verifiedToken:
+            typeof window !== "undefined"
+              ? localStorage.getItem("zm_verified_token") || undefined
+              : undefined,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (
+          response.status === 403 &&
+          (data.error === "LIMIT_REACHED" || (data.message && data.message.toLowerCase().includes("limit")))
+        ) {
+          setIsWorkingScreenOpen(false);
+          setIsGenerating(false);
+          setError(null);
+          setLimitModalEmail(emailToSend || verifiedEmail || data.email || "");
+          setIsLimitReachedModalOpen(true);
+          return;
+        }
         throw new Error(data.message || data.error || "Generation request failed");
       }
 
@@ -481,7 +522,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       setGenerationsTrigger((prev) => prev + 1);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "An error occurred while generating the design.");
+      if (err.message && err.message.toLowerCase().includes("limit")) {
+        setError(null);
+        setLimitModalEmail(emailToSend || verifiedEmail || "");
+        setIsLimitReachedModalOpen(true);
+      } else {
+        setError(err.message || "An error occurred while generating the design.");
+      }
       setIsWorkingScreenOpen(false);
     } finally {
       setIsGenerating(false);
@@ -489,27 +536,36 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   };
 
   const handleOtpVerified = (emailVerified: string) => {
+    setIsLimitReachedModalOpen(false);
     setIsOtpVerified(true);
     setVerifiedEmail(emailVerified);
+    setError(null);
     if (typeof window !== "undefined") {
       localStorage.setItem("zm_verified_email", emailVerified);
       localStorage.setItem("mec_verified_email", emailVerified);
       window.dispatchEvent(new Event("zm_verified_email_updated"));
       window.dispatchEvent(new Event("mec_verified_email_updated"));
     }
-    // Directly launch into the image generation phase
-    executeGeneration();
+    // Directly launch into the image generation phase with the verified email
+    executeGeneration(emailVerified);
   };
 
   const handleUseDifferentEmail = () => {
+    setIsLimitReachedModalOpen(false);
     setIsOtpVerified(false);
     setVerifiedEmail("");
+    setError(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem("zm_verified_email");
       localStorage.removeItem("mec_verified_email");
+      localStorage.removeItem("zm_verified_token");
+      document.cookie = "zm_verified_token=; path=/; max-age=0";
+      document.cookie = "zm_verified_email=; path=/; max-age=0";
       window.dispatchEvent(new Event("zm_verified_email_updated"));
       window.dispatchEvent(new Event("mec_verified_email_updated"));
     }
+    // Prompt the user to enter their new email immediately
+    setIsOtpModalOpen(true);
   };
 
   const handleSelectGeneration = (gen: any) => {
@@ -527,6 +583,16 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       if (el) el.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
+
+  useEffect(() => {
+    const handleGlobalSelect = (e: any) => {
+      if (e?.detail) {
+        handleSelectGeneration(e.detail);
+      }
+    };
+    window.addEventListener("zm_select_generation", handleGlobalSelect);
+    return () => window.removeEventListener("zm_select_generation", handleGlobalSelect);
+  }, []);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
@@ -581,20 +647,6 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             <p className="text-sm md:text-base text-neutral-400 max-w-xl">
               Articulate your architectural vision — our studio synthesizes bespoke, artisan-grade mosaic concepts in authentic Italian marble, Venetian smalti, and 24k gold leaf.
             </p>
-
-            {isOtpVerified && verifiedEmail && (
-              <div className="flex items-center gap-3 mt-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Verified: {verifiedEmail}
-                </div>
-                <UserAccountMenu
-                  email={verifiedEmail}
-                  onUseDifferentEmail={handleUseDifferentEmail}
-                  onSelectGeneration={handleSelectGeneration}
-                  refreshTrigger={generationsTrigger}
-                />
-              </div>
-            )}
           </div>
 
           {/* Unified Luxury Prompt Card (No photo upload / No canvas) */}
@@ -618,11 +670,15 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                       <span className="text-sm font-serif font-bold text-white line-clamp-1">
                         {selectedDesignItem.title}
                       </span>
-                      {selectedDesignItem.category && (
+                      {selectedDesignItem.desc ? (
+                        <p className="text-[11px] text-neutral-400 line-clamp-1 max-w-md font-light">
+                          {selectedDesignItem.desc}
+                        </p>
+                      ) : selectedDesignItem.category ? (
                         <span className="text-[11px] text-neutral-400">
                           {selectedDesignItem.category}
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                   <button
@@ -673,27 +729,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 </div>
               </div>
 
-              {error && (
+              {error && !error.toLowerCase().includes("limit") && (
                 <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex flex-col gap-2.5">
                   <span>{error}</span>
-                  {error.toLowerCase().includes("limit") && (
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setIsMyGenerationsOpen(true)}
-                        className="px-3 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs cursor-pointer shadow-md"
-                      >
-                        View My Generations
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleUseDifferentEmail}
-                        className="px-3 py-1.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 text-xs cursor-pointer"
-                      >
-                        Use a Different Email
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -753,20 +791,6 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             <p className="text-xs md:text-sm text-neutral-400 max-w-2xl">
               Upload architectural photography and define target surface boundaries to render authentic, high-precision luxury mosaics aligned with your space geometry.
             </p>
-
-            {isOtpVerified && verifiedEmail && (
-              <div className="flex items-center gap-3 mt-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Verified: {verifiedEmail}
-                </div>
-                <UserAccountMenu
-                  email={verifiedEmail}
-                  onUseDifferentEmail={handleUseDifferentEmail}
-                  onSelectGeneration={handleSelectGeneration}
-                  refreshTrigger={generationsTrigger}
-                />
-              </div>
-            )}
           </div>
 
           {/* Upper Section: Compact Room Photo Upload & Inpainting Target Button */}
@@ -993,11 +1017,15 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                         <span className="text-xs font-serif font-bold text-white line-clamp-1">
                           {selectedDesignItem.title}
                         </span>
-                        {selectedDesignItem.category && (
+                        {selectedDesignItem.desc ? (
+                          <p className="text-[10px] text-neutral-400 line-clamp-1 max-w-sm font-light">
+                            {selectedDesignItem.desc}
+                          </p>
+                        ) : selectedDesignItem.category ? (
                           <span className="text-[10px] text-neutral-400">
                             {selectedDesignItem.category}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                     <button
@@ -1131,27 +1159,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   </div>
                 )}
 
-                {error && (
+                {error && !error.toLowerCase().includes("limit") && (
                   <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex flex-col gap-2.5">
                     <span>{error}</span>
-                    {error.toLowerCase().includes("limit") && (
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setIsMyGenerationsOpen(true)}
-                          className="px-3 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs cursor-pointer shadow-md"
-                        >
-                          View My Generations
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleUseDifferentEmail}
-                          className="px-3 py-1.5 rounded-lg bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 text-xs cursor-pointer"
-                        >
-                          Use a Different Email
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -1334,14 +1344,29 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       />
 
       {/* User My Generations History Modal */}
-      {verifiedEmail && (
-        <MyGenerationsModal
-          isOpen={isMyGenerationsOpen}
-          onClose={() => setIsMyGenerationsOpen(false)}
-          email={verifiedEmail}
-          onSelectGeneration={handleSelectGeneration}
-        />
-      )}
+      <MyGenerationsModal
+        isOpen={isMyGenerationsOpen}
+        onClose={() => setIsMyGenerationsOpen(false)}
+        email={
+          limitModalEmail ||
+          verifiedEmail ||
+          session?.user?.email ||
+          (typeof window !== "undefined"
+            ? localStorage.getItem("zm_verified_email") || localStorage.getItem("mec_verified_email") || ""
+            : "")
+        }
+        onSelectGeneration={handleSelectGeneration}
+        onUseDifferentEmail={handleUseDifferentEmail}
+      />
+
+      {/* Limit Reached Pop-up Modal */}
+      <LimitReachedModal
+        isOpen={isLimitReachedModalOpen}
+        onClose={() => setIsLimitReachedModalOpen(false)}
+        email={limitModalEmail || verifiedEmail}
+        onUseDifferentEmail={handleUseDifferentEmail}
+        onViewGenerations={() => setIsMyGenerationsOpen(true)}
+      />
     </div>
   );
 }

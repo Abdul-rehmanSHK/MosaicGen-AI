@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    const session = await auth();
     const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email");
+    const emailParam = searchParams.get("email");
+    const cleanEmail = (emailParam || session?.user?.email || "").trim().toLowerCase();
 
-    if (!email || !email.trim()) {
+    if (!cleanEmail) {
       return NextResponse.json(
         { error: "Email query parameter is required." },
         { status: 400 }
       );
     }
-
-    const cleanEmail = email.trim().toLowerCase();
 
     // Find user record if any
     const dbUser = await prisma.user.findUnique({
@@ -23,34 +24,38 @@ export async function GET(request: Request) {
       select: { id: true, email: true, isVerified: true },
     });
 
-    const generations = await prisma.aIGeneration.findMany({
-      where: {
-        OR: [
-          { userEmail: cleanEmail },
-          ...(dbUser ? [{ userId: dbUser.id }] : []),
-        ],
-        isTrashed: false,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: {
-        id: true,
-        prompt: true,
-        placement: true,
-        resultImageUrl: true,
-        inputImageUrl: true,
-        createdAt: true,
-      },
-    });
+    const whereClause = {
+      OR: [
+        { userEmail: cleanEmail },
+        ...(dbUser ? [{ userId: dbUser.id }] : []),
+      ],
+      isTrashed: false,
+    };
 
-    const usedCount = generations.length;
+    const [totalCount, generations] = await Promise.all([
+      prisma.aIGeneration.count({ where: whereClause }),
+      prisma.aIGeneration.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          prompt: true,
+          placement: true,
+          resultImageUrl: true,
+          inputImageUrl: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
     const maxLimit = 5;
-    const remaining = Math.max(0, maxLimit - usedCount);
+    const remaining = Math.max(0, maxLimit - totalCount);
 
     return NextResponse.json({
       success: true,
       email: cleanEmail,
-      usedCount,
+      usedCount: totalCount,
       maxLimit,
       remaining,
       generations,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendOtpVerificationEmail } from "@/lib/email";
+import { createEmailVerificationToken } from "@/lib/verification";
 
 export async function POST(request: Request) {
   try {
@@ -81,7 +82,31 @@ export async function POST(request: Request) {
       // Cleanup code after successful verification
       await prisma.emailVerificationCode.delete({ where: { id: record.id } });
 
-      return NextResponse.json({ success: true, verifiedEmail: cleanEmail });
+      const verifiedToken = createEmailVerificationToken(cleanEmail);
+
+      const response = NextResponse.json({
+        success: true,
+        verifiedEmail: cleanEmail,
+        verifiedToken,
+      });
+
+      response.cookies.set("zm_verified_token", verifiedToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+
+      response.cookies.set("zm_verified_email", cleanEmail, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+
+      return response;
     }
 
     return NextResponse.json({ error: "Invalid action requested." }, { status: 400 });

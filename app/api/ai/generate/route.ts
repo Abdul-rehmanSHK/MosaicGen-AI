@@ -6,6 +6,7 @@ import { uploadImageToStorage } from "@/lib/storage";
 import { logActivity } from "@/lib/logger";
 import { aiGenerationRateLimiter } from "@/lib/ratelimit";
 import { AIGenerationRequestSchema, formatZodError } from "@/lib/validations";
+import { verifyEmailToken } from "@/lib/verification";
 
 export async function POST(request: Request) {
   try {
@@ -13,8 +14,8 @@ export async function POST(request: Request) {
     // 1. Authentication & Identity Extraction
     // -------------------------------------------------------------------------
     const session = await auth();
-    let userId = session?.user?.id || null;
-    let userEmail = session?.user?.email || null;
+    const sessionUserId = session?.user?.id || null;
+    const sessionEmail = session?.user?.email?.toLowerCase().trim() || null;
     const isSessionVerified = (session?.user as any)?.isVerified;
 
     // Parse JSON request body safely
@@ -54,23 +55,37 @@ export async function POST(request: Request) {
       finish,
       groutColor,
       surfaceDetection,
-      email: bodyEmail,
+      email: rawBodyEmail,
+      verifiedToken: bodyVerifiedToken,
     } = validationResult.data;
 
     let inputImageBase64 = rawInputImageBase64;
 
-    if (!userEmail && bodyEmail) {
-      userEmail = bodyEmail;
-    }
+    // Active target email for this generation request:
+    // When the client explicitly specifies an email (e.g., switched to a different email), honor it.
+    const bodyEmail = rawBodyEmail?.toLowerCase().trim() || null;
+    const userCleanEmail = bodyEmail || sessionEmail;
 
-    if (!userEmail) {
+    if (!userCleanEmail) {
       return NextResponse.json(
         { error: "Email is required for verification before AI generation." },
         { status: 401 }
       );
     }
 
-    const userCleanEmail = userEmail.toLowerCase().trim();
+    // Determine the userId for this generation:
+    // If userCleanEmail matches the active session user, attach sessionUserId.
+    // If userCleanEmail is different (e.g. user entered a different email),
+    // decouple from the session user so session quota is NOT consumed.
+    let userId: string | null = null;
+    if (sessionEmail && userCleanEmail === sessionEmail) {
+      userId = sessionUserId;
+    } else {
+      const dbUser = await prisma.user.findUnique({ where: { email: userCleanEmail } });
+      if (dbUser) {
+        userId = dbUser.id;
+      }
+    }
 
     // -------------------------------------------------------------------------
     // 3. User-Specific Upstash Rate Limiting (5 requests per 60s per User/Email)
@@ -108,14 +123,37 @@ export async function POST(request: Request) {
     // 4. Verification Check
     // -------------------------------------------------------------------------
     let isVerified = false;
-    if (isSessionVerified) {
+
+    // Check A: Active session verified (only if session email matches userCleanEmail)
+    if (sessionEmail && userCleanEmail === sessionEmail && isSessionVerified) {
       isVerified = true;
-    } else {
+    }
+
+    // Check B: Database user with isVerified = true
+    if (!isVerified) {
       const dbUser = await prisma.user.findUnique({ where: { email: userCleanEmail } });
       if (dbUser && dbUser.isVerified) {
         isVerified = true;
-        userId = dbUser.id;
+        if (!userId) userId = dbUser.id;
       }
+    }
+
+    // Check C: Cryptographic OTP verification token (from body, header, or cookie)
+    if (!isVerified) {
+      const cookieHeader = request.headers.get("cookie") || "";
+      const cookieTokenMatch = cookieHeader.match(/zm_verified_token=([^;]+)/);
+      const cookieToken = cookieTokenMatch ? decodeURIComponent(cookieTokenMatch[1]) : null;
+      const headerToken = request.headers.get("x-verified-token");
+      const tokenToCheck = bodyVerifiedToken || headerToken || cookieToken;
+
+      if (tokenToCheck && verifyEmailToken(tokenToCheck, userCleanEmail)) {
+        isVerified = true;
+      }
+    }
+
+    // Check D: Development environment fallback
+    if (!isVerified && process.env.NODE_ENV === "development") {
+      isVerified = true;
     }
 
     if (!isVerified) {
@@ -142,7 +180,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "LIMIT_REACHED",
-          message: "You have reached your limit of 5 free previews for this email. Please speak to a specialist or use a different email.",
+          message: `You have reached your limit of 5 free previews for ${userCleanEmail}. Please speak to a specialist or use a different email.`,
+          email: userCleanEmail,
           usedCount: generationCount,
           maxLimit: 5,
           remaining: 0,

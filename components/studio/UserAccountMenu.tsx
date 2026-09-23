@@ -144,7 +144,14 @@ export function UserAccountMenu({
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
         email={email}
-        onSelectGeneration={onSelectGeneration}
+        onSelectGeneration={(gen) => {
+          if (onSelectGeneration) {
+            onSelectGeneration(gen);
+          } else if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("zm_select_generation", { detail: gen }));
+          }
+        }}
+        onUseDifferentEmail={onUseDifferentEmail}
       />
     </div>
   );

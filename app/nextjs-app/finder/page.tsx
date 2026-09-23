@@ -50,11 +50,32 @@ export default async function AdminFinderCMSPage() {
     });
   }
 
-  // Fetch active products from catalog for result showcase selection
+  // Fetch active products from catalog for fallback
   const products = await prisma.product.findMany({
     where: { isTrashed: false },
     orderBy: { createdAt: "desc" },
   });
+
+  // Fetch AI generated mosaic images from studio
+  const rawGenerations = await prisma.aIGeneration.findMany({
+    where: { isTrashed: false },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: {
+      id: true,
+      resultImageUrl: true,
+      prompt: true,
+      placement: true,
+      userEmail: true,
+      createdAt: true,
+      status: true,
+    },
+  });
+
+  const serializedGenerations = rawGenerations.map((g) => ({
+    ...g,
+    createdAt: g.createdAt.toISOString(),
+  }));
 
   // Fetch saved user quiz submissions/results
   const savedResults = await prisma.finderResult.findMany({
@@ -73,8 +94,10 @@ export default async function AdminFinderCMSPage() {
       <FinderManagerClient
         initialSteps={steps}
         availableProducts={products}
+        availableGenerations={serializedGenerations}
         initialResults={savedResults}
       />
     </div>
   );
 }
+
