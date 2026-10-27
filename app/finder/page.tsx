@@ -88,10 +88,7 @@ export default async function FinderPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-obsidian-950 text-white flex flex-col justify-between selection:bg-gold-500 selection:text-obsidian-950 relative overflow-hidden">
-      {/* Sitewide Background Glow */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-gold-500/5 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/2 right-10 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen bg-[#f4f3f2] text-stone-900 flex flex-col justify-between selection:bg-stone-300 selection:text-stone-900 relative">
 
       {/* Sitewide Navbar */}
       <Navbar />

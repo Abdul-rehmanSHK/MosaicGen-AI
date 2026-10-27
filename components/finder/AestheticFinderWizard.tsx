@@ -290,7 +290,7 @@ function AestheticFinderContent({
     return (
       <>
         {parts[0]}
-        <em className="italic font-serif text-gold-400 font-normal">{highlight}</em>
+        <em className="italic font-serif text-stone-700 font-normal">{highlight}</em>
         {parts.slice(1).join(highlight)}
       </>
     );
@@ -478,12 +478,12 @@ function AestheticFinderContent({
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-10 py-6 px-4 sm:px-6">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-8 sm:gap-10 py-6 px-4 sm:px-6 text-stone-900">
       {/* ================= STEPPER PROGRESS BAR ================= */}
-      <div className="w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between text-xs font-mono text-neutral-400 uppercase tracking-widest">
+      <div className="w-full flex flex-col gap-5">
+        <div className="flex items-center justify-between text-xs font-mono text-stone-500 uppercase tracking-widest">
           <span>STEP 0{currentStepIndex + 1} OF 0{initialSteps.length}</span>
-          <span className="font-serif italic capitalize text-base sm:text-lg text-gold-400/90">
+          <span className="font-serif italic capitalize text-base sm:text-lg text-stone-800">
             {SCRIPT_NAMES[currentStepIndex] || currentStep?.title || "Step"}
           </span>
         </div>
@@ -491,10 +491,10 @@ function AestheticFinderContent({
         {/* Stepper Dots & Track */}
         <div className="relative flex items-center justify-between w-full px-2 sm:px-6">
           {/* Background Track Line */}
-          <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-neutral-800 -z-0" />
+          <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-300 -z-0" />
           {/* Active Fill Line */}
           <div
-            className="absolute left-8 top-1/2 -translate-y-1/2 h-[2px] bg-gradient-to-r from-gold-500 to-amber-500 transition-all duration-500 -z-0"
+            className="absolute left-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-900 transition-all duration-500 -z-0"
             style={{ width: `calc(${(currentStepIndex / (initialSteps.length - 1)) * 100}% - 2.5rem)` }}
           />
 
@@ -506,20 +506,20 @@ function AestheticFinderContent({
               <div
                 key={step.id || idx}
                 onClick={() => handleJumpToStep(idx)}
-                className="relative z-10 flex flex-col items-center gap-2.5 cursor-pointer group"
+                className="relative z-10 flex flex-col items-center gap-2 cursor-pointer group"
               >
                 {/* Stepper Circle */}
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-mono transition-all duration-300 ${
                     isCompleted
-                      ? "bg-obsidian-950 border-2 border-gold-500 text-gold-400 shadow-md shadow-gold-500/15"
+                      ? "bg-stone-900 border-2 border-stone-900 text-white shadow-xs"
                       : isCurrent
-                      ? "bg-gradient-to-r from-gold-500 to-amber-500 text-obsidian-950 font-bold border-2 border-gold-300 ring-4 ring-gold-500/20 shadow-lg shadow-gold-500/30 scale-110"
-                      : "bg-obsidian-950 border border-neutral-700 text-neutral-500 group-hover:border-neutral-500"
+                      ? "bg-stone-900 text-white font-bold border-2 border-stone-900 ring-4 ring-stone-900/10 shadow-md scale-105"
+                      : "bg-white border border-stone-300 text-stone-400 group-hover:border-stone-500 group-hover:text-stone-700 shadow-2xs"
                   }`}
                 >
                   {isCompleted ? (
-                    <Check className="w-4 h-4 text-gold-400 stroke-[3]" />
+                    <Check className="w-4 h-4 text-white stroke-[2.5]" />
                   ) : (
                     <span>0{idx + 1}</span>
                   )}
@@ -529,10 +529,10 @@ function AestheticFinderContent({
                 <span
                   className={`text-[11px] font-mono tracking-wider transition-colors uppercase ${
                     isCurrent
-                      ? "text-gold-400 font-bold"
+                      ? "text-stone-900 font-bold"
                       : isCompleted
-                      ? "text-neutral-300"
-                      : "text-neutral-600 group-hover:text-neutral-400"
+                      ? "text-stone-700 font-medium"
+                      : "text-stone-400 group-hover:text-stone-600"
                   }`}
                 >
                   {STEP_NAMES[idx] || step.key}
@@ -544,14 +544,14 @@ function AestheticFinderContent({
       </div>
 
       {/* ================= STEP HEADING & DESCRIPTIONS ================= */}
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-mono uppercase tracking-[0.2em] text-gold-400/90 font-medium">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs font-mono uppercase tracking-[0.2em] text-stone-500 font-semibold">
           {currentStep?.subtitle || `STEP 0${currentStepIndex + 1} • ${STEP_NAMES[currentStepIndex] || currentStep?.key}`}
         </span>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-light text-white tracking-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal text-stone-900 tracking-tight">
           {renderStyledTitle(currentStep?.title || "Choose Your Aesthetic", currentStep?.highlightWord)}
         </h1>
-        <p className="text-sm text-neutral-400 max-w-2xl mt-1 leading-relaxed">
+        <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mt-0.5 leading-relaxed">
           {currentStep?.description}
         </p>
       </div>
@@ -561,51 +561,83 @@ function AestheticFinderContent({
         {/* Steps 1-4: INTERACTIVE QUESTIONNAIRE */}
         {!isResultStep && (
           <div
-            className={`grid gap-5 ${
+            className={`grid gap-4 sm:gap-5 ${
               currentStep?.key === "color"
                 ? "grid-cols-2 sm:grid-cols-4 md:grid-cols-7"
-                : "grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
+                : currentStep?.options?.length === 5
+                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
             }`}
           >
             {currentStep?.options.map((opt) => {
               const currentVal = answers[currentStep.key] || "";
               const isSelected = currentVal === opt.value;
+              const isColor = currentStep?.key === "color";
 
               return (
                 <div
                   key={opt.id}
                   onClick={() => handleSelectOption(opt.value)}
-                  className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 shadow-xl ${
+                  className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 shadow-2xs ${
                     isSelected
-                      ? "border-gold-400 ring-2 ring-gold-500/50 scale-[1.02] shadow-[0_0_25px_rgba(218,165,32,0.25)]"
-                      : "border-neutral-800 bg-obsidian-900 hover:border-gold-500/50 hover:scale-[1.02] hover:shadow-[0_10px_25px_rgba(218,165,32,0.15)]"
+                      ? "border-stone-900 ring-2 ring-stone-900/30 scale-[1.02] shadow-md"
+                      : "border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-sm"
                   }`}
                 >
                   {opt.imageUrl ? (
                     <img
                       src={opt.imageUrl}
                       alt={opt.label}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   ) : opt.colorHex ? (
                     <div
                       className="w-full h-full transition-transform duration-700 group-hover:scale-105"
                       style={{ backgroundColor: opt.colorHex }}
                     />
-                  ) : null}
+                  ) : (
+                    <div
+                      className="w-full h-full transition-transform duration-700 group-hover:scale-105"
+                      style={
+                        opt.value === "multicolor"
+                          ? { background: "linear-gradient(135deg, #e57373, #ba68c8, #4fc3f7, #81c784, #fff176)" }
+                          : opt.value === "custom"
+                          ? { background: "linear-gradient(135deg, #ffffff 0%, #dcdcdc 50%, #9e9e9e 100%)" }
+                          : { background: "linear-gradient(135deg, #f5f5f5 0%, #cfd8dc 100%)" }
+                      }
+                    />
+                  )}
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950 via-obsidian-950/20 to-transparent opacity-90 group-hover:opacity-80 transition-opacity" />
+                  {/* For image options: Subtle dark gradient so white text pops */}
+                  {!isColor && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent opacity-90 group-hover:opacity-80 transition-opacity" />
+                  )}
 
-                  <div className="absolute inset-x-0 bottom-0 p-4 z-10 flex items-center justify-between">
-                    <span className="font-serif font-medium text-sm sm:text-base text-white group-hover:text-gold-300 transition-colors">
-                      {opt.label}
-                    </span>
-                    {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-gold-500 flex items-center justify-center text-obsidian-950 shadow">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </div>
+                  {/* For image options: bottom label with checkmark */}
+                  {!isColor ? (
+                    <div className="absolute inset-x-0 bottom-0 p-3.5 z-10 flex items-center justify-between gap-1.5">
+                      <span className="font-serif font-medium text-xs sm:text-sm text-white drop-shadow-sm leading-snug">
+                        {opt.label}
+                      </span>
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-white text-stone-900 flex items-center justify-center shadow-md shrink-0">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* For color swatches: crisp white badge at bottom for 100% legibility */
+                    <div className="absolute inset-x-1.5 bottom-1.5 py-1.5 px-2 rounded-xl bg-white/95 backdrop-blur-sm border border-stone-200/90 shadow-2xs flex items-center justify-between gap-1 z-10">
+                      <span className="text-[10px] font-sans font-semibold tracking-wide uppercase text-stone-800 truncate">
+                        {opt.label}
+                      </span>
+                      {isSelected && (
+                        <div className="w-4 h-4 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
