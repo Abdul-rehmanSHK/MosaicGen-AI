@@ -51,13 +51,13 @@ export function InspirationGallery({ products, onSelectPrompt, onSelectDesign }:
   return (
     <div className="w-full mt-8">
       <div className="text-center mb-10 flex flex-col items-center gap-2.5">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-300 text-xs font-semibold uppercase tracking-widest shadow-lg shadow-gold-500/5">
-          <Sparkles className="w-3.5 h-3.5" /> Handcrafted Masterpieces
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-stone-200/70 border border-stone-300 text-stone-700 text-xs font-semibold uppercase tracking-widest shadow-2xs">
+          <Sparkles className="w-3.5 h-3.5 text-stone-600" /> Handcrafted Masterpieces
         </div>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-light tracking-tight text-white drop-shadow-md">
-          The <span className="italic text-gold-400 font-normal">Zakiah Mosaics</span> Portfolio
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif tracking-tight text-stone-900">
+          The <span className="italic font-normal">Zakiah Mosaics</span> Portfolio
         </h2>
-        <p className="text-xs sm:text-sm text-neutral-400 max-w-xl text-center">
+        <p className="text-xs sm:text-sm text-stone-500 max-w-xl text-center">
           A curated portfolio of bespoke architectural mosaic installations handcrafted in authentic Italian marble, Venetian smalti, and 24k gold leaf.
         </p>
       </div>
@@ -75,10 +75,10 @@ export function InspirationGallery({ products, onSelectPrompt, onSelectDesign }:
               }
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="group relative rounded-2xl overflow-hidden bg-obsidian-900/90 border border-neutral-800 break-inside-avoid shadow-lg transition-all duration-300 hover:border-gold-500/50 hover:shadow-2xl hover:shadow-gold-500/10 cursor-pointer flex flex-col mb-6"
+            className="group relative rounded-2xl overflow-hidden bg-white border border-stone-200/90 break-inside-avoid shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] hover:border-stone-400 transition-all duration-300 cursor-pointer flex flex-col mb-6"
           >
             {/* Image Container with zoom and badges */}
-            <div className="relative w-full aspect-auto overflow-hidden bg-obsidian-950">
+            <div className="relative w-full aspect-auto overflow-hidden bg-stone-100">
               <img
                 src={item.image}
                 alt={item.title}
@@ -86,27 +86,27 @@ export function InspirationGallery({ products, onSelectPrompt, onSelectDesign }:
                 loading="lazy"
               />
               {item.pricePerSqFt ? (
-                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-obsidian-950/80 backdrop-blur-md border border-gold-500/30 text-gold-300 font-serif font-bold text-[11px] shadow-md">
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-stone-900 font-serif font-bold text-[11px] shadow-sm">
                   ${item.pricePerSqFt}/sq.ft
                 </div>
               ) : null}
             </div>
 
             {/* Product Card Details */}
-            <div className="p-4 sm:p-5 flex flex-col gap-2.5 flex-1 justify-between bg-obsidian-900/95 border-t border-neutral-800/80">
+            <div className="p-4 sm:p-5 flex flex-col gap-2.5 flex-1 justify-between bg-white border-t border-stone-100">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-gold-400 font-semibold">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
                     {item.category || "Bespoke Mosaic"}
                   </span>
                 </div>
 
-                <h3 className="text-base font-serif font-bold text-white group-hover:text-gold-300 transition-colors leading-snug">
+                <h3 className="text-base font-serif font-semibold text-stone-900 group-hover:text-stone-700 transition-colors leading-snug">
                   {item.title}
                 </h3>
 
                 {item.desc && (
-                  <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed font-light">
+                  <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed font-light">
                     {item.desc}
                   </p>
                 )}
@@ -115,9 +115,9 @@ export function InspirationGallery({ products, onSelectPrompt, onSelectDesign }:
               <div className="pt-2">
                 <button
                   type="button"
-                  className="w-full py-2.5 px-4 rounded-xl bg-obsidian-800 group-hover:bg-gold-500 text-neutral-200 group-hover:text-obsidian-950 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all border border-neutral-700/70 group-hover:border-gold-500 shadow-md group-hover:shadow-gold-500/20 active:scale-[0.98]"
+                  className="w-full py-2.5 px-4 rounded-xl bg-stone-100 group-hover:bg-stone-900 text-stone-800 group-hover:text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all border border-stone-200 group-hover:border-stone-900 shadow-2xs active:scale-[0.98] cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-gold-400 group-hover:text-obsidian-950 transition-colors" />
+                  <Sparkles className="w-3.5 h-3.5 text-stone-500 group-hover:text-white transition-colors" />
                   Try this design
                 </button>
               </div>

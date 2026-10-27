@@ -369,6 +369,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     }
   }, [searchParams]);
 
+  // Ensure page always renders cleanly scrolled to top on initial mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   // Sync verified email from localStorage & active session on initial load & updates
   useEffect(() => {
     const syncEmail = () => {
@@ -713,30 +720,53 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g. Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae..."
                   className="w-full p-4 rounded-xl bg-stone-50/70 border border-stone-200 text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-700 transition-all resize-none leading-relaxed font-light"
-                  autoFocus
                 />
               </div>
 
-              {/* Surface Placement Selector */}
-              <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
+              {/* Surface Placement & Generate Button Row */}
+              <div className="pt-2 border-t border-stone-100 flex flex-col gap-2.5">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
                   Architectural Surface Placement
                 </span>
-                <div className="flex flex-wrap gap-2">
-                  {PLACEMENTS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setPlacement(item.id)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer font-medium ${
-                        placement === item.id
-                          ? "bg-stone-900 text-white font-semibold shadow-xs"
-                          : "bg-stone-100/80 hover:bg-stone-200/80 text-stone-600 border border-transparent"
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {PLACEMENTS.map((item) => {
+                      const isSelected = placement === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setPlacement(item.id)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer font-medium ${
+                            isSelected
+                              ? "bg-white text-stone-900 border border-stone-900 shadow-2xs font-semibold"
+                              : "bg-stone-100/80 hover:bg-stone-200/80 text-stone-600 border border-transparent hover:border-stone-300"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateClick}
+                    disabled={isGenerating}
+                    className="py-2.5 px-6 rounded-full font-serif font-medium text-xs sm:text-sm bg-stone-900 hover:bg-stone-800 !text-white transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0 ml-auto"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin !text-white" />
+                        <span className="!text-white">Rendering Concept...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 !text-white" />
+                        <span className="!text-white">Render Bespoke Mosaic</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -745,27 +775,6 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   <span>{error}</span>
                 </div>
               )}
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={handleGenerateClick}
-                  disabled={isGenerating}
-                  className="w-full sm:w-auto py-3 px-7 rounded-full font-serif font-medium text-xs sm:text-sm bg-stone-900 hover:bg-stone-800 text-white transition-all shadow-md flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      Rendering Mosaic Concept...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 text-white" />
-                      Render Bespoke Mosaic Concept
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
 
             {/* Quick Inspiration Pills Strip */}
@@ -882,7 +891,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Iridescent sea-glass mosaic with a soft flowing wave motif"
-                className="w-full py-2.5 px-1 sm:px-2 text-sm sm:text-base text-stone-800 placeholder-stone-400 bg-transparent border-0 border-b border-stone-200 focus:border-stone-700 focus:outline-none transition-colors font-light"
+                className="w-full py-2.5 px-1 sm:px-2 text-sm sm:text-base text-stone-800 placeholder-stone-400 bg-transparent border-0 focus:outline-none transition-colors font-light"
               />
             </div>
 
@@ -934,12 +943,6 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                 {error}
               </div>
             )}
-          </div>
-
-          {/* Carousel dots indicator below banner (as seen in Screenshot 3) */}
-          <div className="flex items-center justify-center gap-1.5 py-2">
-            <span className="w-6 h-1 rounded-full bg-stone-400"></span>
-            <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
           </div>
         </div>
       )}

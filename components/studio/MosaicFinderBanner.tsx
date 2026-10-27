@@ -7,12 +7,12 @@ import { ArrowUpRight } from "lucide-react";
 
 export function MosaicFinderBanner() {
   return (
-    <div className="w-full max-w-4xl mx-auto my-12 px-2">
-      {/* Editorial Decorative Slider Indicator (matching Screenshot 3) */}
+    <div className="w-full max-w-4xl mx-auto mt-6 mb-12 px-2">
+      {/* Editorial Decorative Slider Indicator (matching MEC AI Studio) */}
       <div className="flex items-center justify-center gap-3 mb-10 opacity-60">
-        <div className="h-[1px] w-20 bg-stone-300" />
-        <span className="w-1.5 h-1.5 rounded-full bg-stone-800 inline-block" />
-        <div className="h-[1px] w-20 bg-stone-300" />
+        <div className="h-[1px] w-24 bg-gradient-to-r from-transparent to-stone-300" />
+        <span className="w-1.5 h-1.5 rounded-full bg-stone-700 inline-block" />
+        <div className="h-[1px] w-24 bg-gradient-to-l from-transparent to-stone-300" />
       </div>
 
       {/* Banner Card Container */}

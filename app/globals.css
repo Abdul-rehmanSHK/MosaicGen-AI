@@ -19,49 +19,27 @@ body {
 
 /* Light Theme Foundations & Color Mappings for #f4f3f2 */
 .bg-obsidian-950 {
-  background-color: #f4f3f2 !important;
-  color: #1c1917 !important;
+  background-color: #f4f3f2;
 }
 
 .bg-obsidian-900 {
-  background-color: #ffffff !important;
-  color: #1c1917 !important;
-  border-color: #e7e5e4 !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04) !important;
+  background-color: #ffffff;
+  border-color: #e7e5e4;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
 }
 
 .bg-obsidian-800 {
-  background-color: #edebe8 !important;
-  color: #1c1917 !important;
-  border-color: #e2ded9 !important;
+  background-color: #edebe8;
+  border-color: #e2ded9;
 }
 
 .bg-obsidian-700 {
-  background-color: #e5e2dc !important;
-  color: #1c1917 !important;
+  background-color: #e5e2dc;
 }
 
-/* Text adjustments for light theme */
+/* Ensure white text is genuinely white on dark backgrounds/buttons */
 .text-white {
-  color: #1c1917 !important;
-}
-
-.text-neutral-200,
-.text-neutral-300 {
-  color: #44403c !important;
-}
-
-.text-neutral-400,
-.text-neutral-500 {
-  color: #78716c !important;
-}
-
-.border-neutral-800 {
-  border-color: #e7e5e4 !important;
-}
-
-.border-neutral-700 {
-  border-color: #d6d3d1 !important;
+  color: #ffffff !important;
 }
 
 /* Gold Text Gradient Utility */
@@ -76,8 +54,9 @@ body {
   background: radial-gradient(ellipse at top, rgba(184, 146, 40, 0.08), rgba(244, 243, 242, 0.98)) !important;
 }
 
+/* Luxury Editorial Serif Font matching MEC AI Studio */
 h1, h2, h3, h4, .font-serif {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
 }
 
 /* Clean White Card with Subtle Warm Border */
