@@ -24,10 +24,10 @@ export default async function StudioPage({
   const initialProductId = searchParams.product;
 
   return (
-    <main className="min-h-screen bg-obsidian-950 flex flex-col justify-between selection:bg-gold-500 selection:text-obsidian-950">
+    <main className="min-h-screen bg-[#f4f3f2] flex flex-col justify-between selection:bg-stone-300 selection:text-stone-900">
       <Navbar />
 
-      <div className="py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-6 sm:py-10 px-4 sm:px-6 lg:px-8">
         <DesignStudio 
           initialProducts={products} 
           startFromScratch={false} 

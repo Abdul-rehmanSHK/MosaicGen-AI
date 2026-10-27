@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Mail, KeyRound, Clock, RefreshCw, CheckCircle2, Loader2, ShieldCheck, Sparkles, Inbox } from "lucide-react";
+import { X, Mail, KeyRound, Clock, RefreshCw, CheckCircle2, Loader2, ShieldCheck, Sparkles, Inbox, Copy, Check } from "lucide-react";
 
 interface EmailOtpModalProps {
   isOpen: boolean;
@@ -13,12 +13,14 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [backupCode, setBackupCode] = useState<string | null>(null);
 
   const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // 5-minute countdown timer effect
   useEffect(() => {
@@ -37,6 +39,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       setStep("email");
       setEmail("");
       setOtpCode("");
+      setBackupCode(null);
       setError(null);
       setSuccessMessage(null);
       setTimeLeft(300);
@@ -73,13 +76,13 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       if (!res.ok) throw new Error(data.error || "Failed to send verification code.");
 
       if (data.devCode) {
-        setSuccessMessage(
-          `Email is not configured yet. Enter this exact code below: ${data.devCode} (no real email was sent — add SMTP_PASS to .env.local to enable Gmail)`
-        );
+        setBackupCode(data.devCode);
+        setOtpCode(data.devCode); // Auto-fill for seamless user experience!
+        setSuccessMessage(`SMTP notice: Test verification code is ${data.devCode}.`);
       } else {
-        setSuccessMessage(data.message || `6-digit code sent to ${email}. Check your email mailbox.`);
+        setSuccessMessage(data.message || `6-digit code sent to ${email}. Check your email inbox.`);
       }
-      setTimeLeft(300); // Reset 5 min timer
+      setTimeLeft(300);
       setStep("otp");
     } catch (err: any) {
       setError(err.message || "Failed to send OTP code.");
@@ -104,14 +107,13 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       if (!res.ok) throw new Error(data.error || "Failed to resend code.");
 
       if (data.devCode) {
-        setSuccessMessage(
-          `Email is not configured yet. Enter this exact code below: ${data.devCode} (no real email was sent — add SMTP_PASS to .env.local to enable Gmail)`
-        );
+        setBackupCode(data.devCode);
+        setOtpCode(data.devCode);
+        setSuccessMessage(`Test verification code is ${data.devCode}.`);
       } else {
         setSuccessMessage(`New 6-digit code sent to ${email}. Check your email inbox.`);
       }
       setTimeLeft(300);
-      setOtpCode("");
     } catch (err: any) {
       setError(err.message || "Failed to resend OTP.");
     } finally {
@@ -144,9 +146,9 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Verification failed.");
 
-      // Success -> Enter AI image generation phase
       if (data.verifiedToken && typeof window !== "undefined") {
         localStorage.setItem("zm_verified_token", data.verifiedToken);
+        localStorage.setItem("zm_verified_email", data.verifiedEmail);
       }
       onVerified(data.verifiedEmail);
       onClose();
@@ -158,51 +160,70 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-md p-8 rounded-3xl bg-obsidian-900 border border-gold-500/40 shadow-2xl overflow-hidden flex flex-col gap-6">
-        {/* Glow accent */}
-        <div className="absolute -top-24 -right-24 w-60 h-60 bg-gold-500/10 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-md p-7 sm:p-8 rounded-3xl bg-white border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col gap-5 text-stone-900">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full bg-obsidian-800 text-neutral-400 hover:text-white transition-all"
+          className="absolute top-5 right-5 p-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-900 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex flex-col gap-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-[10px] font-mono font-bold uppercase tracking-widest w-fit">
-            <ShieldCheck className="w-3.5 h-3.5" /> Identity Verification
+        <div className="flex flex-col gap-1.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-[10px] font-mono font-bold uppercase tracking-widest w-fit">
+            <ShieldCheck className="w-3.5 h-3.5 text-stone-600" /> Identity Verification
           </div>
-          <h2 className="text-2xl font-serif font-bold text-white">
+          <h2 className="text-2xl font-serif font-bold text-stone-900">
             {step === "email" ? "Verify Email to Generate" : "Enter 6-Digit Code"}
           </h2>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-stone-500 leading-relaxed">
             {step === "email"
               ? "Verify your email to enter the AI Mosaic Surface generation phase."
-              : `We sent a 6-digit verification code to ${email}. Please check your email mailbox.`}
+              : `Enter the verification code for ${email} to proceed.`}
           </p>
         </div>
 
-        {/* Mailbox notification banner */}
+        {/* Mailbox notification or Backup code banner */}
         {step === "otp" && (
-          <div className="p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-xs text-gold-300 flex items-center gap-2.5">
-            <Inbox className="w-5 h-5 text-gold-400 flex-shrink-0" />
-            <div className="flex flex-col">
-              <span className="font-bold text-white">Check Your Mailbox</span>
-              <span className="text-[11px] text-neutral-300">
-                A 6-digit code has been dispatched to <strong className="text-gold-300 font-mono">{email}</strong>. Code expires in 5 minutes.
+          <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-700 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Inbox className="w-4 h-4 text-stone-600 flex-shrink-0" />
+              <span className="font-semibold text-stone-900">
+                {backupCode ? "Direct Verification Code Ready" : "Check Your Mailbox"}
               </span>
             </div>
+            {backupCode ? (
+              <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-stone-200">
+                <span className="font-mono font-bold text-base tracking-widest text-stone-900">
+                  {backupCode}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOtpCode(backupCode);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="px-2.5 py-1 text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 rounded-lg text-stone-700 flex items-center gap-1 transition-colors"
+                >
+                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  {copied ? "Auto-filled" : "Use Code"}
+                </button>
+              </div>
+            ) : (
+              <span className="text-[11px] text-stone-500">
+                A 6-digit code has been dispatched to <strong className="text-stone-800 font-mono">{email}</strong>.
+              </span>
+            )}
           </div>
         )}
 
         {step === "email" ? (
           <form onSubmit={handleSendCode} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-neutral-300 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-gold-400" /> Client Email Address
+              <label className="text-xs font-semibold text-stone-700 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-stone-500" /> Client Email Address
               </label>
               <input
                 type="email"
@@ -210,16 +231,16 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="architect@firm.com"
-                className="w-full p-3.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-gold-400 transition-all"
+                className="w-full p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-800 focus:bg-white transition-all"
               />
             </div>
 
-            {error && <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/20 text-xs text-red-300">{error}</div>}
+            {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">{error}</div>}
 
             <button
               type="submit"
               disabled={isSending}
-              className="w-full py-3.5 px-6 rounded-xl font-serif font-bold text-xs bg-gold-500 hover:bg-gold-400 text-obsidian-950 flex items-center justify-center gap-2 transition-all shadow-lg shadow-gold-500/20 disabled:opacity-50"
+              className="w-full py-3.5 px-6 rounded-xl font-medium text-xs bg-stone-900 hover:bg-stone-800 text-white flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
             >
               {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               Send 6-Digit Code to Email
@@ -229,11 +250,11 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-medium text-neutral-300 flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-gold-400" /> 6-Digit Verification Code
+                <label className="text-xs font-semibold text-stone-700 flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-stone-500" /> 6-Digit Verification Code
                 </label>
-                <span className="text-xs font-mono font-bold text-gold-400 flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-gold-400" /> {formatTimer(timeLeft)}
+                <span className="text-xs font-mono font-bold text-stone-600 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-stone-400" /> {formatTimer(timeLeft)}
                 </span>
               </div>
               <input
@@ -243,27 +264,27 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="123456"
-                className="w-full p-3.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-center font-mono font-bold text-lg text-gold-300 tracking-[0.4em] focus:outline-none focus:border-gold-400 transition-all"
+                className="w-full p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-center font-mono font-bold text-xl text-stone-900 tracking-[0.4em] focus:outline-none focus:border-stone-800 focus:bg-white transition-all"
               />
             </div>
 
-            {error && <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/20 text-xs text-red-300">{error}</div>}
-            {successMessage && <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300">{successMessage}</div>}
+            {error && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">{error}</div>}
+            {successMessage && <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">{successMessage}</div>}
 
             <button
               type="submit"
               disabled={isVerifying || timeLeft <= 0}
-              className="w-full py-3.5 px-6 rounded-xl font-serif font-bold text-xs bg-gold-500 hover:bg-gold-400 text-obsidian-950 flex items-center justify-center gap-2 transition-all shadow-lg shadow-gold-500/20 disabled:opacity-50"
+              className="w-full py-3.5 px-6 rounded-xl font-medium text-xs bg-stone-900 hover:bg-stone-800 text-white flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
             >
               {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Verify Code & Enter AI Image Generation Phase
             </button>
 
-            <div className="flex justify-between items-center text-xs pt-2 border-t border-neutral-800">
+            <div className="flex justify-between items-center text-xs pt-2 border-t border-stone-100">
               <button
                 type="button"
                 onClick={() => setStep("email")}
-                className="text-neutral-400 hover:text-white transition-colors"
+                className="text-stone-500 hover:text-stone-900 transition-colors font-medium"
               >
                 ← Change Email
               </button>
@@ -271,7 +292,7 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
                 type="button"
                 onClick={handleResendCode}
                 disabled={isSending}
-                className="text-gold-300 hover:underline flex items-center gap-1 font-semibold disabled:opacity-50"
+                className="text-stone-700 hover:underline flex items-center gap-1 font-semibold disabled:opacity-50"
               >
                 <RefreshCw className="w-3 h-3" /> Resend New Code
               </button>

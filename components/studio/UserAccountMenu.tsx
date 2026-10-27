@@ -65,7 +65,7 @@ export function UserAccountMenu({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-obsidian-800 hover:bg-obsidian-700 border border-gold-500/40 text-gold-300 font-serif font-bold text-xs sm:text-sm flex items-center justify-center transition-all shadow-md hover:border-gold-400 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 font-serif font-bold text-xs sm:text-sm flex items-center justify-center transition-all shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-stone-400"
         title={`Signed in as ${email}`}
       >
         {initials}
@@ -73,13 +73,13 @@ export function UserAccountMenu({
 
       {/* Popover Dropdown Card */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-3xl bg-obsidian-900 border border-gold-500/30 shadow-2xl shadow-black/80 backdrop-blur-2xl p-5 z-50 flex flex-col gap-4 animate-fadeIn">
+        <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-3xl bg-white border border-stone-200 shadow-2xl p-5 z-50 flex flex-col gap-4 animate-fadeIn text-stone-900">
           {/* Top Section: Signed In As */}
-          <div className="flex flex-col gap-0.5 border-b border-neutral-800 pb-3">
-            <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase font-bold">
+          <div className="flex flex-col gap-0.5 border-b border-stone-100 pb-3">
+            <span className="text-[10px] font-mono tracking-widest text-stone-400 uppercase font-bold">
               SIGNED IN AS
             </span>
-            <span className="text-xs sm:text-sm font-semibold text-white truncate">
+            <span className="text-xs sm:text-sm font-semibold text-stone-900 truncate">
               {email}
             </span>
           </div>
@@ -87,29 +87,29 @@ export function UserAccountMenu({
           {/* Quota Progress: Free Previews (e.g. 3 / 5) */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-neutral-300">
+              <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-stone-500">
                 FREE PREVIEWS
               </span>
-              <span className="text-xs font-mono font-bold text-gold-300">
+              <span className="text-xs font-mono font-bold text-stone-900">
                 {usedCount} / {maxLimit}
               </span>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full h-1.5 rounded-full bg-obsidian-950 border border-neutral-800 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-stone-100 border border-stone-200 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-gold-500 to-amber-400 rounded-full transition-all duration-300"
+                className="h-full bg-stone-900 rounded-full transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
 
-            <span className="text-[11px] text-neutral-400">
+            <span className="text-[11px] text-stone-500">
               {remaining > 0 ? `${remaining} previews remaining.` : "0 previews remaining (Limit reached)."}
             </span>
           </div>
 
           {/* Action Links */}
-          <div className="flex flex-col gap-1.5 pt-2 border-t border-neutral-800">
+          <div className="flex flex-col gap-1.5 pt-2 border-t border-stone-100">
             {/* My Generations */}
             <button
               type="button"
@@ -117,9 +117,9 @@ export function UserAccountMenu({
                 setIsOpen(false);
                 setIsHistoryModalOpen(true);
               }}
-              className="w-full py-2.5 px-3 rounded-xl bg-obsidian-950/60 hover:bg-obsidian-800 text-neutral-200 hover:text-gold-300 text-xs font-semibold flex items-center gap-2.5 transition-all border border-neutral-800/80 cursor-pointer"
+              className="w-full py-2.5 px-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-800 text-xs font-semibold flex items-center gap-2.5 transition-all border border-stone-200 cursor-pointer"
             >
-              <Layers className="w-4 h-4 text-gold-400" />
+              <Layers className="w-4 h-4 text-stone-600" />
               <span>My generations</span>
             </button>
 
@@ -130,9 +130,9 @@ export function UserAccountMenu({
                 setIsOpen(false);
                 onUseDifferentEmail();
               }}
-              className="w-full py-2.5 px-3 rounded-xl bg-obsidian-950/60 hover:bg-obsidian-800 text-neutral-400 hover:text-white text-[11px] font-mono uppercase tracking-wider flex items-center gap-2.5 transition-all border border-neutral-800/80 cursor-pointer"
+              className="w-full py-2.5 px-3 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-500 hover:text-stone-900 text-[11px] font-mono uppercase tracking-wider flex items-center gap-2.5 transition-all border border-stone-200 cursor-pointer"
             >
-              <Mail className="w-3.5 h-3.5 text-neutral-400" />
+              <Mail className="w-3.5 h-3.5 text-stone-500" />
               <span>USE A DIFFERENT EMAIL</span>
             </button>
           </div>

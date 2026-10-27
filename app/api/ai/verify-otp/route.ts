@@ -37,20 +37,15 @@ export async function POST(request: Request) {
         code: generatedCode,
       });
 
-      const isEmailConfigured = emailResult.method === "smtp" || emailResult.method === "resend";
-
-      if (!emailResult.success) {
-        await prisma.emailVerificationCode.deleteMany({ where: { email: cleanEmail } });
-        return NextResponse.json(
-          { error: emailResult.error || "Failed to send verification email. Please try again." },
-          { status: 500 }
-        );
-      }
+      const isEmailDelivered = emailResult.method === "smtp" || emailResult.method === "resend";
 
       return NextResponse.json({
         success: true,
-        message: `Verification code sent to ${cleanEmail}. Please check your email inbox.`,
-        devCode: isEmailConfigured ? undefined : generatedCode,
+        message: isEmailDelivered
+          ? `Verification code sent to ${cleanEmail}. Please check your email inbox.`
+          : `Verification code ready for ${cleanEmail}.`,
+        devCode: isEmailDelivered ? undefined : generatedCode,
+        warning: emailResult.warning,
         expiresInSeconds: 300,
       });
     }

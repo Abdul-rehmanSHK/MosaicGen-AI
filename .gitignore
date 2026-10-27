@@ -41,3 +41,9 @@ yarn-error.log*
 .vercel
 .idea
 .vscode
+
+# Scratch / Local root documents and assets
+/*.docx
+/download.png
+/Mask-group-residential.webp
+/Mosaic-Wall-Art-Tropical-theme-1024x737.jpeg

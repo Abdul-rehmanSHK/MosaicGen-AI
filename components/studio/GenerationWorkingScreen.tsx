@@ -224,14 +224,16 @@ export function GenerationWorkingScreen({
           {result ? (
             /* COMPLETED STATE: Generated Image + 3-Button Action Bar (Matching Reference) */
             <>
-              <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-gold-500/40 shadow-2xl bg-obsidian-950 group">
-                <Image
+              <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-stone-200 shadow-2xl bg-stone-900 group">
+                <img
                   src={result.resultImageUrl}
                   alt="Generated Bespoke Mosaic Surface"
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.src = "/mosaic-finder-pattern.png";
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950/70 via-transparent to-black/30 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-black/20 pointer-events-none" />
 
                 {/* Top Badge */}
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">

@@ -13,7 +13,7 @@ import { MosaicFinderBanner } from "./MosaicFinderBanner";
 import { GenerationWorkingScreen } from "./GenerationWorkingScreen";
 import { MyGenerationsModal } from "./MyGenerationsModal";
 import { LimitReachedModal } from "./LimitReachedModal";
-import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check, Download } from "lucide-react";
+import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, ArrowUp, Upload, Shield, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check, Download, Maximize2, X } from "lucide-react";
 import Image from "next/image";
 
 const SCRATCH_INSPIRATIONS = [
@@ -82,12 +82,12 @@ export function getInspirationsForPlacement(_placementName?: string): PlacementI
 }
 
 const PLACEMENTS = [
-  { id: "Auto-detect", label: "Auto-detect Space", hint: "AI identifies best surface" },
-  { id: "Floor Medallion", label: "Floor Medallion", hint: "Inlays into floor plane" },
+  { id: "Auto-detect", label: "Auto-detect", hint: "AI identifies best surface" },
   { id: "Backsplash", label: "Backsplash", hint: "Inlays onto counter/wall" },
-  { id: "Accent Wall", label: "Accent Wall", hint: "Full vertical mural" },
-  { id: "Pool", label: "Pool & Wellness", hint: "Waterline & pool basin" },
-  { id: "Entryway", label: "Entryway & Rotunda", hint: "Foyer entrance threshold" },
+  { id: "Accent Wall", label: "Accent wall", hint: "Full vertical mural" },
+  { id: "Floor Medallion", label: "Floor medallion", hint: "Inlays into floor plane" },
+  { id: "Pool", label: "Pool", hint: "Waterline & pool basin" },
+  { id: "Entryway", label: "Entryway", hint: "Foyer entrance threshold" },
 ];
 
 const FINISHES = ["Polished High-Gloss", "Satin Honed", "Antiqued Tumbled", "Textured Matte"];
@@ -95,16 +95,18 @@ const GROUT_COLORS = ["Champagne Gold", "Pure Thassos White", "Charcoal Slate", 
 
 export function DesignStudio({ initialProducts = [], startFromScratch = false, initialSelectedProductId, onOpenInquiryModal }: DesignStudioProps) {
   const canvasRef = useRef<CanvasDrawRef>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const isScratch = startFromScratch || searchParams?.get("mode") === "scratch";
 
-  const [placement, setPlacement] = useState<string>("Floor Medallion");
+  const [placement, setPlacement] = useState<string>("Auto-detect");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedDesignItem, setSelectedDesignItem] = useState<GalleryItem | null>(null);
   const [prompt, setPrompt] = useState<string>(
-    "Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae"
+    "Iridescent sea-glass mosaic with a soft flowing wave motif"
   );
+  const [isDragging, setIsDragging] = useState(false);
   const [finish, setFinish] = useState<string>("Polished High-Gloss");
   const [groutColor, setGroutColor] = useState<string>("Champagne Gold");
 
@@ -120,6 +122,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
   // Modal State for Result Action Buttons
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isSpecialistModalOpen, setIsSpecialistModalOpen] = useState(false);
+  const [isResultLightboxOpen, setIsResultLightboxOpen] = useState(false);
 
   // Room Photo & Inpainting Mask Modal State
   const [isMaskModalOpen, setIsMaskModalOpen] = useState(false);
@@ -272,9 +275,12 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
     }
   };
 
-  const handleRoomPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processUploadedFile = (file: File) => {
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image file size exceeds the 10 MB limit.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
@@ -284,6 +290,11 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       triggerSurfaceDetection(placement, dataUrl);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleRoomPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processUploadedFile(file);
   };
 
   const handleClearRoomPhoto = () => {
@@ -635,28 +646,28 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
         <>
           {isScratch ? (
         /* ==================== IMAGINE FROM SCRATCH MODE ==================== */
-        <div className="w-full flex flex-col gap-8">
+        <div className="w-full flex flex-col gap-6">
           {/* Scratch Studio Header */}
-          <div className="text-center flex flex-col items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-300 text-xs font-semibold uppercase tracking-widest shadow-lg shadow-gold-500/5">
-              <Sparkles className="w-3.5 h-3.5" /> Zakiah Mosaics • Generative Concept Studio
+          <div className="text-center flex flex-col items-center gap-2 pt-2 pb-1">
+            <div className="inline-flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-[0.22em] uppercase">
+              <Sparkles className="w-3.5 h-3.5 text-stone-500" /> IMAGINE FROM SCRATCH
             </div>
-            <h1 className="text-3xl md:text-5xl font-serif font-light tracking-tight text-white drop-shadow-md">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic font-normal tracking-tight text-stone-900">
               Generative Architectural Mosaic Studio
             </h1>
-            <p className="text-sm md:text-base text-neutral-400 max-w-xl">
-              Articulate your architectural vision — our studio synthesizes bespoke, artisan-grade mosaic concepts in authentic Italian marble, Venetian smalti, and 24k gold leaf.
+            <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl">
+              Articulate your architectural vision — synthesize bespoke, artisan-grade mosaic concepts in authentic Italian marble, Venetian smalti, and 24k gold leaf.
             </p>
           </div>
 
-          {/* Unified Luxury Prompt Card (No photo upload / No canvas) */}
-          <div className="w-full rounded-2xl border border-gold-500/30 bg-obsidian-900/90 shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col transition-all">
-            <div className="p-6 sm:p-8 flex flex-col gap-6">
+          {/* Unified Luxury Prompt Card */}
+          <div className="w-full max-w-4xl mx-auto rounded-2xl border border-stone-200/90 bg-white shadow-sm overflow-hidden flex flex-col transition-all">
+            <div className="p-5 sm:p-7 flex flex-col gap-5">
               {/* Active Inspiration Reference Design Badge if chosen */}
               {selectedDesignItem && (
-                <div className="p-3.5 rounded-xl bg-obsidian-950/90 border border-gold-500/40 flex items-center justify-between gap-3 shadow-lg">
+                <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-3 shadow-2xs">
                   <div className="flex items-center gap-3.5">
-                    <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-gold-500/40 shrink-0 bg-obsidian-900">
+                    <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-stone-200 shrink-0 bg-stone-100">
                       <img
                         src={selectedDesignItem.image}
                         alt={selectedDesignItem.title}
@@ -664,18 +675,18 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                       />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-gold-400 font-semibold flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-gold-400" /> Active Inspiration Design Reference
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-stone-500" /> Active Inspiration Design Reference
                       </span>
-                      <span className="text-sm font-serif font-bold text-white line-clamp-1">
+                      <span className="text-sm font-serif font-bold text-stone-900 line-clamp-1">
                         {selectedDesignItem.title}
                       </span>
                       {selectedDesignItem.desc ? (
-                        <p className="text-[11px] text-neutral-400 line-clamp-1 max-w-md font-light">
+                        <p className="text-[11px] text-stone-500 line-clamp-1 max-w-md font-light">
                           {selectedDesignItem.desc}
                         </p>
                       ) : selectedDesignItem.category ? (
-                        <span className="text-[11px] text-neutral-400">
+                        <span className="text-[11px] text-stone-500">
                           {selectedDesignItem.category}
                         </span>
                       ) : null}
@@ -684,31 +695,31 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   <button
                     type="button"
                     onClick={() => setSelectedDesignItem(null)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-mono text-neutral-400 hover:text-red-300 hover:bg-red-950/30 border border-neutral-800 transition-colors"
+                    className="px-3 py-1.5 rounded-full text-xs font-mono text-stone-500 hover:text-red-600 hover:bg-stone-100 border border-stone-200 transition-colors"
                   >
                     Clear Reference
                   </button>
                 </div>
               )}
 
-              <div className="flex flex-col gap-2.5">
-                <label className="text-xs font-medium text-neutral-300 uppercase tracking-wider font-mono flex items-center justify-between">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-stone-700 uppercase tracking-wider font-mono flex items-center justify-between">
                   <span>Artistic Vision & Mosaic Specifications</span>
-                  <span className="text-gold-400/80 uppercase text-[11px] font-mono">Bespoke Generative Synthesis</span>
+                  <span className="text-stone-400 uppercase text-[11px] font-mono">Bespoke Generative Synthesis</span>
                 </label>
                 <textarea
                   rows={4}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g. Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae..."
-                  className="w-full p-4 rounded-xl bg-obsidian-950/80 border border-neutral-800 text-sm sm:text-base text-white placeholder-neutral-500 focus:outline-none focus:border-gold-400 transition-all resize-none leading-relaxed font-light"
+                  className="w-full p-4 rounded-xl bg-stone-50/70 border border-stone-200 text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-700 transition-all resize-none leading-relaxed font-light"
                   autoFocus
                 />
               </div>
 
               {/* Surface Placement Selector */}
-              <div className="pt-2 border-t border-neutral-800/80 flex flex-col gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
+              <div className="pt-2 border-t border-stone-100 flex flex-col gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
                   Architectural Surface Placement
                 </span>
                 <div className="flex flex-wrap gap-2">
@@ -717,10 +728,10 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                       key={item.id}
                       type="button"
                       onClick={() => setPlacement(item.id)}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all border cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer font-medium ${
                         placement === item.id
-                          ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-md shadow-gold-500/20 scale-[1.02]"
-                          : "bg-obsidian-950 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-white"
+                          ? "bg-stone-900 text-white font-semibold shadow-xs"
+                          : "bg-stone-100/80 hover:bg-stone-200/80 text-stone-600 border border-transparent"
                       }`}
                     >
                       {item.label}
@@ -730,7 +741,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               </div>
 
               {error && !error.toLowerCase().includes("limit") && (
-                <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex flex-col gap-2.5">
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col gap-2">
                   <span>{error}</span>
                 </div>
               )}
@@ -740,16 +751,16 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   type="button"
                   onClick={handleGenerateClick}
                   disabled={isGenerating}
-                  className="w-full sm:w-auto py-3.5 px-8 rounded-xl font-serif font-bold text-sm bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 text-obsidian-950 hover:brightness-110 active:scale-[0.99] transition-all shadow-lg shadow-gold-500/25 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto py-3 px-7 rounded-full font-serif font-medium text-xs sm:text-sm bg-stone-900 hover:bg-stone-800 text-white transition-all shadow-md flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isGenerating ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-obsidian-950" />
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
                       Rendering Mosaic Concept...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 text-obsidian-950 fill-obsidian-950" />
+                      <Sparkles className="w-4 h-4 text-white" />
                       Render Bespoke Mosaic Concept
                     </>
                   )}
@@ -758,9 +769,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             </div>
 
             {/* Quick Inspiration Pills Strip */}
-            <div className="bg-obsidian-950 px-6 py-4 border-t border-neutral-800/80 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-gold-400 flex items-center gap-1.5 shrink-0">
-                <Sparkles className="w-3.5 h-3.5" /> Curated Studio Directions:
+            <div className="bg-stone-50/70 px-6 py-4 border-t border-stone-100 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500 flex items-center gap-1.5 shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-stone-500" /> Curated Directions:
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {SCRATCH_INSPIRATIONS.map((insp, i) => (
@@ -768,7 +779,7 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                     key={i}
                     type="button"
                     onClick={() => setPrompt(insp.prompt)}
-                    className="px-3.5 py-1.5 rounded-full text-xs bg-obsidian-900 hover:bg-gold-500/20 text-neutral-300 hover:text-gold-300 border border-neutral-800 hover:border-gold-500/40 transition-all font-medium"
+                    className="px-3 py-1 rounded-full text-xs bg-white hover:bg-stone-100 text-stone-600 hover:text-stone-900 border border-stone-200 transition-all font-medium cursor-pointer"
                   >
                     {insp.label}
                   </button>
@@ -780,428 +791,172 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
       ) : (
         /* ==================== CUSTOMIZE YOUR SPACE MODE ==================== */
         <div className="w-full flex flex-col gap-6">
-          {/* Studio Header Banner */}
-          <div className="text-center flex flex-col items-center gap-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-300 text-xs font-semibold uppercase tracking-widest shadow-lg shadow-gold-500/5">
-              <Sparkles className="w-3.5 h-3.5" /> Zakiah Mosaics • Architectural Surface Studio
+          {/* Studio Header Banner matching Screenshot 3 */}
+          <div className="text-center flex flex-col items-center gap-2 pt-2 pb-1">
+            <div className="inline-flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-[0.22em] uppercase">
+              <Layers className="w-3.5 h-3.5 text-stone-500" /> CUSTOMIZE YOUR SPACE
             </div>
-            <h1 className="text-2xl md:text-4xl font-serif font-bold tracking-tight text-white drop-shadow-md">
-              Architectural Mosaic Space Visualizer
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic font-normal tracking-tight text-stone-900">
+              AI Mosaic Studio
             </h1>
-            <p className="text-xs md:text-sm text-neutral-400 max-w-2xl">
-              Upload architectural photography and define target surface boundaries to render authentic, high-precision luxury mosaics aligned with your space geometry.
+            <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl">
+              Upload a photo of your space — see a bespoke mosaic rendered into it.
             </p>
           </div>
 
-          {/* Upper Section: Compact Room Photo Upload & Inpainting Target Button */}
-          <div className="w-full p-4 sm:p-5 rounded-2xl bg-obsidian-900/90 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base sm:text-lg font-serif font-semibold text-white flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">1</span>
-                Architectural Photography & Surface Masking
-              </h2>
-              <span className="text-xs text-neutral-400">Define precise surface boundaries for architectural integration</span>
-            </div>
-
-            {roomPhotoUrl ? (
-              /* Image is Loaded -> Show Compact Thumbnail Preview + Target Inpainting Mask Button */
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 rounded-xl bg-obsidian-950/80 border border-gold-500/30">
-                <div className="flex items-center gap-3.5">
-                  <div className="relative w-20 h-16 sm:w-24 sm:h-16 rounded-lg overflow-hidden border border-gold-500/40 shrink-0 bg-obsidian-900">
+          {/* Screenshot 3 Unified Studio Banner Card */}
+          <div className="w-full max-w-4xl mx-auto rounded-2xl bg-white border border-stone-200/90 shadow-sm p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 transition-all">
+            {/* Upload Box: Dashed border with thumbnail, title, subtitle, shield note & upload button */}
+            <div className="w-full rounded-xl border border-dashed border-stone-300/90 bg-stone-50/40 hover:bg-stone-50/70 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 shrink-0 shadow-2xs flex items-center justify-center">
+                  {roomPhotoUrl ? (
                     <img
                       src={roomPhotoUrl}
-                      alt="Room Preview"
+                      alt="Room preview"
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-white line-clamp-1">
-                      {roomPhotoName || "Custom Room Space"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
-                        detectedSurface
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                          : hasDrawnMask
-                          ? "bg-gold-500/20 text-gold-300 border border-gold-500/40"
-                          : selectedDesignItem?.image === roomPhotoUrl
-                          ? "bg-gold-500/20 text-gold-300 border border-gold-500/40"
-                          : "bg-neutral-800 text-neutral-400"
-                      }`}>
-                        {detectedSurface
-                          ? `✓ AI Detected: ${detectedSurface.surfaceName}`
-                          : hasDrawnMask
-                          ? "✓ Inpainting Mask Active"
-                          : selectedDesignItem?.image === roomPhotoUrl
-                          ? "✓ Inspiration Space Loaded"
-                          : "Full Space Selected"}
-                      </span>
-                    </div>
-                  </div>
+                  ) : (
+                    <img
+                      src="/Mask-group-residential.webp"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80";
+                      }}
+                      alt="Room space placeholder"
+                      className="w-full h-full object-cover opacity-90"
+                    />
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => triggerSurfaceDetection(placement)}
-                    disabled={isDetectingSurface}
-                    className="py-2.5 px-3 rounded-xl text-xs font-semibold bg-obsidian-800 hover:bg-gold-500/20 text-gold-300 hover:text-gold-200 border border-gold-500/30 transition-all flex items-center gap-1.5"
-                    title="Detect surface on photo with AI Vision"
-                  >
-                    {isDetectingSurface ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Scan className="w-3.5 h-3.5" />}
-                    AI Detect
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsMaskModalOpen(true)}
-                    className="py-2.5 px-4 rounded-xl font-serif font-bold text-xs bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-obsidian-950 flex items-center gap-2 shadow-md shadow-gold-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 fill-obsidian-950" />
-                    Target Inpainting Mask on Photo
-                  </button>
-                  <label className="py-2.5 px-3 rounded-xl text-xs font-semibold bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 hover:text-white border border-neutral-700 cursor-pointer transition-all">
-                    Change
-                    <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleClearRoomPhoto}
-                    className="py-2.5 px-3 rounded-xl text-xs font-semibold bg-obsidian-800 hover:bg-red-950/40 text-neutral-400 hover:text-red-300 border border-neutral-700 transition-all"
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* No Image Loaded -> Show Sleek Upload Field & Mask Trigger */
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-obsidian-950/80 border border-neutral-800 hover:border-gold-500/30 transition-all">
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="py-2 px-4 rounded-xl text-xs font-semibold bg-gold-500/10 text-gold-300 hover:bg-gold-500/20 border border-gold-500/30 cursor-pointer flex items-center gap-2 transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]">
-                    <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-                    Upload Architectural Photo
-                    <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
-                  </label>
-                  <span className="text-xs text-neutral-400">
-                    Upload interior, pool, facade, or rotunda photography for automatic surface detection
+                <div className="flex flex-col text-left">
+                  <h3 className="text-sm sm:text-base font-medium text-stone-900">
+                    Upload a photo of your space
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Drop an image or click to choose · JPEG, PNG, WebP · up to 10 MB
+                  </p>
+                  <span className="text-[11px] text-stone-400 flex items-center gap-1 mt-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-stone-400" />
+                    Used only to render this preview. Not stored.
                   </span>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsMaskModalOpen(true)}
-                  className="py-2 px-4 rounded-xl font-serif font-semibold text-xs bg-obsidian-800 hover:bg-obsidian-700 text-gold-300 border border-gold-500/30 flex items-center justify-center gap-1.5 transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Precision Mask Editor ↗
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Underneath: Architecture and Prompt, both half-width (50% each) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full items-stretch">
-            {/* Architectural Surface Placement */}
-            <div className="p-6 rounded-2xl bg-obsidian-900/80 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col justify-between gap-5">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">2</span>
-                    Architectural Surface Placement
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomInputOpen((prev) => !prev)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 flex items-center gap-1 transition-all"
-                  >
-                    <Plus className="w-3 h-3" /> Custom Surface
-                  </button>
-                </div>
-                <p className="text-xs text-neutral-400">
-                  Select target surface geometry — AI scans perspective planes and aligns tesserae to your space
-                </p>
               </div>
 
-              {/* Dynamic Custom Surface Entry Bar */}
-              {isCustomInputOpen && (
-                <div className="p-3.5 rounded-xl bg-obsidian-950 border border-gold-500/30 flex flex-col gap-2.5">
+              <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                {roomPhotoUrl ? (
                   <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={customInputText}
-                      onChange={(e) => setCustomInputText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddCustomPlacement();
-                        }
-                      }}
-                      placeholder="e.g. Door Back, Kitchen Island, Fireplace..."
-                      className="flex-1 p-2 rounded-lg bg-obsidian-900 border border-neutral-700 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-gold-400"
-                    />
                     <button
                       type="button"
-                      onClick={() => handleAddCustomPlacement()}
-                      disabled={!customInputText.trim()}
-                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-gold-500 hover:bg-gold-400 text-obsidian-950 disabled:opacity-50 transition-all flex items-center gap-1 shrink-0"
+                      onClick={() => setIsMaskModalOpen(true)}
+                      className="px-3 py-1.5 rounded-full border border-stone-200 hover:border-stone-800 bg-white text-xs font-medium text-stone-700 hover:text-stone-900 transition-all flex items-center gap-1 cursor-pointer"
+                      title="Adjust inpainting mask"
                     >
-                      <Scan className="w-3.5 h-3.5" /> Add & Detect
+                      <Scan className="w-3 h-3 text-stone-500" /> Mask Editor ↗
                     </button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] text-neutral-400 font-mono">Quick Suggestions:</span>
-                    {SUGGESTED_CUSTOM_SURFACES.map((sug) => (
-                      <button
-                        key={sug.label}
-                        type="button"
-                        onClick={() => handleAddCustomPlacement(sug.label)}
-                        className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-obsidian-900 text-neutral-300 border border-neutral-800 hover:border-gold-500/40 hover:text-gold-300 transition-all"
-                      >
-                        + {sug.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Surface Option Buttons */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-1">
-                {[...PLACEMENTS, ...customPlacements].map((item) => {
-                  const isSelected = placement === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handlePlacementSelect(item.id)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-medium transition-all duration-200 border text-center flex items-center justify-center truncate cursor-pointer ${
-                        isSelected
-                          ? "bg-gold-500 text-obsidian-950 font-bold border-gold-400 shadow-md shadow-gold-500/20 scale-[1.02]"
-                          : "bg-obsidian-800/80 text-neutral-300 border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
-                      }`}
-                      title={item.label}
-                    >
-                      <span className="truncate">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Selected Placement Indicator */}
-              <div className="p-3 rounded-xl bg-obsidian-950/60 border border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
-                <span>Selected Placement:</span>
-                <span className="text-gold-400 font-semibold font-mono">{placement}</span>
-              </div>
-            </div>
-
-            {/* Mosaic Prompt & Finish Specs */}
-            <div className="p-6 rounded-2xl bg-obsidian-900/80 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col justify-between gap-5">
-              <div className="flex flex-col gap-4">
-                <h2 className="text-lg font-serif font-semibold text-white flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs flex items-center justify-center border border-gold-500/30">3</span>
-                  Design Direction & Artisan Specifications
-                </h2>
-
-                {/* Active Inspiration Reference Design Card */}
-                {selectedDesignItem && (
-                  <div className="p-3.5 rounded-xl bg-obsidian-950/90 border border-gold-500/40 flex items-center justify-between gap-3 shadow-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gold-500/40 shrink-0 bg-obsidian-900">
-                        <img
-                          src={selectedDesignItem.image}
-                          alt={selectedDesignItem.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-gold-400 font-semibold flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-gold-400" /> Active Inspiration Design Reference
-                        </span>
-                        <span className="text-xs font-serif font-bold text-white line-clamp-1">
-                          {selectedDesignItem.title}
-                        </span>
-                        {selectedDesignItem.desc ? (
-                          <p className="text-[10px] text-neutral-400 line-clamp-1 max-w-sm font-light">
-                            {selectedDesignItem.desc}
-                          </p>
-                        ) : selectedDesignItem.category ? (
-                          <span className="text-[10px] text-neutral-400">
-                            {selectedDesignItem.category}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
+                    <label className="cursor-pointer px-3.5 py-1.5 rounded-full border border-stone-200 hover:border-stone-800 bg-white text-xs font-medium text-stone-700 hover:text-stone-900 transition-all shadow-2xs">
+                      Change
+                      <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
+                    </label>
                     <button
                       type="button"
-                      onClick={() => setSelectedDesignItem(null)}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-mono text-neutral-400 hover:text-red-300 hover:bg-red-950/30 border border-neutral-800 transition-colors"
-                      title="Clear reference design"
+                      onClick={handleClearRoomPhoto}
+                      className="px-2.5 py-1.5 rounded-full text-xs text-stone-400 hover:text-red-600 transition-all cursor-pointer"
                     >
                       Clear
                     </button>
                   </div>
+                ) : (
+                  <label className="cursor-pointer px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-stone-300 hover:border-stone-800 bg-white hover:bg-stone-100 text-[11px] sm:text-xs font-semibold text-stone-800 uppercase tracking-wider flex items-center gap-2 shadow-2xs transition-all active:scale-95">
+                    UPLOAD IMAGE
+                    <Upload className="w-3.5 h-3.5 text-stone-600" />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleRoomPhotoUpload} />
+                  </label>
                 )}
+              </div>
+            </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-neutral-300">Artistic Vision & Mosaic Prompt</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const enhanced = `Ultra-luxurious bespoke architectural mosaic artwork for ${placement}. ${prompt.trim().replace(/\.+$/, "")}. Handcrafted by Zakiah Mosaics from authentic Italian marble tesserae and Venetian smalti in ${finish.toLowerCase()} finish with luminous ${groutColor.toLowerCase()} grout lines, scaled in true architectural perspective.`;
-                        setPrompt(enhanced);
-                      }}
-                      className="text-[11px] font-mono text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors group"
-                      title="Enrich prompt with architectural specs"
-                    >
-                      <Sparkles className="w-3 h-3 text-gold-400 group-hover:rotate-12 transition-transform" /> AI Enhance Prompt
-                    </button>
-                  </div>
-                  <textarea
-                    rows={3}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g. Warm earth tones with a Moroccan zellige-inspired pattern in terracotta and indigo..."
-                    className="w-full p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-gold-400 transition-all resize-none"
-                  />
-                </div>
+            {/* Prompt Input Row */}
+            <div className="w-full relative pt-1">
+              <input
+                type="text"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Iridescent sea-glass mosaic with a soft flowing wave motif"
+                className="w-full py-2.5 px-1 sm:px-2 text-sm sm:text-base text-stone-800 placeholder-stone-400 bg-transparent border-0 border-b border-stone-200 focus:border-stone-700 focus:outline-none transition-colors font-light"
+              />
+            </div>
 
-                {/* FIXED ARTISAN DIRECTIONS - Kept constant across all surface selections */}
-                <div className="flex flex-col gap-1.5 pt-0.5">
-                  <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-gold-400" /> Artisan Directions:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {FIXED_ARTISAN_DIRECTIONS.map((item) => (
+            {/* Where Should It Go? Pills & Circular ArrowUp Submit Button */}
+            <div className="flex flex-col gap-2 pt-1">
+              <div className="text-[11px] font-semibold tracking-[0.16em] uppercase text-stone-400">
+                WHERE SHOULD IT GO?
+              </div>
+
+              <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  {PLACEMENTS.map((item) => {
+                    const isSelected = placement === item.id;
+                    return (
                       <button
-                        key={item.label}
+                        key={item.id}
                         type="button"
-                        onClick={() => setPrompt(item.prompt)}
-                        title={item.prompt}
-                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all cursor-pointer ${
-                          prompt === item.prompt
-                            ? "bg-gold-500 text-obsidian-950 border-gold-400 font-bold shadow-sm"
-                            : "bg-obsidian-950 text-neutral-400 border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
+                        onClick={() => handlePlacementSelect(item.id)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer font-medium ${
+                          isSelected
+                            ? "bg-white text-stone-900 border border-stone-800 shadow-2xs font-semibold"
+                            : "bg-stone-100/80 hover:bg-stone-200/80 text-stone-600 border border-transparent hover:border-stone-300"
                         }`}
                       >
                         {item.label}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
 
-                {/* AI Multimodal Vision Detection Status Card (Now positioned in Module 3 with Prompt) */}
-                {roomPhotoUrl ? (
-                  isDetectingSurface ? (
-                    <div className="p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/40 flex items-center justify-between gap-3 animate-pulse">
-                      <div className="flex items-center gap-2.5">
-                        <Loader2 className="w-4 h-4 text-gold-400 animate-spin shrink-0" />
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold text-gold-300">AI Multimodal Vision Scanning...</span>
-                          <span className="text-[10px] text-neutral-400">Locating &ldquo;{placement}&rdquo; architectural plane on your photo</span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono text-gold-400/80">Gemini 3.5</span>
-                    </div>
-                  ) : detectedSurface ? (
-                    <div className="p-3 rounded-xl bg-obsidian-950/90 border border-gold-500/30 flex flex-col gap-2 shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-                          <span className="text-xs font-semibold text-white">
-                            AI Detected: <span className="text-gold-300 font-mono">{detectedSurface.surfaceName}</span>
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
-                            {Math.round((detectedSurface.confidence || 0.95) * 100)}% match
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => triggerSurfaceDetection(placement)}
-                          disabled={isDetectingSurface}
-                          className="text-[10px] font-mono text-neutral-400 hover:text-gold-300 flex items-center gap-1 transition-colors cursor-pointer"
-                          title="Re-scan surface"
-                        >
-                          <RefreshCw className="w-2.5 h-2.5" /> Re-scan
-                        </button>
-                      </div>
-                      <p className="text-[11px] text-neutral-300 line-clamp-2">
-                        {detectedSurface.description}
-                      </p>
-                      <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800 text-[10px] text-neutral-400">
-                        <span className="text-emerald-400 font-mono flex items-center gap-1">
-                          ✓ Gold Mask Auto-Aligned on Surface
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setIsMaskModalOpen(true)}
-                          className="text-gold-400 hover:text-gold-300 font-semibold underline underline-offset-2 flex items-center gap-0.5 transition-colors cursor-pointer"
-                        >
-                          Preview / Adjust Mask ↗
-                        </button>
-                      </div>
-                    </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateClick}
+                  disabled={isGenerating}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-stone-300 hover:bg-stone-900 text-stone-700 hover:text-white flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0 ml-auto cursor-pointer"
+                  title="Generate bespoke mosaic"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <div className="p-2.5 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center justify-between text-xs">
-                      <span className="text-neutral-400 text-[11px] flex items-center gap-1.5">
-                        <Scan className="w-3.5 h-3.5 text-gold-400" /> AI Vision surface detection ready for &ldquo;{placement}&rdquo;
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => triggerSurfaceDetection(placement)}
-                        className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 border border-gold-500/30 transition-all cursor-pointer"
-                      >
-                        Detect Surface
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <div className="p-2.5 rounded-xl bg-obsidian-950/40 border border-neutral-800/60 flex items-center gap-2 text-[11px] text-neutral-400">
-                    <Sparkles className="w-3.5 h-3.5 text-gold-400 shrink-0" />
-                    <span>Upload an architectural photo in Section 1 to enable AI surface detection & auto-masking.</span>
-                  </div>
-                )}
-
-                {error && !error.toLowerCase().includes("limit") && (
-                  <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs flex flex-col gap-2.5">
-                    <span>{error}</span>
-                  </div>
-                )}
+                    <ArrowUp className="w-5 h-5" />
+                  )}
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={handleGenerateClick}
-                disabled={isGenerating}
-                className="w-full py-3.5 px-6 rounded-xl font-serif font-bold text-sm bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 text-obsidian-950 hover:brightness-110 active:scale-[0.99] transition-all shadow-lg shadow-gold-500/25 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-obsidian-950" />
-                    Synthesizing Mosaic Architecture...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-obsidian-950 fill-obsidian-950" />
-                    Render Bespoke Mosaic Surface
-                  </>
-                )}
-              </button>
             </div>
+
+            {error && !error.toLowerCase().includes("limit") && (
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Carousel dots indicator below banner (as seen in Screenshot 3) */}
+          <div className="flex items-center justify-center gap-1.5 py-2">
+            <span className="w-6 h-1 rounded-full bg-stone-400"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
           </div>
         </div>
       )}
 
       {/* AI Generated Result & Material Breakdown Section */}
       {result && (
-        <div id="ai-mosaic-result" className="p-8 rounded-3xl bg-obsidian-900/90 border border-gold-500/40 shadow-2xl backdrop-blur-2xl flex flex-col gap-8 animate-fadeIn">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gold-500/20 pb-6">
+        <div id="ai-mosaic-result" className="p-6 sm:p-8 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col gap-8 animate-fadeIn text-stone-900">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-stone-100 pb-6">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gold-500/10 text-gold-300 text-xs font-semibold uppercase tracking-wider mb-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-gold-400" /> Artisan Architectural Surface Render Complete
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium mb-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Artisan Architectural Surface Render Complete
               </div>
-              <h2 className="text-2xl font-serif font-bold text-white">Bespoke Mosaic Surface Visualization</h2>
+              <h2 className="text-2xl sm:text-3xl font-serif italic text-stone-900">Bespoke Mosaic Surface Visualization</h2>
             </div>
 
             {/* FRONTEND ACTION BUTTONS: Download, Quote Request & Talk to Specialist */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => {
@@ -1212,79 +967,89 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                     );
                   }
                 }}
-                className="px-5 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-gold-500/20 cursor-pointer"
+                className="px-4 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center gap-2 transition-all shadow-sm cursor-pointer"
               >
-                <Download className="w-4 h-4" /> Download High-Res Image
+                <Download className="w-3.5 h-3.5" /> Download High-Res
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsQuoteModalOpen(true)}
-                className="px-5 py-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 border border-gold-500/40 text-gold-300 font-serif font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-full bg-white hover:bg-stone-50 border border-stone-300 text-stone-800 font-serif font-medium text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
               >
-                <Send className="w-4 h-4" /> Request Sample Box & Specification
+                <Send className="w-3.5 h-3.5" /> Request Sample Box
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsSpecialistModalOpen(true)}
-                className="px-5 py-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 border border-neutral-700 text-neutral-300 hover:text-white font-serif font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-full bg-white hover:bg-stone-50 border border-stone-300 text-stone-800 font-serif font-medium text-xs flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
               >
-                <PhoneCall className="w-4 h-4 text-gold-400" /> Speak with a Surface Specialist
+                <PhoneCall className="w-3.5 h-3.5 text-stone-600" /> Speak with Specialist
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 relative w-full h-[450px] rounded-2xl overflow-hidden border border-gold-500/30 shadow-2xl bg-obsidian-950 group">
-              <Image
+            <div className="lg:col-span-7 relative w-full h-[450px] sm:h-[480px] rounded-2xl overflow-hidden border border-stone-200 shadow-lg bg-stone-100 group">
+              <img
                 src={result.resultImageUrl}
                 alt="AI Generated Mosaic Surface"
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80";
+                }}
               />
-              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-obsidian-950/80 backdrop-blur-md border border-gold-500/20">
-                <p className="text-xs text-neutral-300 font-mono line-clamp-2">
-                  <span className="text-gold-400 font-bold">Artisan Specification:</span> {result.promptApplied}
+              <button
+                type="button"
+                onClick={() => setIsResultLightboxOpen(true)}
+                className="absolute top-3.5 right-3.5 p-2.5 rounded-full bg-white/90 hover:bg-white text-stone-800 shadow-md backdrop-blur-sm transition-all hover:scale-110 cursor-pointer"
+                title="View Maximize / High-Resolution"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-xl bg-white/95 backdrop-blur-md border border-stone-200/80 shadow-sm">
+                <p className="text-xs text-stone-700 font-serif italic line-clamp-2">
+                  <span className="font-sans not-italic font-semibold text-stone-900">Artisan Specification:</span> {result.promptApplied}
                 </p>
               </div>
             </div>
 
-            <div className="lg:col-span-5 flex flex-col gap-6 bg-obsidian-950/80 p-6 rounded-2xl border border-neutral-800">
-              <h3 className="text-lg font-serif font-semibold text-gold-300 border-b border-neutral-800 pb-3 flex items-center gap-2">
-                <Grid className="w-4 h-4 text-gold-400" /> Architectural Material Estimation
+            <div className="lg:col-span-5 flex flex-col gap-5 bg-stone-50/70 p-6 rounded-2xl border border-stone-200/90">
+              <h3 className="text-base font-serif font-semibold text-stone-900 border-b border-stone-200 pb-3 flex items-center gap-2">
+                <Grid className="w-4 h-4 text-stone-700" /> Architectural Material Estimation
               </h3>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-obsidian-900 border border-neutral-800">
-                  <span className="text-xs text-neutral-400 block mb-1">Estimated Area</span>
-                  <span className="text-xl font-bold font-serif text-white">{result.estimatedSqFt} sq.ft</span>
+              <div className="grid grid-cols-2 gap-3.5">
+                <div className="p-3.5 rounded-xl bg-white border border-stone-200 shadow-2xs">
+                  <span className="text-xs text-stone-500 block mb-1">Estimated Area</span>
+                  <span className="text-xl font-bold font-serif text-stone-900">{result.estimatedSqFt} sq.ft</span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-obsidian-900 border border-neutral-800">
-                  <span className="text-xs text-neutral-400 block mb-1">Mosaic Chips</span>
-                  <span className="text-xl font-bold font-serif text-white">{result.estimatedTileCount.toLocaleString()}</span>
+                <div className="p-3.5 rounded-xl bg-white border border-stone-200 shadow-2xs">
+                  <span className="text-xs text-stone-500 block mb-1">Mosaic Chips</span>
+                  <span className="text-xl font-bold font-serif text-stone-900">{result.estimatedTileCount.toLocaleString()}</span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-obsidian-900 border border-gold-500/30 col-span-2">
-                  <span className="text-xs text-gold-400 font-medium block mb-1">Estimated Material Cost</span>
-                  <span className="text-3xl font-serif font-bold text-white">${result.estimatedMaterialCost.toLocaleString()}</span>
-                  <span className="text-[10px] text-neutral-400 block mt-1">*Includes precision waterjet cut tesserae, fiberglass mesh mounting, and bespoke wooden crating.</span>
+                <div className="p-4 rounded-xl bg-stone-100 border border-stone-300/80 col-span-2 shadow-2xs">
+                  <span className="text-xs text-stone-600 font-medium block mb-1">Estimated Material Cost</span>
+                  <span className="text-3xl font-serif font-bold text-stone-900">${result.estimatedMaterialCost.toLocaleString()}</span>
+                  <span className="text-[10px] text-stone-500 block mt-1">*Includes precision waterjet cut tesserae, fiberglass mesh mounting, and bespoke wooden crating.</span>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 text-xs text-neutral-300 pt-2 border-t border-neutral-800">
+              <div className="flex flex-col gap-2 text-xs text-stone-600 pt-2 border-t border-stone-200">
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Selected Style:</span>
-                  <span className="font-semibold text-white">{selectedProduct?.title || "Bespoke Italian"}</span>
+                  <span className="text-stone-500">Selected Style:</span>
+                  <span className="font-semibold text-stone-900">{selectedProduct?.title || "Bespoke Italian"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Surface Placement:</span>
-                  <span className="font-semibold text-white">{placement}</span>
+                  <span className="text-stone-500">Surface Placement:</span>
+                  <span className="font-semibold text-stone-900">{placement}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Finish / Grout:</span>
-                  <span className="font-semibold text-white">{finish} • {groutColor}</span>
+                  <span className="text-stone-500">Finish / Grout:</span>
+                  <span className="font-semibold text-stone-900">{finish} • {groutColor}</span>
                 </div>
               </div>
             </div>
@@ -1342,6 +1107,46 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
         onClose={() => setIsSpecialistModalOpen(false)}
         initialData={result ? { resultImageUrl: result.resultImageUrl, prompt, placement } : undefined}
       />
+
+      {/* High-Resolution Result Image Maximize Lightbox Modal */}
+      {isResultLightboxOpen && result?.resultImageUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setIsResultLightboxOpen(false)}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white text-white hover:text-stone-900 transition-colors cursor-pointer"
+              title="Close Fullscreen View"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="w-full max-h-[80vh] overflow-hidden rounded-2xl border border-white/20 shadow-2xl flex items-center justify-center bg-stone-950">
+              <img
+                src={result.resultImageUrl}
+                alt="Fullscreen Mosaic Render"
+                className="w-full h-full max-h-[80vh] object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80";
+                }}
+              />
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  handleDownloadImage(
+                    result.resultImageUrl,
+                    `zakiah-mosaic-${placement.toLowerCase().replace(/[^a-z0-9]/g, "-")}.png`
+                  );
+                }}
+                className="px-6 py-2.5 rounded-full bg-white text-stone-900 font-serif font-bold text-xs flex items-center gap-2 hover:bg-stone-200 transition-all cursor-pointer shadow-lg"
+              >
+                <Download className="w-4 h-4" /> Download Full Resolution
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User My Generations History Modal */}
       <MyGenerationsModal

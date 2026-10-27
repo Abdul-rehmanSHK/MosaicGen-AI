@@ -42,10 +42,25 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
       const width = rect.width > 0 ? Math.round(rect.width) : 800;
       const height = rect.height > 0 ? Math.round(rect.height) : Math.max(Math.round(width * 0.65), 320);
 
+      const drawCanvas = drawCanvasRef.current;
+      let tempCanvas: HTMLCanvasElement | null = null;
+      if (hasMaskStrokes && drawCanvas.width > 0 && drawCanvas.height > 0) {
+        tempCanvas = document.createElement("canvas");
+        tempCanvas.width = drawCanvas.width;
+        tempCanvas.height = drawCanvas.height;
+        const tempCtx = tempCanvas.getContext("2d");
+        tempCtx?.drawImage(drawCanvas, 0, 0);
+      }
+
       imageCanvasRef.current.width = width;
       imageCanvasRef.current.height = height;
-      drawCanvasRef.current.width = width;
-      drawCanvasRef.current.height = height;
+      drawCanvas.width = width;
+      drawCanvas.height = height;
+
+      if (tempCanvas) {
+        const drawCtx = drawCanvas.getContext("2d");
+        drawCtx?.drawImage(tempCanvas, 0, 0, width, height);
+      }
 
       redrawBackground();
     }
@@ -67,12 +82,15 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
     if (backgroundImageElement && backgroundImageElement.width > 0 && backgroundImageElement.height > 0) {
       try {
-        // Draw image to cover canvas smoothly
+        // Draw image cleanly to fit nicely within canvas without aggressive cropping or distortion
         const hRatio = canvas.width / backgroundImageElement.width;
         const vRatio = canvas.height / backgroundImageElement.height;
-        const ratio = Math.max(hRatio, vRatio);
+        const ratio = Math.min(hRatio, vRatio);
         const centerShift_x = (canvas.width - backgroundImageElement.width * ratio) / 2;
         const centerShift_y = (canvas.height - backgroundImageElement.height * ratio) / 2;
+
+        ctx.fillStyle = "#F4F3F2";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.drawImage(
           backgroundImageElement,
@@ -89,11 +107,11 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
         console.warn("Error drawing background image onto canvas:", err);
       }
     } else {
-      // Grid scratch backdrop
-      ctx.fillStyle = "#0F1015";
+      // Grid scratch backdrop (light luxury architectural paper)
+      ctx.fillStyle = "#FAF9F8";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = "#1F2330";
+      ctx.strokeStyle = "#E7E5E4";
       ctx.lineWidth = 1;
       const gridSize = 40;
       for (let x = 0; x < canvas.width; x += gridSize) {
