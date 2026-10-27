@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Loader2,
   AlertCircle,
+  Mail,
 } from "lucide-react";
 import { EmailOtpModal } from "@/components/studio/EmailOtpModal";
 import { LimitReachedModal } from "@/components/studio/LimitReachedModal";
@@ -127,12 +128,13 @@ function AestheticFinderContent({
   const [limitModalEmail, setLimitModalEmail] = useState("");
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const hasAutoOpenedOtpModalRef = useRef(false);
 
-  // Auto-restore verification state from localStorage on mount
+  // Auto-restore verification state from localStorage on mount & listen to changes
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedEmail = localStorage.getItem("zm_verified_email");
-      const storedToken = localStorage.getItem("zm_verified_token");
+      const storedEmail = localStorage.getItem("zm_verified_email") || localStorage.getItem("mec_verified_email");
+      const storedToken = localStorage.getItem("zm_verified_token") || localStorage.getItem("mec_verified_token");
       if (storedEmail && storedToken) {
         setIsVerified(true);
         setVerifiedEmail(storedEmail);
@@ -199,6 +201,20 @@ function AestheticFinderContent({
   const currentStep = initialSteps[currentStepIndex] || initialSteps[0];
   const isResultStep = currentStepIndex === maxStepIndex;
 
+  // When arriving on Step 5 (Result), automatically trigger email verification if not yet verified
+  useEffect(() => {
+    if (isResultStep && !generatedResult && !isGenerating) {
+      const storedEmail = typeof window !== "undefined" ? localStorage.getItem("zm_verified_email") : null;
+      const storedToken = typeof window !== "undefined" ? localStorage.getItem("zm_verified_token") : null;
+      const isAlreadyVerified = isVerified || Boolean(storedEmail && storedToken);
+
+      if (!isAlreadyVerified && !hasAutoOpenedOtpModalRef.current) {
+        hasAutoOpenedOtpModalRef.current = true;
+        setIsOtpModalOpen(true);
+      }
+    }
+  }, [isResultStep, isVerified, generatedResult, isGenerating]);
+
   const handleSelectOption = (value: string) => {
     const stepObj = initialSteps[currentStepIndex];
     if (!stepObj) return;
@@ -228,7 +244,17 @@ function AestheticFinderContent({
     updateUrl(newStyle, newShape, newColor, newSpace);
 
     if (currentStepIndex < maxStepIndex) {
-      setCurrentStepIndex((prev) => prev + 1);
+      const nextIndex = currentStepIndex + 1;
+      setCurrentStepIndex(nextIndex);
+      if (nextIndex === maxStepIndex) {
+        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("zm_verified_email") : null;
+        const storedToken = typeof window !== "undefined" ? localStorage.getItem("zm_verified_token") : null;
+        const isAlreadyVerified = isVerified || Boolean(storedEmail && storedToken);
+        if (!isAlreadyVerified) {
+          hasAutoOpenedOtpModalRef.current = true;
+          setIsOtpModalOpen(true);
+        }
+      }
     }
   };
 
@@ -424,6 +450,7 @@ function AestheticFinderContent({
 
   const handleGenerateClick = () => {
     if (!isVerified) {
+      hasAutoOpenedOtpModalRef.current = true;
       setIsOtpModalOpen(true);
       return;
     }
@@ -434,6 +461,10 @@ function AestheticFinderContent({
     setIsVerified(true);
     setVerifiedEmail(email);
     setIsOtpModalOpen(false);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("zm_verified_email_updated"));
+      window.dispatchEvent(new Event("mec_verified_email_updated"));
+    }
     handleExecuteGeneration(email);
   };
 
@@ -586,70 +617,64 @@ function AestheticFinderContent({
           <div className="w-full flex flex-col gap-10">
             {/* 1. If currently generating, show the luxurious neural synthesis progress card */}
             {isGenerating ? (
-              <div className="relative w-full p-8 sm:p-14 rounded-3xl bg-gradient-to-br from-[#1c1507] via-[#2d1e08] to-[#120d04] border-2 border-gold-500/60 shadow-[0_0_70px_rgba(218,165,32,0.28)] backdrop-blur-2xl flex flex-col items-center justify-center gap-6 overflow-hidden min-h-[380px] text-center">
-                <div className="absolute w-72 h-72 bg-gold-500/20 rounded-full blur-[100px] animate-pulse pointer-events-none" />
-
+              <div className="relative w-full p-8 sm:p-14 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col items-center justify-center gap-6 overflow-hidden min-h-[380px] text-center animate-fadeIn text-stone-900">
                 <div className="relative z-10 flex flex-col items-center gap-4">
-                  <div className="relative w-20 h-20 rounded-full bg-obsidian-950/90 border-2 border-gold-400 flex items-center justify-center shadow-xl shadow-gold-500/20">
-                    <div className="absolute inset-0 rounded-full border-2 border-gold-400/40 animate-ping pointer-events-none" />
-                    <Sparkles className="w-8 h-8 text-gold-400 animate-spin" style={{ animationDuration: "5s" }} />
+                  <div className="relative w-20 h-20 rounded-full bg-stone-100 border-2 border-stone-800 flex items-center justify-center shadow-md">
+                    <Loader2 className="w-8 h-8 text-stone-800 animate-spin" />
                   </div>
 
                   <div className="flex flex-col gap-1.5 max-w-lg">
-                    <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-gold-400 font-bold">
-                      NEURAL MOSAIC SYNTHESIS IN PROGRESS
+                    <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold">
+                      ARTISAN MOSAIC SYNTHESIS IN PROGRESS
                     </span>
-                    <h3 className="text-2xl sm:text-3xl font-serif text-white font-light">
+                    <h3 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal italic">
                       Generating Your Bespoke Mosaic
                     </h3>
-                    <p className="text-xs sm:text-sm text-neutral-300 font-light mt-1">
+                    <p className="text-xs sm:text-sm text-stone-600 font-light mt-1">
                       {generationStep}
                     </p>
                   </div>
 
                   {/* Selections Pill Badges */}
                   <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                    <span className="px-3 py-1 rounded-full bg-obsidian-950/90 border border-gold-500/30 text-gold-300 text-xs font-mono">
+                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
                       Style: {styleLabel}
                     </span>
-                    <span className="px-3 py-1 rounded-full bg-obsidian-950/90 border border-gold-500/30 text-gold-300 text-xs font-mono">
+                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
                       Shape: {shapeLabel}
                     </span>
-                    <span className="px-3 py-1 rounded-full bg-obsidian-950/90 border border-gold-500/30 text-gold-300 text-xs font-mono">
+                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
                       Color: {colorLabel}
                     </span>
-                    <span className="px-3 py-1 rounded-full bg-obsidian-950/90 border border-gold-500/30 text-gold-300 text-xs font-mono">
+                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
                       Space: {spaceLabel}
                     </span>
                   </div>
 
-                  <div className="w-64 h-1.5 bg-obsidian-950 rounded-full overflow-hidden border border-gold-500/30 mt-2">
-                    <div className="w-full h-full bg-gradient-to-r from-gold-500 via-amber-300 to-gold-500 animate-pulse" />
+                  <div className="w-64 h-1.5 bg-stone-200 rounded-full overflow-hidden mt-3">
+                    <div className="w-full h-full bg-stone-900 animate-pulse" />
                   </div>
                 </div>
               </div>
             ) : generatedResult ? (
               /* 2. If generatedResult is present: Show the Generated Mosaic Masterpiece! */
-              <div className="relative w-full p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-[#1c1507] via-[#2d1e08] to-[#120d04] border-2 border-gold-500/60 shadow-[0_0_70px_rgba(218,165,32,0.28)] backdrop-blur-2xl flex flex-col gap-8 overflow-hidden">
-                <div className="absolute -top-24 -right-24 w-80 h-80 bg-gold-500/25 rounded-full blur-[90px] pointer-events-none" />
-                <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-amber-500/20 rounded-full blur-[90px] pointer-events-none" />
-
+              <div className="relative w-full p-6 sm:p-10 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col gap-8 overflow-hidden text-stone-900 animate-fadeIn">
                 {/* Header */}
-                <div className="relative z-10 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                <div className="relative z-10 flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-stone-100 pb-5">
                   <div className="flex flex-col gap-1">
-                    <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-gold-400 font-semibold flex items-center gap-2">
-                      <Sparkles className="w-3.5 h-3.5 text-gold-400" /> YOUR BESPOKE AI MOSAIC RESULT
+                    <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-stone-600" /> YOUR BESPOKE AI MOSAIC RESULT
                     </span>
-                    <h2 className="text-2xl sm:text-3xl font-serif font-light text-white">
+                    <h2 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal italic">
                       Architectural Mosaic Masterpiece Generated
                     </h2>
-                    <p className="text-xs sm:text-sm text-neutral-300">
+                    <p className="text-xs sm:text-sm text-stone-500">
                       Rendered exclusively for your {styleLabel} aesthetic and {spaceLabel} surface geometry.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-semibold flex items-center gap-1.5 shadow">
-                      <Check className="w-3.5 h-3.5 stroke-[3]" /> Synthesis Complete
+                    <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium text-xs flex items-center gap-1.5 shadow-2xs">
+                      <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-600" /> Synthesis Complete
                     </span>
                   </div>
                 </div>
@@ -660,43 +685,43 @@ function AestheticFinderContent({
                   <div className="lg:col-span-7 flex flex-col gap-3">
                     <div
                       onClick={() => setIsLightboxOpen(true)}
-                      className="group relative w-full aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-obsidian-950 border-2 border-gold-500/50 shadow-2xl cursor-zoom-in transition-all hover:border-gold-400 hover:shadow-gold-500/20"
+                      className="group relative w-full aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shadow-md cursor-zoom-in transition-all hover:border-stone-400 hover:shadow-xl"
                     >
                       <img
                         src={generatedResult.resultImageUrl}
                         alt={generatedResult.promptApplied}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-4">
-                        <span className="text-xs font-serif text-white flex items-center gap-1.5 bg-obsidian-950/80 px-3 py-1.5 rounded-xl border border-gold-500/30">
-                          <Maximize2 className="w-3.5 h-3.5 text-gold-400" /> Click to view full resolution
+                      <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-4">
+                        <span className="text-xs font-serif text-white flex items-center gap-1.5 bg-stone-900/80 px-3 py-1.5 rounded-xl border border-white/20">
+                          <Maximize2 className="w-3.5 h-3.5" /> Click to view full resolution
                         </span>
-                        <span className="text-[10px] font-mono text-gold-300 bg-obsidian-950/80 px-2.5 py-1 rounded-lg border border-gold-500/30">
+                        <span className="text-[10px] font-mono text-white bg-stone-900/80 px-2.5 py-1 rounded-lg border border-white/20">
                           Authentic Tesserae
                         </span>
                       </div>
-                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-obsidian-950/85 backdrop-blur-md border border-gold-500/40 text-gold-300 font-mono text-xs font-bold uppercase tracking-wider">
+                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-stone-200 text-stone-800 font-mono text-xs font-semibold uppercase tracking-wider shadow-2xs">
                         {spaceLabel || "Bespoke Mosaic"}
                       </div>
                     </div>
-                    <span className="text-[11px] text-neutral-400 text-center font-mono flex items-center justify-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-gold-400" /> High-precision AI mosaic tesserae rendered with authentic marble & gold leaf
+                    <span className="text-[11px] text-stone-500 text-center font-mono flex items-center justify-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-stone-500" /> High-precision AI mosaic tesserae rendered with authentic marble & gold leaf
                     </span>
                   </div>
 
                   {/* Right Column (5 cols): Taste Attributes, Prompt & Actions */}
                   <div className="lg:col-span-5 flex flex-col gap-5 justify-between">
                     {/* Taste Attributes */}
-                    <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-obsidian-950/85 border border-gold-500/30 shadow-inner">
+                    <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-stone-50 border border-stone-200 shadow-2xs">
                       {questionnaireSteps.map((step, idx) => {
                         const val = answers[step.key] || (idx === 0 ? selectedStyle : idx === 1 ? selectedShape : idx === 2 ? selectedColor : idx === 3 ? selectedSpace : "");
                         const label = getSelectedLabel(step.key, val);
                         return (
                           <div key={step.id || step.key} className="flex flex-col gap-0.5">
-                            <span className="text-[9px] font-mono uppercase tracking-widest text-gold-400/80">
+                            <span className="text-[9px] font-mono uppercase tracking-widest text-stone-400 font-bold">
                               {step.title || step.key}
                             </span>
-                            <span className="text-xs font-serif font-bold text-white capitalize truncate">
+                            <span className="text-xs font-serif font-bold text-stone-900 capitalize truncate">
                               {label}
                             </span>
                           </div>
@@ -705,11 +730,11 @@ function AestheticFinderContent({
                     </div>
 
                     {/* Applied Prompt */}
-                    <div className="p-4 rounded-xl bg-obsidian-950/70 border border-neutral-800 flex flex-col gap-1.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-gold-400 font-semibold">
+                    <div className="p-4 rounded-xl bg-stone-50/70 border border-stone-200 flex flex-col gap-1.5">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 font-bold">
                         Applied Artisan Vision Prompt
                       </span>
-                      <p className="text-xs text-neutral-300 font-serif italic leading-relaxed">
+                      <p className="text-xs text-stone-700 font-serif italic leading-relaxed">
                         &ldquo;{generatedResult.promptApplied}&rdquo;
                       </p>
                     </div>
@@ -720,9 +745,9 @@ function AestheticFinderContent({
                         href={`/?mode=scratch&prompt=${encodeURIComponent(
                           generatedResult.promptApplied
                         )}&placement=${encodeURIComponent(spaceLabel || "Floor Medallion")}`}
-                        className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-obsidian-950 font-serif font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-gold-500/25 active:scale-[0.98]"
+                        className="w-full py-3 px-4 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98]"
                       >
-                        <Sparkles className="w-4 h-4 fill-obsidian-950" />
+                        <Sparkles className="w-4 h-4 text-white" />
                         Customize & Inpaint in Studio
                       </Link>
 
@@ -730,18 +755,18 @@ function AestheticFinderContent({
                         <button
                           type="button"
                           onClick={() => handleDownload(generatedResult.resultImageUrl, `zakiah-mosaic-${(styleLabel || "custom").toLowerCase()}-${(spaceLabel || "design").toLowerCase()}.jpg`)}
-                          className="py-2.5 px-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-neutral-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-neutral-700 hover:border-gold-500/40 cursor-pointer"
+                          className="py-2.5 px-3 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-200 cursor-pointer shadow-2xs"
                         >
-                          <Download className="w-3.5 h-3.5 text-gold-400" />
+                          <Download className="w-3.5 h-3.5 text-stone-600" />
                           Download
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setIsInquiryModalOpen(true)}
-                          className="py-2.5 px-3 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-neutral-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-neutral-700 hover:border-gold-500/40 cursor-pointer"
+                          className="py-2.5 px-3 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-200 cursor-pointer shadow-2xs"
                         >
-                          <MessageSquare className="w-3.5 h-3.5 text-gold-400" />
+                          <MessageSquare className="w-3.5 h-3.5 text-stone-600" />
                           Quote Inquiry
                         </button>
                       </div>
@@ -751,15 +776,15 @@ function AestheticFinderContent({
                           type="button"
                           onClick={() => handleExecuteGeneration()}
                           disabled={isGenerating}
-                          className="flex-1 py-2 rounded-xl bg-obsidian-900/80 hover:bg-obsidian-800 text-gold-400 hover:text-gold-300 text-[11px] font-mono font-semibold flex items-center justify-center gap-1.5 transition-all border border-gold-500/30 cursor-pointer"
+                          className="flex-1 py-2 rounded-full bg-white hover:bg-stone-100 text-stone-800 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-300 cursor-pointer shadow-2xs"
                         >
-                          <RefreshCw className="w-3 h-3" />
+                          <RefreshCw className="w-3 h-3 text-stone-500" />
                           Generate Another Variation
                         </button>
                         <button
                           type="button"
                           onClick={handleReset}
-                          className="py-2 px-3 rounded-xl bg-obsidian-900/80 hover:bg-obsidian-800 text-neutral-400 hover:text-white text-[11px] font-mono transition-all border border-neutral-800 cursor-pointer"
+                          className="py-2 px-4 rounded-full bg-white hover:bg-stone-100 text-stone-500 hover:text-stone-900 text-[11px] transition-all border border-stone-200 cursor-pointer shadow-2xs"
                         >
                           Start Over
                         </button>
@@ -770,30 +795,27 @@ function AestheticFinderContent({
               </div>
             ) : (
               /* 3. Initial Result Card before Generation */
-              <div className="relative w-full p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-[#1c1507] via-[#2d1e08] to-[#120d04] border-2 border-gold-500/60 shadow-[0_0_70px_rgba(218,165,32,0.28)] backdrop-blur-2xl flex flex-col gap-8 overflow-hidden">
-                <div className="absolute -top-24 -right-24 w-80 h-80 bg-gold-500/25 rounded-full blur-[90px] pointer-events-none" />
-                <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-amber-500/20 rounded-full blur-[90px] pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col gap-2">
-                  <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-gold-400 font-semibold flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-gold-400" /> YOUR AESTHETIC RESULT
+              <div className="relative w-full p-8 sm:p-10 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col gap-7 overflow-hidden text-stone-900 animate-fadeIn">
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-stone-600" /> YOUR AESTHETIC RESULT
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-serif font-light text-white">
-                    Based on your answers, you have an <em className="italic text-gold-400 font-normal">exquisite architectural sense</em>.
+                  <h2 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal">
+                    Based on your answers, you have an <em className="italic font-serif font-normal text-stone-900">exquisite architectural sense</em>.
                   </h2>
                 </div>
 
                 {/* Taste Attributes Grid (Dynamically includes all questionnaire steps) */}
-                <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 rounded-2xl bg-obsidian-950/80 border border-gold-500/25 shadow-inner">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 rounded-2xl bg-stone-50 border border-stone-200/90 shadow-2xs">
                   {questionnaireSteps.map((step, idx) => {
                     const val = answers[step.key] || (idx === 0 ? selectedStyle : idx === 1 ? selectedShape : idx === 2 ? selectedColor : idx === 3 ? selectedSpace : "");
                     const label = getSelectedLabel(step.key, val);
                     return (
-                      <div key={step.id || step.key} className="flex flex-col gap-1 border-r last:border-r-0 border-neutral-800/80 pr-2">
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400/80">
+                      <div key={step.id || step.key} className="flex flex-col gap-1 border-r last:border-r-0 border-stone-200 pr-2">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">
                           {step.title || step.key}
                         </span>
-                        <span className="text-sm font-serif font-bold text-white capitalize">
+                        <span className="text-sm font-serif font-bold text-stone-900 capitalize">
                           {label}
                         </span>
                       </div>
@@ -801,34 +823,82 @@ function AestheticFinderContent({
                   })}
                 </div>
 
-                <p className="relative z-10 text-xs sm:text-sm text-neutral-200 leading-relaxed max-w-3xl">
-                  Press the button below to generate a one-of-a-kind mosaic design crafted specifically from your {styleLabel} style, {shapeLabel} composition, and {colorLabel} palette for {spaceLabel}.
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-3xl">
+                  Synthesize an authentic one-of-a-kind mosaic concept crafted specifically from your {styleLabel} aesthetic, {shapeLabel} composition, and {colorLabel} palette for {spaceLabel}.
                 </p>
 
+                {/* Email Verification Flow Banner */}
+                {!isVerified ? (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-stone-50 border border-stone-200">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-full bg-stone-200/70 flex items-center justify-center shrink-0">
+                        <Mail className="w-5 h-5 text-stone-700" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs sm:text-sm font-semibold text-stone-900">Email Verification Required</span>
+                        <span className="text-xs text-stone-500">
+                          Verify your email to synthesize and view your bespoke AI mosaic concept.
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsOtpModalOpen(true)}
+                      className="px-6 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
+                    >
+                      <Mail className="w-3.5 h-3.5 text-white" />
+                      Verify Email to Generate
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                        <Check className="w-4 h-4 text-emerald-700 stroke-[2.5]" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-emerald-900">Email Verified: {verifiedEmail}</span>
+                        <span className="text-[11px] text-emerald-700">Ready to synthesize your architectural concept.</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleGenerateClick}
+                      disabled={isGenerating}
+                      className="px-6 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center gap-2 transition-all shadow-sm cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-white" />
+                      Generate Mosaic Now
+                    </button>
+                  </div>
+                )}
+
                 {error && (
-                  <div className="relative z-10 p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-red-200 text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                <div className="relative z-10 flex flex-wrap items-center gap-4 pt-2">
+                <div className="flex flex-wrap items-center gap-3 pt-2">
                   <button
                     type="button"
                     onClick={handleGenerateClick}
                     disabled={isGenerating}
-                    className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-obsidian-950 font-serif font-bold text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-lg shadow-gold-500/25 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                    className="px-8 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-md hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
                   >
-                    <Sparkles className="w-4 h-4 fill-obsidian-950" />
-                    Generate my mosaic
+                    <Sparkles className="w-4 h-4 text-white" />
+                    {isVerified ? "Generate My Bespoke Mosaic" : "Verify Email & Generate Mosaic"}
                   </button>
 
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="px-5 py-3.5 rounded-xl bg-obsidian-800/90 hover:bg-obsidian-700 text-neutral-300 hover:text-white text-xs font-semibold flex items-center gap-2 transition-all border border-neutral-700 hover:border-gold-500/30 cursor-pointer"
+                    className="px-5 py-3.5 rounded-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-medium flex items-center gap-2 transition-all border border-stone-300 shadow-2xs cursor-pointer"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    <RefreshCw className="w-3.5 h-3.5 text-stone-500" />
                     Start over
                   </button>
                 </div>
