@@ -8,9 +8,7 @@ import {
   Plus,
   Trash2,
   ExternalLink,
-  Grid,
   Layers,
-  Compass,
   Check,
   CheckCircle2,
   Loader2,
@@ -292,9 +290,7 @@ export function PagesManagerClient({
                   : "text-neutral-400 hover:text-white hover:bg-obsidian-800"
               }`}
             >
-              {pg.templateType === "classic_grid" && <Grid className="w-3.5 h-3.5" />}
-              {pg.templateType === "hero_showcase" && <Layers className="w-3.5 h-3.5" />}
-              {pg.templateType === "split_gallery" && <Compass className="w-3.5 h-3.5" />}
+              <Layers className="w-3.5 h-3.5" />
               <span className="truncate max-w-[200px]">{pg.title}</span>
               <span
                 className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
@@ -377,26 +373,19 @@ export function PagesManagerClient({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-neutral-300 font-medium">Layout Template</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { type: "hero_showcase", label: "Hero Showcase", desc: "Parallax hero banner with narrative story & featured grid" },
-                    { type: "classic_grid", label: "Classic Grid", desc: "Filterable mosaic texture catalog with interactive preview cards" },
-                    { type: "split_gallery", label: "Split Gallery", desc: "Dual-column luxury architectural visual showcase" },
-                  ].map((tpl) => (
-                    <div
-                      key={tpl.type}
-                      onClick={() => setNewTemplateType(tpl.type)}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col gap-1 ${
-                        newTemplateType === tpl.type
-                          ? "bg-gold-500/10 border-gold-400 text-white"
-                          : "bg-obsidian-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
-                      }`}
-                    >
-                      <span className="font-serif font-bold text-sm text-gold-300">{tpl.label}</span>
-                      <span className="text-[11px] text-neutral-400">{tpl.desc}</span>
-                    </div>
-                  ))}
+                <label className="text-neutral-300 font-medium">Page Template</label>
+                <div className="p-3.5 rounded-xl border bg-gold-500/10 border-gold-400/40 text-white flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gold-500/20 text-gold-300">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-serif font-bold text-sm text-gold-300 block">
+                      Architectural Hero Showcase Template
+                    </span>
+                    <span className="text-[11px] text-neutral-400">
+                      High-impact parallax hero banner with narrative craftsmanship story and featured mosaic catalog grid.
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -560,7 +549,7 @@ export function PagesManagerClient({
                   </span>
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-0.5">
-                  Template: <strong className="text-neutral-200 capitalize">{currentPage.templateType.replace("_", " ")}</strong>
+                  Template: <strong className="text-gold-300">Architectural Hero Showcase</strong>
                 </p>
               </div>
             </div>
@@ -633,29 +622,10 @@ export function PagesManagerClient({
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-neutral-300 font-medium">Layout Template</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    {[
-                      { type: "hero_showcase", label: "Hero Showcase", icon: Layers },
-                      { type: "classic_grid", label: "Classic Grid", icon: Grid },
-                      { type: "split_gallery", label: "Split Gallery", icon: Compass },
-                    ].map((tpl) => {
-                      const Icon = tpl.icon;
-                      const isSelected = currentPage.templateType === tpl.type;
-                      return (
-                        <div
-                          key={tpl.type}
-                          onClick={() => handleFieldChange("templateType", tpl.type)}
-                          className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 ${
-                            isSelected
-                              ? "bg-gold-500/10 border-gold-400 text-white"
-                              : "bg-obsidian-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
-                          }`}
-                        >
-                          <Icon className={`w-4 h-4 ${isSelected ? "text-gold-400" : "text-neutral-500"}`} />
-                          <span className="font-semibold text-xs">{tpl.label}</span>
-                        </div>
-                      );
-                    })}
+                  <div className="p-3 rounded-xl border bg-gold-500/10 border-gold-400/40 text-white flex items-center gap-2.5">
+                    <Layers className="w-4 h-4 text-gold-400" />
+                    <span className="font-semibold text-xs text-gold-200">Architectural Hero Showcase Template</span>
+                    <span className="text-[10px] text-neutral-400 font-mono ml-auto">Active Template</span>
                   </div>
                 </div>
 

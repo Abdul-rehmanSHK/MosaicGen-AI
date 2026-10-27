@@ -22,20 +22,22 @@
 - **Request Quote & Sample Box**: Order physical mesh tesserae sample boxes and architectural cost breakdowns.
 - **Talk to Surface Specialist**: Book direct phone consultations with Italian marble engineers (selectable phone number, preferred time slot, and call notes).
 
-### 📄 4. Dynamic CMS & 3 Strict Template Layout System (`/[slug]`)
-- Render dynamic architectural pages from PostgreSQL / Prisma DB records using 3 strict layout templates:
-  1. `classic_grid`: Clean catalog grid with category filters, spec inspect modals, and quote drawers.
-  2. `hero_showcase`: High-impact full-width editorial banner, storytelling, and studio CTAs.
-  3. `split_gallery`: Side-by-side interactive studio canvas and material specs breakdown.
-- **Full-Window Page Editor (`/nextjs-app/pages/edit/[id]`)**: User-friendly, full-screen admin editor route featuring visual template cards, live hero image preview, save & return, and live site preview.
+### 📄 4. Dynamic CMS Architectural Showcase (`/[slug]`)
+- Render dynamic architectural pages from PostgreSQL / Prisma DB records using the high-impact **Architectural Hero Showcase Template**:
+  - Full-width editorial parallax hero banner with custom headline, storytelling copy, and studio CTAs.
+  - Bespoke value proposition section highlighting Italian tesserae craftsmanship and waterjet engineering.
+  - Dynamically configured product catalog showcase grid.
+  - Integrated quote inquiry drawer for high-value client acquisition.
 
 ### 🛡️ 5. Dedicated NextJS App Admin Portal (`/nextjs-app`)
-- **Protected Route Middleware**: Protects all `/nextjs-app/*` routes using Auth.js (v5) JWT role verification (`role: "ADMIN"`). Unauthenticated attempts automatically open `/nextjs-app/login`.
+- **Protected Route Middleware**: Protects all `/nextjs-app/*` routes using Auth.js (v5) JWT role verification (`role: "ADMIN"` or `"CONTENT_EDITOR"`). Unauthenticated attempts automatically open `/login`.
 - **Analytics Overview (`/nextjs-app`)**: Monitors registered users, total AI renderings, API compute cost estimates ($0.04/render), and active lead inquiries.
-- **Products Catalog CRUD (`/nextjs-app/products`)**: Manage tile reference images, categories, specs JSON, and prices per sq.ft.
-- **AI Generations Control (`/nextjs-app/generations`)**: Inspect full renders, edit prompt vision or placement tags, filter by space, or delete records.
-- **Client Lead Queries Manager (`/nextjs-app/inquiries`)**: Track incoming quote inquiries and specialist calls with lead type badges, client contacts, attached render thumbnails, and status changers (`PENDING`, `CONTACTED`, `COMPLETED`).
-- **System Audit Logs (`/nextjs-app/logs`)**: Automated system activity logging capturing actions executed by clients and administrators with search filters.
+- **Pages CMS (`/nextjs-app/pages`)**: Seamlessly edit dynamic architectural showcase landing pages with live hero WebP upload and product showcase selection.
+- **Aesthetic Finder CMS (`/nextjs-app/finder`)**: Configure the 5-step aesthetic finder wizard styles, shapes, and color swatches.
+- **Products Catalog (`/nextjs-app/products`)**: Manage tile reference images, categories, specs JSON, and prices per sq.ft.
+- **AI Generations (`/nextjs-app/generations`)**: Inspect full renders, view verified client emails, download high-res files, and manage trash/restores.
+- **Client Inquiries (`/nextjs-app/inquiries`)**: Track incoming quote inquiries and specialist calls with lead status management.
+- **Appearance & Navigation (`/nextjs-app/appearance`)**: Manage brand names, header menus, and footer specifications.
 
 ### 🌓 6. Luxury Theme Switcher
 - **Obsidian Dark & Pearl Light Modes**: Smooth theme toggle with `localStorage` state persistence.

@@ -1051,8 +1051,8 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
                   <span className="font-semibold text-stone-900">{placement}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-stone-500">Finish / Grout:</span>
-                  <span className="font-semibold text-stone-900">{finish} • {groutColor}</span>
+                  <span className="text-stone-500">Surface Finish:</span>
+                  <span className="font-semibold text-stone-900">Artisan Polished Marble</span>
                 </div>
               </div>
             </div>

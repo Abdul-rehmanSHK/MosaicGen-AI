@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ClassicGridTemplate } from "@/components/templates/ClassicGridTemplate";
 import { HeroShowcaseTemplate } from "@/components/templates/HeroShowcaseTemplate";
-import { SplitGalleryTemplate } from "@/components/templates/SplitGalleryTemplate";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
@@ -69,21 +67,11 @@ export default async function DynamicSlugPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-obsidian-950 flex flex-col">
+    <main className="min-h-screen bg-[#f4f3f2] flex flex-col justify-between selection:bg-stone-300 selection:text-stone-900">
       <Navbar />
 
       <div className="flex-1">
-        {page.templateType === "classic_grid" && (
-          <ClassicGridTemplate page={page} products={products} />
-        )}
-
-        {page.templateType === "hero_showcase" && (
-          <HeroShowcaseTemplate page={page} products={products} />
-        )}
-
-        {page.templateType === "split_gallery" && (
-          <SplitGalleryTemplate page={page} products={products} />
-        )}
+        <HeroShowcaseTemplate page={page} products={products} />
       </div>
 
       <Footer />
