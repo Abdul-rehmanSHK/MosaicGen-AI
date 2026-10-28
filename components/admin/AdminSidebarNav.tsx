@@ -39,10 +39,9 @@ export function AdminSidebarNav({ isAdmin }: AdminSidebarNavProps) {
   ];
 
   const contentLinks = [
-    { href: "/nextjs-app/pages", label: "Pages Content CMS", icon: FileText },
-    { href: "/nextjs-app/finder", label: "Aesthetic Finder CMS", icon: Palette },
-    { href: "/nextjs-app/media", label: "Media Library", icon: ImageIcon },
     { href: "/nextjs-app/products", label: "Products Catalog", icon: Package },
+    { href: "/nextjs-app/pages", label: "Pages Content CMS", icon: FileText },
+    { href: "/nextjs-app/media", label: "Media Library", icon: ImageIcon },
     { href: "/nextjs-app/appearance", label: "Appearance & Navigation", icon: Sliders },
   ];
 
@@ -54,13 +53,13 @@ export function AdminSidebarNav({ isAdmin }: AdminSidebarNavProps) {
       <Link
         key={link.href}
         href={link.href}
-        className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 transition-all ${
+        className={`px-4 py-2.5 rounded-xl text-xs font-medium flex items-center gap-3 transition-all ${
           active
-            ? "bg-gold-500 text-obsidian-950 shadow-md shadow-gold-500/20 font-bold"
-            : "text-neutral-300 hover:text-gold-300 hover:bg-obsidian-800"
+            ? "bg-stone-900 text-white shadow-xs font-semibold"
+            : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
         }`}
       >
-        <Icon className={`w-4 h-4 shrink-0 ${active ? "text-obsidian-950" : "text-gold-400"}`} />
+        <Icon className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-stone-500"}`} />
         <span>{link.label}</span>
       </Link>
     );
@@ -70,14 +69,14 @@ export function AdminSidebarNav({ isAdmin }: AdminSidebarNavProps) {
     <nav className="flex flex-col gap-1.5">
       {isAdmin && (
         <>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 px-4 pt-1 pb-0.5">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 px-4 pt-1 pb-0.5 font-bold">
             Studio Administration
           </span>
           {adminLinks.map(renderLink)}
         </>
       )}
 
-      <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 px-4 pt-2 pb-0.5">
+      <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 px-4 pt-2 pb-0.5 font-bold">
         Content & Studio Assets
       </span>
       {contentLinks.map(renderLink)}

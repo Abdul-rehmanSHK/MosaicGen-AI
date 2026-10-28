@@ -92,10 +92,10 @@ export function Navbar() {
   const isNavActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#f4f3f2]/95 backdrop-blur-md border-b border-stone-200/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full bg-[#f4f3f2]/95 backdrop-blur-md border-b border-black">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* Brand Logo & Name */}
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3 group shrink-0">
           {appearance.headerLogoUrl ? (
             <div className="relative w-10 h-10 rounded-xl bg-white border border-stone-200 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
               <Image
@@ -118,10 +118,10 @@ export function Navbar() {
         </Link>
 
         {/* Public Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-8 shrink min-w-0">
           <Link
             href="/"
-            className={`text-xs font-bold uppercase tracking-wider transition-all pb-1.5 ${
+            className={`text-xs font-bold uppercase tracking-wider transition-all pb-1.5 whitespace-nowrap ${
               isNavActive("/")
                 ? "text-stone-900 border-b-2 border-stone-900"
                 : "text-stone-500 hover:text-stone-900 border-b-2 border-transparent"
@@ -132,7 +132,7 @@ export function Navbar() {
 
           <Link
             href="/from-scratch"
-            className={`text-xs font-bold uppercase tracking-wider transition-all pb-1.5 ${
+            className={`text-xs font-bold uppercase tracking-wider transition-all pb-1.5 whitespace-nowrap ${
               isNavActive("/from-scratch")
                 ? "text-stone-900 border-b-2 border-stone-900"
                 : "text-stone-500 hover:text-stone-900 border-b-2 border-transparent"
@@ -143,7 +143,7 @@ export function Navbar() {
 
           <Link
             href="/finder"
-            className={`text-xs font-bold uppercase tracking-wider transition-all pb-1.5 ${
+            className={`text-xs font-bold uppercase tracking-wider transition-all pb-1.5 whitespace-nowrap ${
               isNavActive("/finder")
                 ? "text-stone-900 border-b-2 border-stone-900"
                 : "text-stone-500 hover:text-stone-900 border-b-2 border-transparent"
@@ -154,12 +154,12 @@ export function Navbar() {
         </nav>
 
         {/* Dynamic Auth Action Buttons & User Menu */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <a
             href="https://zakiahmarble.com/contact-us/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex px-4 py-2 rounded-full text-xs font-semibold bg-white border border-stone-300 text-stone-800 hover:bg-stone-100 transition-all items-center gap-1.5 shadow-sm"
+            className="hidden xl:inline-flex px-3.5 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-300 text-stone-800 hover:bg-stone-100 transition-all items-center gap-1.5 shadow-2xs shrink-0 whitespace-nowrap"
           >
             Speak to a Specialist <ExternalLink className="w-3 h-3 text-stone-500" />
           </a>
@@ -179,31 +179,30 @@ export function Navbar() {
                 window.dispatchEvent(new Event("mec_verified_email_updated"));
               }}
             />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-stone-200/80 border border-stone-300 text-stone-700 text-xs font-bold flex items-center justify-center font-mono">
-              AB
-            </div>
-          )}
+          ) : null}
 
           {isLoading ? (
             <div className="px-2 py-1 flex items-center gap-2 text-xs text-stone-400">
               <Loader2 className="w-4 h-4 animate-spin text-stone-500" />
             </div>
           ) : role === "ADMIN" || role === "CONTENT_EDITOR" ? (
-            /* Logged In as ADMIN or CONTENT_EDITOR */
-            <div className="flex items-center gap-2">
+            /* Logged In as ADMIN or CONTENT_EDITOR: Compact layout to protect navigation spacing */
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <Link
                 href={role === "ADMIN" ? "/nextjs-app" : "/nextjs-app/pages"}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-stone-900 text-white hover:bg-stone-800 flex items-center gap-1.5 transition-all shadow-sm"
+                className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium bg-stone-900 text-white hover:bg-stone-800 flex items-center gap-1.5 transition-all shadow-xs shrink-0 whitespace-nowrap"
+                title="Admin Dashboard"
               >
-                <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+                <span>Dashboard</span>
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="px-3 py-2 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 flex items-center gap-1.5 transition-all border border-stone-300"
+                className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium bg-white hover:bg-stone-100 text-stone-700 flex items-center gap-1.5 transition-all border border-stone-300 shadow-xs shrink-0 whitespace-nowrap cursor-pointer"
                 title="Log Out"
               >
-                <LogOut className="w-3.5 h-3.5" /> Logout
+                <LogOut className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                <span>Logout</span>
               </button>
             </div>
           ) : null}

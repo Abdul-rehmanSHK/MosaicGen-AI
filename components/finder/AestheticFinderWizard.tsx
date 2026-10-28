@@ -68,7 +68,7 @@ export function AestheticFinderWizard({
   availableGenerations = [],
 }: WizardProps) {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-gold-400 font-serif">Loading Aesthetic Studio...</div>}>
+    <Suspense fallback={<div className="p-12 text-center text-stone-700 font-serif">Loading Aesthetic Studio...</div>}>
       <AestheticFinderContent
         initialSteps={initialSteps}
         availableProducts={availableProducts}
@@ -480,21 +480,27 @@ function AestheticFinderContent({
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-8 sm:gap-10 py-6 px-4 sm:px-6 text-stone-900">
       {/* ================= STEPPER PROGRESS BAR ================= */}
-      <div className="w-full flex flex-col gap-5">
-        <div className="flex items-center justify-between text-xs font-mono text-stone-500 uppercase tracking-widest">
-          <span>STEP 0{currentStepIndex + 1} OF 0{initialSteps.length}</span>
-          <span className="font-serif italic capitalize text-base sm:text-lg text-stone-800">
+      <div className="w-full flex flex-col gap-4">
+        <div className="flex items-baseline justify-between">
+          <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-stone-500">
+            Step{" "}
+            <span className="text-stone-900 font-semibold tabular-nums">
+              0{currentStepIndex + 1}
+            </span>{" "}
+            of 0{initialSteps.length}
+          </p>
+          <p className="font-serif text-sm sm:text-base font-light italic text-stone-800">
             {SCRIPT_NAMES[currentStepIndex] || currentStep?.title || "Step"}
-          </span>
+          </p>
         </div>
 
         {/* Stepper Dots & Track */}
         <div className="relative flex items-center justify-between w-full px-2 sm:px-6">
           {/* Background Track Line */}
-          <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-300 -z-0" />
+          <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-px bg-stone-200 -z-0" />
           {/* Active Fill Line */}
           <div
-            className="absolute left-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-900 transition-all duration-500 -z-0"
+            className="absolute left-8 top-1/2 -translate-y-1/2 h-px bg-stone-900 transition-all duration-300 ease-out -z-0"
             style={{ width: `calc(${(currentStepIndex / (initialSteps.length - 1)) * 100}% - 2.5rem)` }}
           />
 
@@ -514,12 +520,12 @@ function AestheticFinderContent({
                     isCompleted
                       ? "bg-stone-900 border-2 border-stone-900 text-white shadow-xs"
                       : isCurrent
-                      ? "bg-stone-900 text-white font-bold border-2 border-stone-900 ring-4 ring-stone-900/10 shadow-md scale-105"
+                      ? "bg-white text-stone-900 font-bold border-2 border-stone-900 ring-4 ring-stone-900/10 shadow-md scale-105"
                       : "bg-white border border-stone-300 text-stone-400 group-hover:border-stone-500 group-hover:text-stone-700 shadow-2xs"
                   }`}
                 >
                   {isCompleted ? (
-                    <Check className="w-4 h-4 text-white stroke-[2.5]" />
+                    <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
                   ) : (
                     <span>0{idx + 1}</span>
                   )}
@@ -527,7 +533,7 @@ function AestheticFinderContent({
 
                 {/* Step Label */}
                 <span
-                  className={`text-[11px] font-mono tracking-wider transition-colors uppercase ${
+                  className={`text-[10px] font-mono tracking-[0.22em] transition-colors uppercase ${
                     isCurrent
                       ? "text-stone-900 font-bold"
                       : isCompleted
@@ -563,7 +569,7 @@ function AestheticFinderContent({
           <div
             className={`grid gap-4 sm:gap-5 ${
               currentStep?.key === "color"
-                ? "grid-cols-2 sm:grid-cols-4 md:grid-cols-7"
+                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-6"
                 : currentStep?.options?.length === 5
                 ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
                 : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
@@ -573,15 +579,71 @@ function AestheticFinderContent({
               const currentVal = answers[currentStep.key] || "";
               const isSelected = currentVal === opt.value;
               const isColor = currentStep?.key === "color";
+              const isNoPreference = opt.value === "any" || opt.value === "no-preference";
 
+              // 1. Color Swatch Cards: clean white cards with centered circular swatch + label below
+              if (isColor) {
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => handleSelectOption(opt.value)}
+                    className={`group relative rounded-2xl p-5 flex flex-col items-center justify-center gap-3.5 aspect-[4/5] cursor-pointer transition-all duration-300 shadow-2xs ${
+                      isSelected
+                        ? "border-2 border-stone-900 ring-4 ring-stone-900/10 bg-white scale-[1.02] shadow-md"
+                        : "border border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
+                    }`}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-full border border-stone-200/60 shadow-inner transition-transform duration-300 group-hover:scale-105"
+                      style={{
+                        background: opt.colorHex || "#18181B",
+                      }}
+                    />
+                    <span className="text-xs font-sans font-medium text-stone-800 text-center tracking-tight leading-snug">
+                      {opt.label}
+                    </span>
+                    {isSelected && (
+                      <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-stone-900 text-white flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // 2. Shape Step: "No preference" card without image
+              if (isNoPreference && !opt.imageUrl) {
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => handleSelectOption(opt.value)}
+                    className={`group relative aspect-[3/4] rounded-2xl p-5 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-2xs ${
+                      isSelected
+                        ? "border-2 border-stone-900 ring-4 ring-stone-900/10 bg-white scale-[1.02] shadow-md"
+                        : "border border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
+                    }`}
+                  >
+                    <span className="font-serif font-medium text-sm sm:text-base text-stone-900 text-center">
+                      No preference
+                    </span>
+                    {isSelected && (
+                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-xs">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // 3. Image Cards (Styles, Shapes, Spaces)
               return (
                 <div
                   key={opt.id}
                   onClick={() => handleSelectOption(opt.value)}
                   className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 shadow-2xs ${
                     isSelected
-                      ? "border-stone-900 ring-2 ring-stone-900/30 scale-[1.02] shadow-md"
-                      : "border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-sm"
+                      ? "border-2 border-stone-900 ring-4 ring-stone-900/10 scale-[1.02] shadow-md"
+                      : "border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
                   }`}
                 >
                   {opt.imageUrl ? (
@@ -590,54 +652,26 @@ function AestheticFinderContent({
                       alt={opt.label}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
-                  ) : opt.colorHex ? (
-                    <div
-                      className="w-full h-full transition-transform duration-700 group-hover:scale-105"
-                      style={{ backgroundColor: opt.colorHex }}
-                    />
                   ) : (
-                    <div
-                      className="w-full h-full transition-transform duration-700 group-hover:scale-105"
-                      style={
-                        opt.value === "multicolor"
-                          ? { background: "linear-gradient(135deg, #e57373, #ba68c8, #4fc3f7, #81c784, #fff176)" }
-                          : opt.value === "custom"
-                          ? { background: "linear-gradient(135deg, #ffffff 0%, #dcdcdc 50%, #9e9e9e 100%)" }
-                          : { background: "linear-gradient(135deg, #f5f5f5 0%, #cfd8dc 100%)" }
-                      }
-                    />
-                  )}
-
-                  {/* For image options: Subtle dark gradient so white text pops */}
-                  {!isColor && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent opacity-90 group-hover:opacity-80 transition-opacity" />
-                  )}
-
-                  {/* For image options: bottom label with checkmark */}
-                  {!isColor ? (
-                    <div className="absolute inset-x-0 bottom-0 p-3.5 z-10 flex items-center justify-between gap-1.5">
-                      <span className="font-serif font-medium text-xs sm:text-sm text-white drop-shadow-sm leading-snug">
-                        {opt.label}
-                      </span>
-                      {isSelected && (
-                        <div className="w-5 h-5 rounded-full bg-white text-stone-900 flex items-center justify-center shadow-md shrink-0">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* For color swatches: crisp white badge at bottom for 100% legibility */
-                    <div className="absolute inset-x-1.5 bottom-1.5 py-1.5 px-2 rounded-xl bg-white/95 backdrop-blur-sm border border-stone-200/90 shadow-2xs flex items-center justify-between gap-1 z-10">
-                      <span className="text-[10px] font-sans font-semibold tracking-wide uppercase text-stone-800 truncate">
-                        {opt.label}
-                      </span>
-                      {isSelected && (
-                        <div className="w-4 h-4 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0">
-                          <Check className="w-2.5 h-2.5 stroke-[3]" />
-                        </div>
-                      )}
+                    <div className="w-full h-full bg-stone-100 flex items-center justify-center text-stone-400 text-xs">
+                      {opt.label}
                     </div>
                   )}
+
+                  {/* Dark gradient for crisp text legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-95 group-hover:opacity-90 transition-opacity" />
+
+                  {/* Bottom label & selection checkmark */}
+                  <div className="absolute inset-x-0 bottom-0 p-3.5 z-10 flex items-center justify-between gap-1.5">
+                    <span className="font-serif font-medium text-xs sm:text-sm text-white drop-shadow-sm leading-snug">
+                      {opt.label}
+                    </span>
+                    {isSelected && (
+                      <div className="w-5 h-5 rounded-full bg-white text-stone-900 flex items-center justify-center shadow-md shrink-0">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -826,49 +860,74 @@ function AestheticFinderContent({
                 </div>
               </div>
             ) : (
-              /* 3. Initial Result Card before Generation */
-              <div className="relative w-full p-8 sm:p-10 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col gap-7 overflow-hidden text-stone-900 animate-fadeIn">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-stone-600" /> YOUR AESTHETIC RESULT
+              /* 3. Initial Result Card before Generation (Matches exact reference layout) */
+              <div className="relative w-full p-6 sm:p-8 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-6 text-stone-900 animate-fadeIn">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.32em] text-stone-500 font-bold">
+                    YOUR TASTE
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal">
-                    Based on your answers, you have an <em className="italic font-serif font-normal text-stone-900">exquisite architectural sense</em>.
+                  <h2 className="text-xl sm:text-2xl font-serif text-stone-900 font-normal">
+                    Based on your answers, you have an{" "}
+                    <em className="italic font-serif font-normal text-stone-800">
+                      exquisite aesthetic sense
+                    </em>
+                    .
                   </h2>
                 </div>
 
-                {/* Taste Attributes Grid (Dynamically includes all questionnaire steps) */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 rounded-2xl bg-stone-50 border border-stone-200/90 shadow-2xs">
-                  {questionnaireSteps.map((step, idx) => {
-                    const val = answers[step.key] || (idx === 0 ? selectedStyle : idx === 1 ? selectedShape : idx === 2 ? selectedColor : idx === 3 ? selectedSpace : "");
-                    const label = getSelectedLabel(step.key, val);
-                    return (
-                      <div key={step.id || step.key} className="flex flex-col gap-1 border-r last:border-r-0 border-stone-200 pr-2">
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-bold">
-                          {step.title || step.key}
-                        </span>
-                        <span className="text-sm font-serif font-bold text-stone-900 capitalize">
-                          {label}
-                        </span>
-                      </div>
-                    );
-                  })}
+                {/* 4 Taste Columns matching exact reference */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1 pb-2">
+                  <div className="border-l-2 border-stone-300 pl-3">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
+                      COLLECTION
+                    </span>
+                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
+                      {styleLabel || "—"}
+                    </span>
+                  </div>
+
+                  <div className="border-l-2 border-stone-300 pl-3">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
+                      SHAPE
+                    </span>
+                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
+                      {shapeLabel === "any" || shapeLabel === "no-preference" ? "No preference" : shapeLabel || "—"}
+                    </span>
+                  </div>
+
+                  <div className="border-l-2 border-stone-300 pl-3">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
+                      COLOUR
+                    </span>
+                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
+                      {colorLabel || "—"}
+                    </span>
+                  </div>
+
+                  <div className="border-l-2 border-stone-300 pl-3">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
+                      PLACEMENT
+                    </span>
+                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
+                      {spaceLabel || "—"}
+                    </span>
+                  </div>
                 </div>
 
                 <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-3xl">
-                  Synthesize an authentic one-of-a-kind mosaic concept crafted specifically from your {styleLabel} aesthetic, {shapeLabel} composition, and {colorLabel} palette for {spaceLabel}.
+                  Press the button below to see a one-of-a-kind design that reflects your taste. Customisation can be made to any chosen mosaic, and we&apos;re always available for a free consultation.
                 </p>
 
                 {/* Email Verification Flow Banner */}
                 {!isVerified ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-stone-50 border border-stone-200">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-full bg-stone-200/70 flex items-center justify-center shrink-0">
-                        <Mail className="w-5 h-5 text-stone-700" />
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-stone-50 border border-stone-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-stone-200/80 flex items-center justify-center shrink-0">
+                        <Mail className="w-4 h-4 text-stone-700" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-xs sm:text-sm font-semibold text-stone-900">Email Verification Required</span>
-                        <span className="text-xs text-stone-500">
+                        <span className="text-xs font-semibold text-stone-900">Email Verification Required</span>
+                        <span className="text-[11px] text-stone-500">
                           Verify your email to synthesize and view your bespoke AI mosaic concept.
                         </span>
                       </div>
@@ -877,231 +936,213 @@ function AestheticFinderContent({
                     <button
                       type="button"
                       onClick={() => setIsOtpModalOpen(true)}
-                      className="px-6 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
+                      className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
                     >
                       <Mail className="w-3.5 h-3.5 text-white" />
                       Verify Email to Generate
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                        <Check className="w-4 h-4 text-emerald-700 stroke-[2.5]" />
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                        <Check className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" />
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs font-semibold text-emerald-900">Email Verified: {verifiedEmail}</span>
                         <span className="text-[11px] text-emerald-700">Ready to synthesize your architectural concept.</span>
                       </div>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={handleGenerateClick}
-                      disabled={isGenerating}
-                      className="px-6 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center gap-2 transition-all shadow-sm cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-white" />
-                      Generate Mosaic Now
-                    </button>
                   </div>
                 )}
 
                 {error && (
-                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-3 pt-2">
+                <div className="flex items-center gap-3 pt-1">
                   <button
                     type="button"
                     onClick={handleGenerateClick}
                     disabled={isGenerating}
-                    className="px-8 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-md hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
+                    className="px-6 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-xs hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
-                    {isVerified ? "Generate My Bespoke Mosaic" : "Verify Email & Generate Mosaic"}
+                    {isVerified ? "Generate my mosaic" : "Verify Email & Generate"}
                   </button>
 
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="px-5 py-3.5 rounded-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-medium flex items-center gap-2 transition-all border border-stone-300 shadow-2xs cursor-pointer"
+                    className="px-4 py-3 text-stone-500 hover:text-stone-900 text-xs sm:text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-stone-500" />
+                    <RefreshCw className="w-3.5 h-3.5 text-stone-400" />
                     Start over
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ================= AI GENERATED MOSAIC RESULTS AT BOTTOM ================= */}
+            {/* ================= CATALOG MOSAIC RECOMMENDATIONS & STUDIO RESULTS ================= */}
             {(() => {
-              let featuredIds: string[] = [];
-              try {
-                if (currentStep?.featuredProductIds) {
-                  featuredIds = JSON.parse(currentStep.featuredProductIds);
+              // 1. Filter matching products from active catalog
+              const selStyle = (selectedStyle || answers["style"] || "").toLowerCase();
+              const selSpace = (selectedSpace || answers["space"] || "").toLowerCase();
+
+              const matchingProducts = availableProducts.filter((p) => {
+                let specs: any = {};
+                try {
+                  specs = typeof p.specs === "string" ? JSON.parse(p.specs || "{}") : p.specs || {};
+                } catch {
+                  specs = {};
                 }
-              } catch {
-                featuredIds = [];
-              }
+                if (specs.showOnFinder === false) return false;
 
-              // Check if featured IDs correspond to studio generations
-              let displayGenerations: GenerationItem[] = [];
-              if (generationsList && generationsList.length > 0) {
-                if (featuredIds.length > 0) {
-                  const curated = featuredIds
-                    .map((id) => generationsList.find((g) => g.id === id))
-                    .filter((g): g is GenerationItem => Boolean(g));
-                  if (curated.length > 0) {
-                    displayGenerations = curated;
-                  }
-                }
-                if (displayGenerations.length === 0) {
-                  displayGenerations = generationsList.slice(0, 4);
-                }
-              }
+                const pStyle = (specs.style || p.category || "").toLowerCase();
+                const pSpace = (specs.space || "").toLowerCase();
 
-              // If we have AI studio generations to showcase
-              if (displayGenerations.length > 0) {
-                return (
-                  <div className="flex flex-col gap-6 pt-4 border-t border-gold-500/20">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold-400 font-semibold block">
-                          STUDIO GENERATED INSPIRATIONS
-                        </span>
-                        <h3 className="text-xl sm:text-2xl font-serif font-bold text-white">
-                          One-of-a-Kind Mosaics Generated For Your Taste
-                        </h3>
-                      </div>
-                      <p className="text-xs text-neutral-400">
-                        Bespoke neural mosaic renders matching your {styleLabel} aesthetic
-                      </p>
-                    </div>
+                if (selStyle && (pStyle.includes(selStyle) || selStyle.includes(pStyle))) return true;
+                if (selSpace && (pSpace.includes(selSpace) || selSpace.includes(pSpace))) return true;
+                return false;
+              });
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                      {displayGenerations.map((gen) => (
-                        <div
-                          key={gen.id}
-                          className="group rounded-2xl bg-obsidian-900/80 border border-gold-500/20 hover:border-gold-500/50 overflow-hidden shadow-xl transition-all flex flex-col justify-between"
-                        >
-                          <div className="relative aspect-[4/3] w-full bg-obsidian-950 overflow-hidden">
-                            <img
-                              src={gen.resultImageUrl}
-                              alt={gen.prompt}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-obsidian-950/85 backdrop-blur-md border border-gold-500/30 text-gold-300 font-mono font-bold text-[10px] tracking-wider uppercase">
-                              {gen.placement || "Bespoke"}
-                            </div>
-                            <div className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-gold-500/20 backdrop-blur-md border border-gold-500/40 text-gold-300 font-mono text-[9px] flex items-center gap-1">
-                              <Sparkles className="w-2.5 h-2.5" /> AI Render
-                            </div>
-                          </div>
+              const displayProducts = (matchingProducts.length > 0 ? matchingProducts : availableProducts).slice(0, 4);
 
-                          <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                            <div>
-                              <span className="text-[10px] font-mono text-gold-400/90 uppercase tracking-wider block">
-                                Handcrafted AI Synthesis
-                              </span>
-                              <h4 className="font-serif font-bold text-white text-sm line-clamp-1 mt-0.5">
-                                {gen.placement} Mosaic Concept
-                              </h4>
-                              <p className="text-[11px] text-neutral-400 line-clamp-2 mt-1 leading-relaxed font-light">
-                                {gen.prompt}
-                              </p>
-                            </div>
-
-                            <Link
-                              href={`/?mode=scratch&prompt=${encodeURIComponent(
-                                gen.prompt
-                              )}&placement=${encodeURIComponent(gen.placement || spaceLabel)}`}
-                              className="w-full py-2 rounded-xl bg-obsidian-800 hover:bg-gold-500 text-neutral-200 hover:text-obsidian-950 font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-neutral-700 hover:border-gold-500 shadow-md group-hover:shadow-gold-500/20 active:scale-[0.98]"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-
-              // Fallback to catalog products if no studio generations exist yet
-              let resultProducts = availableProducts;
-              if (featuredIds.length > 0) {
-                const curated = featuredIds
-                  .map((id) => availableProducts.find((p) => p.id === id))
-                  .filter(Boolean);
-                if (curated.length > 0) resultProducts = curated;
-              }
-
-              const displayProducts = resultProducts.slice(0, 4);
-              if (displayProducts.length === 0) return null;
+              // 2. Studio generations
+              const displayGenerations = (generationsList || []).slice(0, 4);
 
               return (
-                <div className="flex flex-col gap-6 pt-4 border-t border-gold-500/20">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-gold-400 font-semibold block">
-                        CURATED MOSAIC REFERENCES
-                      </span>
-                      <h3 className="text-xl sm:text-2xl font-serif font-bold text-white">
-                        Recommended Pieces For Your Aesthetic
-                      </h3>
-                    </div>
-                    <p className="text-xs text-neutral-400">
-                      Handcrafted Italian Tesserae matching your {styleLabel} style
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {displayProducts.map((prod) => (
-                      <div
-                        key={prod.id}
-                        className="group rounded-2xl bg-obsidian-900/80 border border-gold-500/20 hover:border-gold-500/50 overflow-hidden shadow-xl transition-all flex flex-col justify-between"
-                      >
-                        <div className="relative aspect-[4/3] w-full bg-obsidian-950 overflow-hidden">
-                          <Image
-                            src={prod.sampleImageUrl}
-                            alt={prod.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-obsidian-950/80 backdrop-blur-md border border-gold-500/30 text-gold-300 font-serif font-bold text-[10px]">
-                            ${prod.pricePerSqFt}/sq.ft
-                          </div>
+                <div className="flex flex-col gap-10 pt-4 border-t border-stone-200">
+                  {/* Matching Catalog Pieces */}
+                  {displayProducts.length > 0 && (
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-500 font-semibold block">
+                            CURATED CATALOG PIECES
+                          </span>
+                          <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
+                            Recommended Pieces For Your Aesthetic
+                          </h3>
                         </div>
-
-                        <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                          <div>
-                            <span className="text-[10px] font-mono text-gold-400/90 uppercase tracking-wider block">
-                              {prod.category}
-                            </span>
-                            <h4 className="font-serif font-bold text-white text-sm line-clamp-1 mt-0.5">
-                              {prod.title}
-                            </h4>
-                            <p className="text-[11px] text-neutral-400 line-clamp-2 mt-1 leading-relaxed">
-                              {prod.description}
-                            </p>
-                          </div>
-
-                          <Link
-                            href={`/?mode=scratch&product=${prod.id}&prompt=${encodeURIComponent(
-                              generatedVisionPrompt
-                            )}&placement=${encodeURIComponent(spaceLabel)}`}
-                            className="w-full py-2 rounded-xl bg-obsidian-800 hover:bg-gold-500 text-neutral-200 hover:text-obsidian-950 font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-neutral-700 hover:border-gold-500"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
-                          </Link>
-                        </div>
+                        <p className="text-xs text-stone-500">
+                          Handcrafted Italian Tesserae matching your {styleLabel} aesthetic
+                        </p>
                       </div>
-                    ))}
-                  </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {displayProducts.map((prod) => (
+                          <div
+                            key={prod.id}
+                            className="group rounded-2xl bg-white border border-stone-200 hover:border-stone-400 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                          >
+                            <div className="relative aspect-[4/3] w-full bg-stone-100 overflow-hidden">
+                              <Image
+                                src={prod.sampleImageUrl}
+                                alt={prod.title}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-stone-900 font-serif font-bold text-[10px] shadow-2xs">
+                                ${prod.pricePerSqFt}/sq.ft
+                              </div>
+                            </div>
+
+                            <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
+                              <div>
+                                <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider block font-medium">
+                                  {prod.category}
+                                </span>
+                                <h4 className="font-serif font-bold text-stone-900 text-sm line-clamp-1 mt-0.5">
+                                  {prod.title}
+                                </h4>
+                                <p className="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-relaxed">
+                                  {prod.description}
+                                </p>
+                              </div>
+
+                              <Link
+                                href={`/?mode=scratch&product=${prod.id}&prompt=${encodeURIComponent(
+                                  generatedVisionPrompt
+                                )}&placement=${encodeURIComponent(spaceLabel)}`}
+                                className="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
+                              </Link>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Generations Showcase */}
+                  {displayGenerations.length > 0 && (
+                    <div className="flex flex-col gap-5 pt-4 border-t border-stone-100">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-500 font-semibold block">
+                            STUDIO AI INSPIRATIONS
+                          </span>
+                          <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
+                            Neural Mosaics Generated For Similar Tastes
+                          </h3>
+                        </div>
+                        <p className="text-xs text-stone-500">
+                          Bespoke neural mosaic concepts synthesized in our studio
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {displayGenerations.map((gen) => (
+                          <div
+                            key={gen.id}
+                            className="group rounded-2xl bg-white border border-stone-200 hover:border-stone-400 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                          >
+                            <div className="relative aspect-[4/3] w-full bg-stone-100 overflow-hidden">
+                              <img
+                                src={gen.resultImageUrl}
+                                alt={gen.prompt}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-stone-900 font-mono font-bold text-[10px] tracking-wider uppercase shadow-2xs">
+                                {gen.placement || "Bespoke"}
+                              </div>
+                              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 font-mono text-[9px] flex items-center gap-1 border border-stone-200">
+                                <Sparkles className="w-2.5 h-2.5" /> AI Render
+                              </div>
+                            </div>
+
+                            <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
+                              <div>
+                                <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider block font-medium">
+                                  Handcrafted AI Synthesis
+                                </span>
+                                <h4 className="font-serif font-bold text-stone-900 text-sm line-clamp-1 mt-0.5">
+                                  {gen.placement} Mosaic Concept
+                                </h4>
+                                <p className="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-relaxed font-light">
+                                  {gen.prompt}
+                                </p>
+                              </div>
+
+                              <Link
+                                href={`/?mode=scratch&prompt=${encodeURIComponent(
+                                  gen.prompt
+                                )}&placement=${encodeURIComponent(gen.placement || spaceLabel)}`}
+                                className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-stone-200"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
+                              </Link>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -1112,7 +1153,7 @@ function AestheticFinderContent({
       {/* Fullscreen Lightbox Modal */}
       {isLightboxOpen && generatedResult && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-950/95 backdrop-blur-xl animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/90 backdrop-blur-md animate-fadeIn"
           onClick={() => setIsLightboxOpen(false)}
         >
           <div
@@ -1122,16 +1163,16 @@ function AestheticFinderContent({
             <button
               type="button"
               onClick={() => setIsLightboxOpen(false)}
-              className="absolute -top-12 right-0 p-2 rounded-full bg-obsidian-900 border border-neutral-700 text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+              className="absolute -top-12 right-0 p-2 rounded-full bg-stone-900 border border-stone-700 text-stone-200 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
             <img
               src={generatedResult.resultImageUrl}
               alt={generatedResult.promptApplied}
-              className="max-w-full max-h-[80vh] rounded-2xl object-contain border-2 border-gold-500/40 shadow-2xl"
+              className="max-w-full max-h-[80vh] rounded-2xl object-contain border-2 border-stone-700 shadow-2xl"
             />
-            <div className="flex items-center justify-between w-full px-2 text-xs text-neutral-300 flex-wrap gap-2">
+            <div className="flex items-center justify-between w-full px-2 text-xs text-stone-300 flex-wrap gap-2">
               <span className="font-serif italic truncate max-w-lg">&ldquo;{generatedResult.promptApplied}&rdquo;</span>
               <button
                 type="button"
@@ -1141,7 +1182,7 @@ function AestheticFinderContent({
                     `zakiah-mosaic-${(styleLabel || "custom").toLowerCase()}-${(spaceLabel || "design").toLowerCase()}.jpg`
                   )
                 }
-                className="px-4 py-1.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-bold text-xs flex items-center gap-1.5 shadow transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-white hover:bg-stone-100 text-stone-900 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" /> Download Image
               </button>

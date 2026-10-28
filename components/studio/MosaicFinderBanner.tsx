@@ -7,7 +7,7 @@ import { ArrowUpRight } from "lucide-react";
 
 export function MosaicFinderBanner() {
   return (
-    <div className="w-full max-w-4xl mx-auto mt-6 mb-12 px-2">
+    <div className="w-full max-w-7xl mx-auto mt-6 mb-12 px-2">
       {/* Editorial Decorative Slider Indicator (matching MEC AI Studio) */}
       <div className="flex items-center justify-center gap-3 mb-10 opacity-60">
         <div className="h-[1px] w-24 bg-gradient-to-r from-transparent to-stone-300" />

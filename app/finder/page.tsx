@@ -7,6 +7,14 @@ import { Footer } from "@/components/Footer";
 
 export const revalidate = 0;
 
+function parseProductSpecs(specsStr: string | null | undefined) {
+  try {
+    return JSON.parse(specsStr || "{}");
+  } catch {
+    return {};
+  }
+}
+
 export default async function FinderPage() {
   let steps = await prisma.finderStep.findMany({
     orderBy: { order: "asc" },
@@ -60,10 +68,54 @@ export default async function FinderPage() {
     }
   }
 
-  // Fetch active products from catalog for fallback
+  // Fetch active products from catalog as the single source of truth
   const products = await prisma.product.findMany({
     where: { isTrashed: false },
     orderBy: { createdAt: "desc" },
+  });
+
+  // Synchronize wizard style & space cards with real catalog products
+  const synchronizedSteps = steps.map((step) => {
+    if (step.key === "style") {
+      const updatedOptions = step.options.map((opt) => {
+        // Find matching product from catalog
+        const matchingProduct = products.find((p) => {
+          const specs = parseProductSpecs(p.specs);
+          const pStyle = (specs.style || p.category || "").toLowerCase();
+          const optVal = opt.value.toLowerCase();
+          const optLabel = opt.label.toLowerCase();
+          return pStyle.includes(optVal) || optVal.includes(pStyle) || pStyle.includes(optLabel);
+        });
+
+        if (matchingProduct?.sampleImageUrl) {
+          return { ...opt, imageUrl: matchingProduct.sampleImageUrl };
+        }
+        return opt;
+      });
+
+      return { ...step, options: updatedOptions };
+    }
+
+    if (step.key === "space") {
+      const updatedOptions = step.options.map((opt) => {
+        const matchingProduct = products.find((p) => {
+          const specs = parseProductSpecs(p.specs);
+          const pSpace = (specs.space || "").toLowerCase();
+          const pCategory = (p.category || "").toLowerCase();
+          const optVal = opt.value.toLowerCase();
+          return pSpace.includes(optVal) || optVal.includes(pSpace) || pCategory.includes(optVal);
+        });
+
+        if (matchingProduct?.sampleImageUrl) {
+          return { ...opt, imageUrl: matchingProduct.sampleImageUrl };
+        }
+        return opt;
+      });
+
+      return { ...step, options: updatedOptions };
+    }
+
+    return step;
   });
 
   // Fetch AI generated mosaic designs from studio
@@ -89,15 +141,14 @@ export default async function FinderPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f3f2] text-stone-900 flex flex-col justify-between selection:bg-stone-300 selection:text-stone-900 relative">
-
       {/* Sitewide Navbar */}
       <Navbar />
 
       {/* Main Finder Wizard Area */}
       <main className="flex-1 py-8 sm:py-12 relative z-10">
-        <AestheticFinderWizard 
-          initialSteps={steps} 
-          availableProducts={products} 
+        <AestheticFinderWizard
+          initialSteps={synchronizedSteps}
+          availableProducts={products}
           availableGenerations={serializedGenerations}
         />
       </main>

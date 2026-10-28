@@ -5,20 +5,36 @@ import { ProductsManagerClient } from "./ProductsManagerClient";
 export const revalidate = 0;
 
 export default async function AdminProductsPage() {
-  const products = await prisma.product.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [products, rawSubmissions] = await Promise.all([
+    prisma.product.findMany({
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.finderResult.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+  ]);
+
+  const serializedSubmissions = rawSubmissions.map((s) => ({
+    ...s,
+    createdAt: s.createdAt.toISOString(),
+  }));
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-white">Mosaic Products Catalog</h1>
-        <p className="text-xs text-neutral-400 mt-1">
-          Manage mosaic texture references, material specs, pricing per square foot, and sample imagery.
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900">
+          Products Catalog & Aesthetic Styles
+        </h1>
+        <p className="text-xs text-stone-500 mt-1">
+          Single unified management for mosaic designs, aesthetic reference styles, surface placements, material specs, and pricing.
         </p>
       </div>
 
-      <ProductsManagerClient initialProducts={products} />
+      <ProductsManagerClient
+        initialProducts={products}
+        initialSubmissions={serializedSubmissions}
+      />
     </div>
   );
 }

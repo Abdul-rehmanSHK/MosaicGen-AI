@@ -25,20 +25,123 @@ body {
 .bg-obsidian-900 {
   background-color: #ffffff;
   border-color: #e7e5e4;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
 }
 
 .bg-obsidian-800 {
-  background-color: #edebe8;
-  border-color: #e2ded9;
+  background-color: #f5f5f4;
+  border-color: #e7e5e4;
 }
 
 .bg-obsidian-700 {
-  background-color: #e5e2dc;
+  background-color: #e7e5e4;
 }
 
-/* Ensure white text is genuinely white on dark backgrounds/buttons */
-.text-white {
+/* ========================================================
+   Admin / Dashboard Light Theme Color Management
+   ======================================================== */
+.admin-light-theme {
+  background-color: #f4f3f2;
+  color: #1c1917;
+}
+
+.admin-light-theme aside {
+  background-color: #ffffff !important;
+  border-color: #e7e5e4 !important;
+}
+
+.admin-light-theme .bg-obsidian-900 {
+  background-color: #ffffff !important;
+  border-color: #e7e5e4 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+.admin-light-theme .bg-obsidian-950 {
+  background-color: #f7f6f5 !important;
+  border-color: #e7e5e4 !important;
+}
+
+.admin-light-theme .border-neutral-800,
+.admin-light-theme .border-neutral-700,
+.admin-light-theme .border-neutral-900,
+.admin-light-theme .border-gold-500\/20,
+.admin-light-theme .border-gold-500\/30 {
+  border-color: #e7e5e4 !important;
+}
+
+/* Headings in Light Dashboard */
+.admin-light-theme h1,
+.admin-light-theme h2,
+.admin-light-theme h3,
+.admin-light-theme h4 {
+  color: #1c1917 !important;
+}
+
+/* Text inside cards, inputs, labels, tables that had text-white */
+.admin-light-theme .bg-obsidian-900 .text-white,
+.admin-light-theme .bg-obsidian-950 .text-white,
+.admin-light-theme table .text-white,
+.admin-light-theme input.text-white,
+.admin-light-theme textarea.text-white,
+.admin-light-theme select.text-white {
+  color: #1c1917 !important;
+}
+
+/* Text colors for readable contrast on light backgrounds */
+.admin-light-theme .text-neutral-100,
+.admin-light-theme .text-neutral-200 {
+  color: #1c1917 !important;
+}
+
+.admin-light-theme .text-neutral-300 {
+  color: #292524 !important;
+}
+
+.admin-light-theme .text-neutral-400 {
+  color: #57534e !important;
+}
+
+.admin-light-theme .text-neutral-500 {
+  color: #78716c !important;
+}
+
+/* Gold / Accent text in light mode: deep warm amber for crisp readability */
+.admin-light-theme .text-gold-300,
+.admin-light-theme .text-gold-400 {
+  color: #92400e !important;
+}
+
+/* Form Controls in Light Dashboard */
+.admin-light-theme input,
+.admin-light-theme textarea,
+.admin-light-theme select {
+  background-color: #ffffff !important;
+  border: 1px solid #d6d3d1 !important;
+  color: #1c1917 !important;
+}
+
+.admin-light-theme input:focus,
+.admin-light-theme textarea:focus,
+.admin-light-theme select:focus {
+  border-color: #1c1917 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 1px #1c1917 !important;
+}
+
+.admin-light-theme input::placeholder,
+.admin-light-theme textarea::placeholder {
+  color: #a8a29e !important;
+}
+
+/* Ensure genuine white text on dark buttons and active badges */
+.admin-light-theme .bg-stone-900,
+.admin-light-theme .bg-stone-900 *,
+.admin-light-theme .bg-black,
+.admin-light-theme .bg-black *,
+.admin-light-theme button[class*="bg-stone-900"],
+.admin-light-theme button[class*="bg-stone-900"] *,
+.admin-light-theme button[class*="from-gold-400"],
+.admin-light-theme button[class*="from-gold-400"] * {
   color: #ffffff !important;
 }
 

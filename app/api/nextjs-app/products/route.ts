@@ -86,6 +86,7 @@ export async function POST(request: Request) {
     revalidateTag("pages");
     revalidatePath("/");
     revalidatePath("/from-scratch");
+    revalidatePath("/finder");
 
     return NextResponse.json({ success: true, product });
   } catch (error: any) {
@@ -182,6 +183,7 @@ export async function PUT(request: Request) {
     revalidateTag("pages");
     revalidatePath("/");
     revalidatePath("/from-scratch");
+    revalidatePath("/finder");
 
     return NextResponse.json({ success: true, product });
   } catch (error: any) {
