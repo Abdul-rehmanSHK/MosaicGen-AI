@@ -741,7 +741,7 @@ export function DesignStudio({
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Describe your bespoke mosaic vision (e.g. Classical Italian Calacatta gold medallion with central sunburst motif, laurel wreath border, and antiqued marble tesserae...)"
-                  className="w-full p-4 rounded-xl bg-stone-50/70 border border-stone-200 text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-700 transition-all resize-none leading-relaxed font-light"
+                  className="w-full p-4 rounded-xl bg-stone-50/70 border border-solid border-gold-400 hover:border-gold-500 focus:border-gold-500 focus:ring-2 focus:ring-gold-400/20 text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none transition-all resize-none leading-relaxed font-light shadow-2xs"
                 />
               </div>
 
@@ -877,14 +877,14 @@ export function DesignStudio({
               </div>
             </div>
 
-            {/* Prompt Input Row */}
-            <div className="w-full relative pt-1">
+            {/* Prompt Input Row: Solid Gold border matching the upload box */}
+            <div className="w-full rounded-xl border border-solid border-gold-400 hover:border-gold-500 focus-within:border-gold-500 focus-within:ring-2 focus-within:ring-gold-400/20 bg-stone-50/40 hover:bg-gold-50/20 p-3 sm:p-4 transition-all shadow-2xs">
               <input
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Iridescent sea-glass mosaic with a soft flowing wave motif"
-                className="w-full py-2.5 px-1 sm:px-2 text-sm sm:text-base text-stone-800 placeholder-stone-400 bg-transparent border-0 focus:outline-none transition-colors font-light"
+                className="w-full text-sm sm:text-base text-stone-900 placeholder-stone-400 bg-transparent border-0 focus:outline-none transition-colors font-light"
               />
             </div>
 
@@ -905,7 +905,7 @@ export function DesignStudio({
                         onClick={() => handlePlacementSelect(item.id)}
                         className={`px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer font-medium ${
                           isSelected
-                            ? "bg-white text-stone-900 border border-stone-800 shadow-2xs font-semibold"
+                            ? "bg-white text-stone-900 border border-solid border-gold-500 shadow-2xs font-semibold ring-1 ring-gold-400/30"
                             : "bg-stone-100/80 hover:bg-stone-200/80 text-stone-600 border border-transparent hover:border-stone-300"
                         }`}
                       >
