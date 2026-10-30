@@ -27,21 +27,16 @@ export default async function AdminPagesPage() {
     orderBy: { createdAt: "asc" },
   });
 
-  const products = await prisma.product.findMany({
-    where: { isTrashed: false },
-    orderBy: { createdAt: "desc" },
-  });
-
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-serif font-bold text-stone-900">Pages Content CMS</h1>
         <p className="text-sm text-stone-500 mt-1">
-          Customize live studio pages, headlines, descriptions, category badges, and featured mosaic showcases across the 3 primary pages.
+          Customize live studio page headlines, descriptions, and category badges. All products across all pages are managed directly in the Products Catalog.
         </p>
       </div>
 
-      <PagesManagerClient initialPages={pages} availableProducts={products} />
+      <PagesManagerClient initialPages={pages} />
     </div>
   );
 }

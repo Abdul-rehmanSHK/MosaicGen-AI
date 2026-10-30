@@ -78,50 +78,35 @@ export async function getCachedPageBySlug(slug: string) {
 }
 
 /**
- * 4. Cached Page-Specific Products (Dynamic Post Object Selection)
- * Allows "Customize your space" (/) and "Imagine from scratch" (/from-scratch)
- * to showcase distinct, admin-selected products.
+ * 4. Cached Page-Specific Products (Product Catalog as Single Source of Truth)
+ * Products across all pages come directly from the Product Catalog.
  */
 export async function getCachedPageProducts(pageSlug: "customize-space" | "from-scratch") {
   return unstable_cache(
     async () => {
-      // 1. Check if the page has explicitly selected featured products (Post Object method)
-      const page = await prisma.page.findUnique({
-        where: { slug: pageSlug },
-        select: { featuredProductIds: true },
-      });
-
-      if (page?.featuredProductIds) {
-        try {
-          const ids: string[] = JSON.parse(page.featuredProductIds);
-          if (Array.isArray(ids) && ids.length > 0) {
-            const products = await prisma.product.findMany({
-              where: { id: { in: ids }, isTrashed: false },
-            });
-            // Preserve the specific order selected in the Post Object selector
-            const map = new Map(products.map((p) => [p.id, p]));
-            const ordered = ids.map((id) => map.get(id)).filter(Boolean) as typeof products;
-            if (ordered.length > 0) return ordered;
-          }
-        } catch (e) {
-          console.error("Error parsing featuredProductIds for", pageSlug, e);
-        }
-      }
-
-      // 2. Fallback to product-level assignment flags
       const whereFilter =
         pageSlug === "customize-space"
           ? { isTrashed: false, showOnCustomize: true }
           : { isTrashed: false, showOnFromScratch: true };
 
-      return prisma.product.findMany({
+      let products = await prisma.product.findMany({
         where: whereFilter,
         orderBy: { createdAt: "desc" },
       });
+
+      // Fallback: If no products have the specific flag, return all active catalog products
+      if (products.length === 0) {
+        products = await prisma.product.findMany({
+          where: { isTrashed: false },
+          orderBy: { createdAt: "desc" },
+        });
+      }
+
+      return products;
     },
-    [`cached-page-products-${pageSlug}`],
+    [`cached-page-products-${pageSlug}-v3`],
     {
-      tags: ["products", "pages", `page-${pageSlug}`],
+      tags: ["products"],
       revalidate: 60,
     }
   )();

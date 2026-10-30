@@ -20,17 +20,9 @@ import {
   FileText,
   X,
   Compass,
+  Package,
+  ChevronRight,
 } from "lucide-react";
-
-interface Product {
-  id: string;
-  title: string;
-  slug: string;
-  category: string;
-  sampleImageUrl: string;
-  pricePerSqFt: number;
-  specs: string;
-}
 
 interface PageRecord {
   id: string;
@@ -47,10 +39,8 @@ interface PageRecord {
 
 export function PagesManagerClient({
   initialPages,
-  availableProducts,
 }: {
   initialPages: PageRecord[];
-  availableProducts: Product[];
 }) {
   const [pages, setPages] = useState<PageRecord[]>(initialPages);
   const [activePageId, setActivePageId] = useState<string>(initialPages[0]?.id || "");
@@ -66,7 +56,6 @@ export function PagesManagerClient({
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80"
   );
   const [newSecondaryText, setNewSecondaryText] = useState("");
-  const [newSelectedProductIds, setNewSelectedProductIds] = useState<string[]>([]);
 
   // State for image upload
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -104,40 +93,10 @@ export function PagesManagerClient({
     return "Architectural Hero Showcase Template";
   };
 
-  // Parse selected product IDs for current page
-  const currentSelectedProductIds: string[] = useMemo(() => {
-    if (!currentPage || !currentPage.featuredProductIds) return [];
-    try {
-      return JSON.parse(currentPage.featuredProductIds);
-    } catch {
-      return [];
-    }
-  }, [currentPage]);
-
   const handleFieldChange = (field: keyof PageRecord, value: any) => {
     setPages((prev) =>
       prev.map((p) => (p.id === activePageId ? { ...p, [field]: value } : p))
     );
-  };
-
-  const handleToggleProductSelection = (productId: string) => {
-    if (!currentPage) return;
-    const current = currentSelectedProductIds;
-    let next: string[];
-    if (current.includes(productId)) {
-      next = current.filter((id) => id !== productId);
-    } else {
-      next = [...current, productId];
-    }
-    handleFieldChange("featuredProductIds", JSON.stringify(next));
-  };
-
-  const handleToggleNewProductSelection = (productId: string) => {
-    if (newSelectedProductIds.includes(productId)) {
-      setNewSelectedProductIds(newSelectedProductIds.filter((id) => id !== productId));
-    } else {
-      setNewSelectedProductIds([...newSelectedProductIds, productId]);
-    }
   };
 
   // Upload image to WebP optimization endpoint
@@ -194,7 +153,6 @@ export function PagesManagerClient({
           bodyText: currentPage.bodyText,
           heroImageUrl: currentPage.heroImageUrl,
           secondaryText: currentPage.secondaryText,
-          featuredProductIds: currentPage.featuredProductIds,
         }),
       });
 
@@ -227,7 +185,6 @@ export function PagesManagerClient({
           bodyText: newBodyText,
           heroImageUrl: newHeroImageUrl,
           secondaryText: newSecondaryText,
-          featuredProductIds: JSON.stringify(newSelectedProductIds),
         }),
       });
 
@@ -244,7 +201,6 @@ export function PagesManagerClient({
       setNewHeading("");
       setNewBodyText("");
       setNewSecondaryText("");
-      setNewSelectedProductIds([]);
 
       showToast(`Page "${data.page.title}" created successfully!`);
     } catch (err: any) {
@@ -438,53 +394,6 @@ export function PagesManagerClient({
                 />
               </div>
 
-              {/* Product Selection */}
-              <div className="flex flex-col gap-3 pt-4 border-t border-stone-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-serif font-bold text-stone-900 text-sm">
-                      Select Products to Showcase at the Bottom of This Page
-                    </h3>
-                    <p className="text-[11px] text-stone-500">
-                      Choose which catalog mosaic references will appear in the showcase section.
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono text-amber-800 font-bold">
-                    {newSelectedProductIds.length} products selected
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-72 overflow-y-auto p-1">
-                  {availableProducts.map((prod) => {
-                    const isSelected = newSelectedProductIds.includes(prod.id);
-                    return (
-                      <div
-                        key={prod.id}
-                        onClick={() => handleToggleNewProductSelection(prod.id)}
-                        className={`group relative rounded-xl bg-white border overflow-hidden cursor-pointer transition-all flex flex-col ${
-                          isSelected
-                            ? "border-stone-900 ring-2 ring-stone-900/10 shadow-xs"
-                            : "border-stone-200 hover:border-stone-300 opacity-70 hover:opacity-100"
-                        }`}
-                      >
-                        <div className="relative aspect-square w-full">
-                          <Image src={prod.sampleImageUrl} alt={prod.title} fill className="object-cover" />
-                          {isSelected && (
-                            <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow">
-                              <Check className="w-3 h-3" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-2 flex flex-col">
-                          <span className="font-bold text-stone-900 truncate text-[11px]">{prod.title}</span>
-                          <span className="text-[10px] text-stone-500 font-mono">${prod.pricePerSqFt}/sq.ft</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs">
                   {error}
@@ -659,56 +568,33 @@ export function PagesManagerClient({
                 </div>
               </div>
 
-              {/* Showcase Mosaic Catalog Grid */}
-              <div className="p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-4 text-xs">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-stone-100 pb-3">
-                  <div>
-                    <h3 className="font-serif font-bold text-stone-900 text-base">
-                      Mosaic Pieces to Showcase at Bottom of Page
-                    </h3>
-                    <p className="text-[11px] text-stone-500">
-                      Check which catalog references will appear in the curated bottom showcase grid on this page.
+              {/* Single Source of Truth Banner for Products Catalog */}
+              <div className="p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-800 shrink-0">
+                    <Package className="w-6 h-6" />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-serif font-bold text-stone-900 text-sm">Unified Product Catalog Integration</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Active & Synced
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-500 mt-1 max-w-xl leading-relaxed">
+                      All mosaic products showcased at the bottom of this page and across the studio come directly from the single unified <strong>Products Catalog</strong> tab. No duplicate manual assignment is needed.
                     </p>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-800 font-mono text-xs self-start sm:self-auto font-semibold">
-                    {currentSelectedProductIds.length} Selected
-                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1">
-                  {availableProducts.map((prod) => {
-                    const isSelected = currentSelectedProductIds.includes(prod.id);
-                    const selectedIndex = currentSelectedProductIds.indexOf(prod.id);
-
-                    return (
-                      <div
-                        key={prod.id}
-                        onClick={() => handleToggleProductSelection(prod.id)}
-                        className={`group relative rounded-2xl bg-white border overflow-hidden cursor-pointer transition-all flex flex-col ${
-                          isSelected
-                            ? "border-stone-900 ring-2 ring-stone-900/10 shadow-xs"
-                            : "border-stone-200 hover:border-stone-300 opacity-60 hover:opacity-100"
-                        }`}
-                      >
-                        <div className="relative aspect-square w-full bg-stone-100">
-                          <Image src={prod.sampleImageUrl} alt={prod.title} fill className="object-cover" />
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-stone-900 text-white flex items-center gap-1 font-bold text-[10px] shadow">
-                              <Check className="w-3 h-3" /> #{selectedIndex + 1}
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-2.5 flex flex-col gap-0.5">
-                          <span className="font-serif font-bold text-stone-900 truncate text-xs">{prod.title}</span>
-                          <div className="flex items-center justify-between text-[10px] font-mono text-stone-500">
-                            <span className="text-amber-800 font-bold">${prod.pricePerSqFt}/sq.ft</span>
-                            <span className="truncate max-w-[70px]">{prod.category}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <Link
+                  href="/nextjs-app/products"
+                  className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs flex items-center gap-2 transition-all shadow-xs shrink-0 whitespace-nowrap cursor-pointer"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Open Products Catalog</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
+                </Link>
               </div>
             </div>
 

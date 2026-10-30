@@ -126,6 +126,12 @@ export async function PUT(request: Request) {
         details: { ids, count: ids.length },
       });
 
+      revalidateTag("products");
+      revalidateTag("pages");
+      revalidatePath("/");
+      revalidatePath("/from-scratch");
+      revalidatePath("/finder");
+
       return NextResponse.json({ success: true, count: ids.length });
     }
 
@@ -150,6 +156,12 @@ export async function PUT(request: Request) {
         userEmail: adminUser.email,
         details: { ids, count: ids.length },
       });
+
+      revalidateTag("products");
+      revalidateTag("pages");
+      revalidatePath("/");
+      revalidatePath("/from-scratch");
+      revalidatePath("/finder");
 
       return NextResponse.json({ success: true, count: ids.length });
     }
@@ -213,6 +225,12 @@ export async function DELETE(request: Request) {
         details: { count: deleteResult.count },
       });
 
+      revalidateTag("products");
+      revalidateTag("pages");
+      revalidatePath("/");
+      revalidatePath("/from-scratch");
+      revalidatePath("/finder");
+
       return NextResponse.json({ success: true, count: deleteResult.count });
     }
 
@@ -247,6 +265,12 @@ export async function DELETE(request: Request) {
         details: { ids, count: deleteResult.count },
       });
 
+      revalidateTag("products");
+      revalidateTag("pages");
+      revalidatePath("/");
+      revalidatePath("/from-scratch");
+      revalidatePath("/finder");
+
       return NextResponse.json({ success: true, permanent: true, count: deleteResult.count });
     } else {
       // Soft delete: Move to trash
@@ -264,6 +288,12 @@ export async function DELETE(request: Request) {
         userEmail: adminUser.email,
         details: { ids, count: updateResult.count },
       });
+
+      revalidateTag("products");
+      revalidateTag("pages");
+      revalidatePath("/");
+      revalidatePath("/from-scratch");
+      revalidatePath("/finder");
 
       return NextResponse.json({ success: true, permanent: false, count: updateResult.count });
     }
