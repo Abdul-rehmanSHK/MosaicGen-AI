@@ -404,19 +404,23 @@ export function DesignStudio({
       const stored = typeof window !== "undefined"
         ? localStorage.getItem("zm_verified_email") || localStorage.getItem("mec_verified_email")
         : null;
-      if (stored) {
-        setIsOtpVerified(true);
-        setVerifiedEmail(stored);
-      } else if (session?.user?.email) {
+      const storedToken = typeof window !== "undefined"
+        ? localStorage.getItem("zm_verified_token")
+        : null;
+
+      if (session?.user?.email) {
         const sessEmail = session.user.email.toLowerCase().trim();
         setIsOtpVerified(true);
         setVerifiedEmail(sessEmail);
         if (typeof window !== "undefined") {
           localStorage.setItem("zm_verified_email", sessEmail);
         }
+      } else if (stored && storedToken) {
+        setIsOtpVerified(true);
+        setVerifiedEmail(stored);
       } else {
         setIsOtpVerified(false);
-        setVerifiedEmail("");
+        setVerifiedEmail(stored || "");
       }
     };
     syncEmail();
@@ -462,7 +466,10 @@ export function DesignStudio({
       return;
     }
 
-    if (!isOtpVerified) {
+    const storedToken = typeof window !== "undefined" ? localStorage.getItem("zm_verified_token") : null;
+    const hasActiveSession = Boolean(session?.user?.email);
+
+    if (!isOtpVerified && !storedToken && !hasActiveSession) {
       // Intercept with 6-digit OTP verification modal before image generation phase
       setIsOtpModalOpen(true);
       return;
@@ -550,6 +557,20 @@ export function DesignStudio({
           setIsLimitReachedModalOpen(true);
           return;
         }
+
+        if (
+          response.status === 403 &&
+          (data.error === "UNVERIFIED_EMAIL" || (data.message && data.message.toLowerCase().includes("verify your email")))
+        ) {
+          setIsWorkingScreenOpen(false);
+          setIsGenerating(false);
+          setIsOtpVerified(false);
+          setError(null);
+          // Automatically launch the Email OTP Verification modal so user can verify immediately
+          setIsOtpModalOpen(true);
+          return;
+        }
+
         throw new Error(data.message || data.error || "Generation request failed");
       }
 
@@ -567,6 +588,10 @@ export function DesignStudio({
         setError(null);
         setLimitModalEmail(emailToSend || verifiedEmail || "");
         setIsLimitReachedModalOpen(true);
+      } else if (err.message && err.message.toLowerCase().includes("verify your email")) {
+        setError(null);
+        setIsOtpVerified(false);
+        setIsOtpModalOpen(true);
       } else {
         setError(err.message || "An error occurred while generating the design.");
       }
@@ -769,9 +794,23 @@ export function DesignStudio({
               </div>
 
               {error && !error.toLowerCase().includes("limit") && (
-                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                  <span className="font-medium">{error}</span>
+                <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span className="font-medium">{error}</span>
+                  </div>
+                  {error.toLowerCase().includes("verify your email") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError(null);
+                        setIsOtpModalOpen(true);
+                      }}
+                      className="px-4 py-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs transition-colors shrink-0 cursor-pointer shadow-xs"
+                    >
+                      Verify Email & Generate Now →
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -933,9 +972,23 @@ export function DesignStudio({
             </div>
 
             {error && !error.toLowerCase().includes("limit") && (
-              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                <span className="font-medium">{error}</span>
+              <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span className="font-medium">{error}</span>
+                </div>
+                {error.toLowerCase().includes("verify your email") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError(null);
+                      setIsOtpModalOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs transition-colors shrink-0 cursor-pointer shadow-xs"
+                  >
+                    Verify Email & Generate Now →
+                  </button>
+                )}
               </div>
             )}
           </div>

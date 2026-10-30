@@ -124,17 +124,21 @@ export async function POST(request: Request) {
     // -------------------------------------------------------------------------
     let isVerified = false;
 
-    // Check A: Active session verified (only if session email matches userCleanEmail)
-    if (sessionEmail && userCleanEmail === sessionEmail && isSessionVerified) {
-      isVerified = true;
+    // Check A: Active authenticated session (if user is authenticated in the dashboard or an ADMIN)
+    if (sessionEmail && userCleanEmail === sessionEmail) {
+      if (isSessionVerified || (session?.user as any)?.role === "ADMIN" || Boolean(sessionUserId)) {
+        isVerified = true;
+      }
     }
 
-    // Check B: Database user with isVerified = true
-    if (!isVerified) {
+    // Check B: Database user with isVerified = true or role = ADMIN
+    if (!isVerified && userCleanEmail) {
       const dbUser = await prisma.user.findUnique({ where: { email: userCleanEmail } });
-      if (dbUser && dbUser.isVerified) {
-        isVerified = true;
-        if (!userId) userId = dbUser.id;
+      if (dbUser) {
+        if (dbUser.isVerified || dbUser.role === "ADMIN") {
+          isVerified = true;
+          if (!userId) userId = dbUser.id;
+        }
       }
     }
 
