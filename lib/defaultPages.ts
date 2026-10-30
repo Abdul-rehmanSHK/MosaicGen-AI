@@ -33,3 +33,4 @@ export const DEFAULT_STUDIO_PAGES: DefaultStudioPage[] = [
     secondaryText: "FIND YOUR AESTHETIC",
   },
 ];
+

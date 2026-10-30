@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Mail, KeyRound, Clock, RefreshCw, CheckCircle2, Loader2, ShieldCheck, Sparkles, Inbox, Copy, Check } from "lucide-react";
 
 interface EmailOtpModalProps {
@@ -46,7 +47,23 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted || typeof document === "undefined") return null;
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -159,8 +176,8 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-md animate-fadeIn">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-md p-7 sm:p-8 rounded-3xl bg-white border border-stone-200/90 shadow-2xl overflow-hidden flex flex-col gap-5 text-stone-900">
         <button
           type="button"
@@ -302,4 +319,6 @@ export function EmailOtpModal({ isOpen, onClose, onVerified }: EmailOtpModalProp
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

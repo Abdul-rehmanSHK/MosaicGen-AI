@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import {
   X,
@@ -54,6 +55,21 @@ export function MyGenerationsModal({
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [lightboxItem, setLightboxItem] = useState<GenerationItem | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   // Sync or discover email on open
   useEffect(() => {
@@ -130,22 +146,22 @@ export function MyGenerationsModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted || typeof document === "undefined") return null;
 
   const progressPercent = Math.min(100, Math.round((usedCount / maxLimit) * 100));
   const remaining = Math.max(0, maxLimit - usedCount);
   const sessionEmail = session?.user?.email?.trim().toLowerCase();
 
-  return (
+  const modalContent = (
     <>
       <div
-        className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-md flex min-h-full items-center justify-center p-3 sm:p-6 animate-fadeIn"
+        className="fixed inset-0 z-[100] bg-stone-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
       >
         <div
-          className="relative w-full max-w-4xl max-h-[88vh] rounded-3xl bg-white border border-stone-200 shadow-2xl flex flex-col overflow-hidden text-stone-900 my-auto animate-scaleUp"
+          className="relative w-full max-w-4xl h-[88vh] max-h-[88vh] rounded-3xl bg-white border border-stone-200 shadow-2xl flex flex-col overflow-hidden text-stone-900 animate-scaleUp"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Fixed Header */}
@@ -562,7 +578,7 @@ export function MyGenerationsModal({
       {/* Fullscreen Lightbox Image Viewer */}
       {lightboxItem && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-stone-900/80 backdrop-blur-xl animate-fadeIn"
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-stone-950/85 backdrop-blur-xl animate-fadeIn"
           onClick={() => setLightboxItem(null)}
         >
           <div
@@ -629,4 +645,6 @@ export function MyGenerationsModal({
       )}
     </>
   );
+
+  return createPortal(modalContent, document.body);
 }

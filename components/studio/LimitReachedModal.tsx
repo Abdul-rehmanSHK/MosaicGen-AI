@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Mail, Layers, AlertCircle, Sparkles, ExternalLink, ArrowRight } from "lucide-react";
 
 interface LimitReachedModalProps {
@@ -18,6 +19,12 @@ export function LimitReachedModal({
   onUseDifferentEmail,
   onViewGenerations,
 }: LimitReachedModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -29,11 +36,11 @@ export function LimitReachedModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted || typeof document === "undefined") return null;
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-950/85 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-obsidian-950/85 backdrop-blur-md animate-fadeIn"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -133,4 +140,6 @@ export function LimitReachedModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
