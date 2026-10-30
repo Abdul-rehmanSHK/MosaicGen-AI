@@ -13,7 +13,7 @@ import { MosaicFinderBanner } from "./MosaicFinderBanner";
 import { GenerationWorkingScreen } from "./GenerationWorkingScreen";
 import { MyGenerationsModal } from "./MyGenerationsModal";
 import { LimitReachedModal } from "./LimitReachedModal";
-import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, ArrowUp, Upload, Shield, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check, Download, Maximize2, X } from "lucide-react";
+import { Sparkles, Layers, Sliders, CheckCircle2, DollarSign, Grid, ArrowRight, ArrowUp, Upload, Shield, Loader2, RefreshCw, Send, PhoneCall, ShieldCheck, Plus, Scan, Target, Check, Download, Maximize2, X, AlertCircle } from "lucide-react";
 import Image from "next/image";
 
 const SCRATCH_INSPIRATIONS = [
@@ -757,8 +757,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
               </div>
 
               {error && !error.toLowerCase().includes("limit") && (
-                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col gap-2">
-                  <span>{error}</span>
+                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span className="font-medium">{error}</span>
                 </div>
               )}
             </div>
@@ -920,8 +921,9 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
             </div>
 
             {error && !error.toLowerCase().includes("limit") && (
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                {error}
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span className="font-medium">{error}</span>
               </div>
             )}
           </div>
