@@ -168,30 +168,41 @@ export async function POST(request: Request) {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Enforce Total Free Previews Quota (Max 5 per verified email)
+    // 5. Enforce Total Free Previews Quota (Max 5 per verified email for public visitors)
+    // Studio Admins & authenticated team members have UNLIMITED generations
     // -------------------------------------------------------------------------
-    const generationCount = await prisma.aIGeneration.count({
-      where: {
-        OR: [
-          { userEmail: userCleanEmail },
-          ...(userId ? [{ userId }] : []),
-        ],
-        isTrashed: false,
-      },
-    });
+    const isAdmin =
+      (session?.user as any)?.role === "ADMIN" ||
+      userCleanEmail === "abdulrehman.irfan11286@gmail.com" ||
+      userCleanEmail === "admin@mosaic.com" ||
+      (userId ? (await prisma.user.findUnique({ where: { id: userId } }))?.role === "ADMIN" : false);
 
-    if (generationCount >= 5) {
-      return NextResponse.json(
-        {
-          error: "LIMIT_REACHED",
-          message: `You have reached your limit of 5 free previews for ${userCleanEmail}. Please speak to a specialist or use a different email.`,
-          email: userCleanEmail,
-          usedCount: generationCount,
-          maxLimit: 5,
-          remaining: 0,
+    let generationCount = 0;
+
+    if (!isAdmin) {
+      generationCount = await prisma.aIGeneration.count({
+        where: {
+          OR: [
+            { userEmail: userCleanEmail },
+            ...(userId ? [{ userId }] : []),
+          ],
+          isTrashed: false,
         },
-        { status: 403 }
-      );
+      });
+
+      if (generationCount >= 5) {
+        return NextResponse.json(
+          {
+            error: "LIMIT_REACHED",
+            message: `You have reached your limit of 5 free previews for ${userCleanEmail}. Please speak to a specialist or use a different email.`,
+            email: userCleanEmail,
+            usedCount: generationCount,
+            maxLimit: 5,
+            remaining: 0,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -285,7 +296,7 @@ export async function POST(request: Request) {
     });
 
     const newUsedCount = generationCount + 1;
-    const remaining = Math.max(0, 5 - newUsedCount);
+    const remaining = isAdmin ? 999 : Math.max(0, 5 - newUsedCount);
 
     return NextResponse.json(
       {
@@ -297,7 +308,7 @@ export async function POST(request: Request) {
         estimatedMaterialCost: aiResult.estimatedMaterialCost,
         promptApplied: aiResult.promptApplied,
         usedCount: newUsedCount,
-        maxLimit: 5,
+        maxLimit: isAdmin ? 999 : 5,
         remaining,
       },
       {
