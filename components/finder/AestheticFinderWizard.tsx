@@ -283,17 +283,35 @@ function AestheticFinderContent({
     router.push("/finder");
   };
 
+  const COLOR_GRADIENTS: Record<string, string> = {
+    black: "radial-gradient(circle at 35% 35%, #3F3F46 0%, #18181B 65%, #09090B 100%)",
+    white: "radial-gradient(circle at 35% 35%, #FFFFFF 0%, #F5F5F4 65%, #E7E5E4 100%)",
+    gold: "radial-gradient(circle at 35% 35%, #FDE047 0%, #D97706 65%, #92400E 100%)",
+    silver: "radial-gradient(circle at 35% 35%, #FFFFFF 0%, #E2E8F0 50%, #94A3B8 100%)",
+    blue: "radial-gradient(circle at 35% 35%, #38BDF8 0%, #1D4ED8 65%, #1E3A8A 100%)",
+    teal: "radial-gradient(circle at 35% 35%, #2DD4BF 0%, #0F766E 70%, #134E4A 100%)",
+    green: "radial-gradient(circle at 35% 35%, #4ADE80 0%, #15803D 70%, #14532D 100%)",
+    purple: "radial-gradient(circle at 35% 35%, #C084FC 0%, #7E22CE 70%, #581C87 100%)",
+    pink: "radial-gradient(circle at 35% 35%, #FDA4AF 0%, #E11D48 70%, #9F1239 100%)",
+    yellow: "radial-gradient(circle at 35% 35%, #FEF08A 0%, #CA8A04 70%, #854D0E 100%)",
+    earth: "radial-gradient(circle at 35% 35%, #FDBA74 0%, #C2410C 70%, #7C2D12 100%)",
+    multicolor: "radial-gradient(circle at 30% 30%, #38BDF8 0%, #818CF8 33%, #EC4899 66%, #F59E0B 100%)",
+  };
+
   // Helper to render title with italic highlight word
   const renderStyledTitle = (title: string, highlight?: string | null) => {
-    if (!highlight || !title.includes(highlight)) {
+    if (!highlight || !title.toLowerCase().includes(highlight.toLowerCase())) {
       return title;
     }
-    const parts = title.split(highlight);
+    const idx = title.toLowerCase().indexOf(highlight.toLowerCase());
+    const before = title.slice(0, idx);
+    const matched = title.slice(idx, idx + highlight.length);
+    const after = title.slice(idx + highlight.length);
     return (
       <>
-        {parts[0]}
-        <em className="italic font-serif text-stone-800 font-normal">{highlight}</em>
-        {parts.slice(1).join(highlight)}
+        {before}
+        <em className="italic font-serif text-stone-800 font-normal">{matched}</em>
+        {after}
       </>
     );
   };
@@ -509,11 +527,16 @@ function AestheticFinderContent({
           {/* Stepper Dots & Track */}
           <div className="relative flex items-center justify-between w-full px-2 sm:px-6">
             {/* Background Track Line */}
-            <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-200 -z-0" />
+            <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-[2px] bg-stone-200 -z-0" />
             {/* Active Fill Line */}
             <div
-              className="absolute left-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-900 transition-all duration-500 -z-0"
-              style={{ width: `calc(${(currentStepIndex / (initialSteps.length - 1)) * 100}% - 2.5rem)` }}
+              className="absolute left-6 top-1/2 -translate-y-1/2 h-[2px] bg-stone-900 transition-all duration-500 -z-0"
+              style={{
+                width:
+                  currentStepIndex === 0
+                    ? "0%"
+                    : `calc(${(currentStepIndex / (initialSteps.length - 1)) * 100}% - 1.5rem)`,
+              }}
             />
 
             {initialSteps.map((step, idx) => {
@@ -595,21 +618,26 @@ function AestheticFinderContent({
 
                 // 1. Color Swatch Cards: Luxurious tactile material card with rich round swatch + typography
                 if (isColor) {
+                  const gradient = COLOR_GRADIENTS[opt.value.toLowerCase()] || opt.colorHex || "#18181B";
+                  const isWhite = opt.value.toLowerCase() === "white";
+
                   return (
                     <div
                       key={opt.id}
                       onClick={() => handleSelectOption(opt.value)}
-                      className={`group relative rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-between aspect-[3/4] sm:aspect-[4/5] cursor-pointer transition-all duration-300 shadow-2xs ${
+                      className={`group relative rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between aspect-square sm:aspect-[4/5] cursor-pointer transition-all duration-300 shadow-2xs ${
                         isSelected
-                          ? "border-2 border-stone-900 ring-4 ring-stone-900/15 bg-white scale-[1.03] shadow-md"
-                          : "border border-stone-200/90 bg-gradient-to-b from-stone-50/70 to-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
+                          ? "border-2 border-stone-900 ring-4 ring-stone-900/15 bg-stone-50/60 scale-[1.03] shadow-md"
+                          : "border border-stone-200/90 bg-white hover:border-stone-400 hover:-translate-y-0.5 hover:shadow-md"
                       }`}
                     >
                       <div className="flex-1 flex items-center justify-center w-full">
                         <div
-                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-transform duration-300 group-hover:scale-110 relative"
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md flex items-center justify-center transition-transform duration-300 group-hover:scale-110 relative ${
+                            isWhite ? "border-2 border-stone-300" : "border-2 border-white"
+                          }`}
                           style={{
-                            background: opt.colorHex || "#18181B",
+                            background: gradient,
                           }}
                         >
                           {isSelected && (
@@ -620,7 +648,7 @@ function AestheticFinderContent({
                         </div>
                       </div>
 
-                      <div className="w-full pt-2 border-t border-stone-100/80 text-center">
+                      <div className="w-full pt-2 border-t border-stone-100 text-center">
                         <span className="font-serif font-semibold text-xs sm:text-sm text-stone-900 tracking-tight block">
                           {opt.label}
                         </span>
@@ -635,10 +663,10 @@ function AestheticFinderContent({
                     <div
                       key={opt.id}
                       onClick={() => handleSelectOption(opt.value)}
-                      className={`group relative aspect-[3/4] rounded-2xl p-5 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all duration-300 shadow-2xs border-2 border-dashed ${
+                      className={`group relative aspect-[3/4] rounded-2xl sm:rounded-3xl p-5 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all duration-300 shadow-2xs border-2 border-dashed ${
                         isSelected
                           ? "border-stone-900 ring-4 ring-stone-900/15 bg-white scale-[1.02] shadow-md"
-                          : "border-stone-300 bg-stone-50/50 hover:bg-white hover:border-stone-800 hover:scale-[1.01]"
+                          : "border-stone-300 bg-stone-50/50 hover:bg-white hover:border-stone-800 hover:-translate-y-0.5 hover:shadow-md"
                       }`}
                     >
                       <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 group-hover:text-stone-900 transition-colors">
@@ -665,17 +693,17 @@ function AestheticFinderContent({
                   <div
                     key={opt.id}
                     onClick={() => handleSelectOption(opt.value)}
-                    className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 shadow-2xs ${
+                    className={`group relative aspect-[3/4] rounded-2xl sm:rounded-3xl overflow-hidden border cursor-pointer transition-all duration-300 shadow-2xs ${
                       isSelected
-                        ? "border-2 border-stone-900 ring-4 ring-stone-900/20 scale-[1.02] shadow-md"
-                        : "border-stone-200/90 bg-stone-100 hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
+                        ? "border-2 border-stone-900 ring-4 ring-stone-900/20 scale-[1.02] shadow-xl"
+                        : "border-stone-200/90 bg-stone-100 hover:border-stone-400 hover:-translate-y-1 hover:shadow-lg"
                     }`}
                   >
                     {opt.imageUrl ? (
                       <img
                         src={opt.imageUrl}
                         alt={opt.label}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full bg-stone-100 flex items-center justify-center text-stone-400 text-xs font-mono">
@@ -687,8 +715,8 @@ function AestheticFinderContent({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-95 group-hover:opacity-90 transition-opacity" />
 
                     {/* Bottom label & selection checkmark */}
-                    <div className="absolute inset-x-0 bottom-0 p-3.5 z-10 flex items-center justify-between gap-1.5">
-                      <span className="font-serif font-medium text-xs sm:text-sm text-white drop-shadow-sm leading-snug">
+                    <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-4 z-10 flex items-center justify-between gap-2">
+                      <span className="font-serif font-medium text-xs sm:text-base text-white drop-shadow-sm leading-snug">
                         {opt.label}
                       </span>
                       {isSelected && (
@@ -988,9 +1016,9 @@ function AestheticFinderContent({
                   )}
 
                   {error && (
-                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      <span>{error}</span>
+                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <span className="font-medium">{error}</span>
                     </div>
                   )}
 
