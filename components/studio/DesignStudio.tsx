@@ -794,8 +794,8 @@ export function DesignStudio({
 
           {/* Screenshot 3 Unified Studio Banner Card */}
           <div className="w-full max-w-7xl mx-auto rounded-2xl bg-white border border-stone-200/90 shadow-sm p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 transition-all">
-            {/* Upload Box: Dashed border with thumbnail, title, subtitle, shield note & upload button */}
-            <div className="w-full rounded-xl border border-dashed border-stone-300/90 bg-stone-50/40 hover:bg-stone-50/70 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+            {/* Upload Box: Solid Gold border with thumbnail, title, subtitle, shield note & upload button */}
+            <div className="w-full rounded-xl border border-solid border-gold-400 hover:border-gold-500 bg-stone-50/40 hover:bg-gold-50/20 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-2xs">
               <div className="flex items-center gap-3.5 sm:gap-4">
                 <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 shrink-0 shadow-2xs flex items-center justify-center">
                   {roomPhotoUrl ? (
