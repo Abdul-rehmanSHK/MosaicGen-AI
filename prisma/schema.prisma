@@ -31,6 +31,8 @@ model EmailVerificationCode {
   code      String
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model Product {
@@ -50,6 +52,9 @@ model Product {
   updatedAt      DateTime       @updatedAt
   generations    AIGeneration[]
   leads          Lead[]
+
+  @@index([isTrashed])
+  @@index([category])
 }
 
 model AIGeneration {
@@ -70,6 +75,10 @@ model AIGeneration {
   trashedAt          DateTime?
   createdAt          DateTime    @default(now())
   leads              Lead[]
+
+  @@index([userEmail])
+  @@index([isTrashed])
+  @@index([createdAt])
 }
 
 model Page {
@@ -107,6 +116,9 @@ model Lead {
   quoteAmount    Float?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt @default(now())
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model AuditLog {
@@ -118,6 +130,9 @@ model AuditLog {
   resourceId     String?
   metadata       String?
   createdAt      DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
 }
 
 model FinderStep {
@@ -173,6 +188,9 @@ model FinderResult {
   resultImageUrl  String?
   generationId    String?
   createdAt       DateTime @default(now())
+
+  @@index([resultImageUrl])
+  @@index([createdAt])
 }
 
 model SiteAppearance {

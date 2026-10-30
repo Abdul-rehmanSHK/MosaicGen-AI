@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Compress all responses and static assets using gzip/brotli
+  compress: true,
+
+  // Hide framework fingerprint for lightweight headers & security
+  poweredByHeader: false,
+
+  // Strip debug logs in production client bundle to reduce JS bundle size
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
+  },
+
   // Production Image Optimization Configuration
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -18,10 +29,28 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  // High-performance tree-shaking & server action payload sizing
   experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns', 'clsx', 'tailwind-merge'],
     serverActions: {
       bodySizeLimit: '10mb',
     },
+  },
+
+  // HTTP Caching headers for high-performance CDN edge delivery
+  async headers() {
+    return [
+      {
+        source: '/:all*(svg|jpg|jpeg|png|webp|avif|ico)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
 };
 
