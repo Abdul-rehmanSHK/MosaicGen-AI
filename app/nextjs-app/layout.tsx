@@ -27,7 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <AdminThemeWrapper>
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-white border-r border-stone-200 p-6 flex flex-col justify-between shrink-0 shadow-xs">
+      <aside className="w-full md:w-64 bg-white border-r border-stone-200 p-6 flex flex-col justify-between shrink-0 shadow-xs md:h-screen md:overflow-y-auto">
         <div className="flex flex-col gap-8">
           {/* Role Header */}
           <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl">
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto w-full md:h-screen">
         {children}
       </main>
     </AdminThemeWrapper>

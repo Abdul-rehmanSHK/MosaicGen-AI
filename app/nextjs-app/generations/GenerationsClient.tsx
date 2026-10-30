@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { format } from "date-fns";
 import {
@@ -21,6 +21,9 @@ import {
   ChevronRight,
   Layers,
   Check,
+  Grid,
+  List,
+  Eye,
 } from "lucide-react";
 
 interface Generation {
@@ -58,14 +61,27 @@ interface DeleteTarget {
   mode: "active" | "trash";
 }
 
-type TabType = "users" | "user-detail" | "all" | "trash";
+type TabType = "users" | "all" | "trash";
 
 export function GenerationsClient({ initialGenerations }: { initialGenerations: Generation[] }) {
   const [generations, setGenerations] = useState<Generation[]>(initialGenerations);
   const [activeTab, setActiveTab] = useState<TabType>("users");
   const [selectedUserEmail, setSelectedUserEmail] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedGen, setSelectedGen] = useState<Generation | null>(null);
+
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedGen(null);
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Downloading feedback state
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -387,21 +403,17 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
     }
   };
 
-  // Open User Detail Tab
+  // Open User Detail inside Client Users
   const handleOpenUserDetail = (email: string) => {
     setSelectedUserEmail(email);
-    setActiveTab("user-detail");
+    setActiveTab("users");
     setSelectedGenIds([]);
     setGlobalFilter("");
   };
 
-  // Close User Detail Tab
-  const handleCloseUserTab = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Close User Detail
+  const handleCloseUserDetail = () => {
     setSelectedUserEmail(null);
-    if (activeTab === "user-detail") {
-      setActiveTab("users");
-    }
     setSelectedGenIds([]);
   };
 
@@ -409,9 +421,9 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
   const currentViewGenerations = useMemo(() => {
     if (activeTab === "all") return filteredAllGenerations;
     if (activeTab === "trash") return filteredTrashedGenerations;
-    if (activeTab === "user-detail") return filteredUserDetailGenerations;
+    if (activeTab === "users" && selectedUserEmail) return filteredUserDetailGenerations;
     return [];
-  }, [activeTab, filteredAllGenerations, filteredTrashedGenerations, filteredUserDetailGenerations]);
+  }, [activeTab, selectedUserEmail, filteredAllGenerations, filteredTrashedGenerations, filteredUserDetailGenerations]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -451,44 +463,12 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
               </span>
             </button>
 
-            {/* Tab 2: User Detail (Active when a user is selected) */}
-            {selectedUserEmail && currentUserGroup && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab("user-detail");
-                  setSelectedGenIds([]);
-                }}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                  activeTab === "user-detail"
-                    ? "bg-amber-600 text-white shadow-xs"
-                    : "text-amber-800 hover:bg-amber-50"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span className="truncate max-w-[160px]">{currentUserGroup.email}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    activeTab === "user-detail" ? "bg-amber-700 text-white" : "bg-amber-100 text-amber-900"
-                  }`}
-                >
-                  {currentUserGroup.activeCount}
-                </span>
-                <span
-                  onClick={handleCloseUserTab}
-                  className="p-0.5 rounded-full hover:bg-black/20 text-current cursor-pointer ml-0.5"
-                  title="Close client tab"
-                >
-                  <X className="w-3 h-3" />
-                </span>
-              </button>
-            )}
-
-            {/* Tab 3: All Active Generations */}
+            {/* Tab 2: All Active Generations */}
             <button
               type="button"
               onClick={() => {
                 setActiveTab("all");
+                setSelectedUserEmail(null);
                 setSelectedGenIds([]);
               }}
               className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
@@ -508,11 +488,12 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
               </span>
             </button>
 
-            {/* Tab 4: Trash Box */}
+            {/* Tab 3: Trash Box */}
             <button
               type="button"
               onClick={() => {
                 setActiveTab("trash");
+                setSelectedUserEmail(null);
                 setSelectedGenIds([]);
               }}
               className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
@@ -534,16 +515,43 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
           </div>
         </div>
 
-        {/* Empty Trash Button if on trash tab */}
-        {activeTab === "trash" && overallTrashedCount > 0 && (
-          <button
-            type="button"
-            onClick={handleEmptyTrash}
-            className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs"
-          >
-            <Trash2 className="w-3.5 h-3.5" /> Empty Trash Box
-          </button>
-        )}
+        {/* Right side controls: View Mode toggle & Empty Trash Button */}
+        <div className="flex items-center gap-2.5">
+          {(activeTab === "all" || (activeTab === "users" && selectedUserEmail)) && (
+            <div className="flex items-center p-1 rounded-xl bg-white border border-stone-200 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === "table" ? "bg-stone-900 text-white shadow-xs font-semibold" : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+                }`}
+                title="Table List View"
+              >
+                <List className="w-3.5 h-3.5" /> Table
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                  viewMode === "grid" ? "bg-stone-900 text-white shadow-xs font-semibold" : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+                }`}
+                title="Gallery Grid View"
+              >
+                <Grid className="w-3.5 h-3.5" /> Grid
+              </button>
+            </div>
+          )}
+
+          {activeTab === "trash" && overallTrashedCount > 0 && (
+            <button
+              type="button"
+              onClick={handleEmptyTrash}
+              className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Empty Trash Box
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -555,9 +563,9 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={
-              activeTab === "users"
+              activeTab === "users" && !selectedUserEmail
                 ? "Search client users by email or prompt..."
-                : activeTab === "user-detail"
+                : activeTab === "users" && selectedUserEmail
                 ? `Search within ${currentUserGroup?.email || "this user"}'s designs...`
                 : activeTab === "all"
                 ? "Search all generations (email, prompt, placement)..."
@@ -568,10 +576,10 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
         </div>
 
         <span className="text-xs font-mono text-stone-500">
-          {activeTab === "users" && (
+          {activeTab === "users" && !selectedUserEmail && (
             <>Showing {filteredUserGroups.length} client {filteredUserGroups.length === 1 ? "user" : "users"} ({overallActiveCount} active generations)</>
           )}
-          {activeTab === "user-detail" && (
+          {activeTab === "users" && selectedUserEmail && (
             <>Showing {filteredUserDetailGenerations.length} of {currentUserGroup?.activeCount || 0} active images for this client</>
           )}
           {activeTab === "all" && (
@@ -649,7 +657,7 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
       {/* ========================================================================= */}
       {/* TAB 1: CLIENT USERS VIEW (One Row per User) */}
       {/* ========================================================================= */}
-      {activeTab === "users" && (
+      {activeTab === "users" && !selectedUserEmail && (
         <div className="rounded-2xl overflow-hidden shadow-sm border border-stone-200/90 bg-white">
           {filteredUserGroups.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
@@ -662,9 +670,9 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[calc(100vh-280px)] overflow-y-auto">
               <table className="w-full text-left text-sm text-stone-700">
-                <thead className="bg-stone-50 border-b border-stone-200 text-[11px] font-mono uppercase tracking-wider text-stone-500">
+                <thead className="sticky top-0 z-10 bg-stone-50 border-b border-stone-200 text-[11px] font-mono uppercase tracking-wider text-stone-500 shadow-2xs">
                   <tr>
                     <th className="p-4 font-semibold">Client User Email</th>
                     <th className="p-4 font-semibold text-center">Images Tried</th>
@@ -709,15 +717,23 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
                           </span>
                         </td>
 
-                        {/* Latest Mosaic Concept Preview */}
+                        {/* Latest Mosaic Concept Preview - Click opens high-res modal */}
                         <td className="p-4 align-middle">
                           <div className="flex items-center gap-3 max-w-md">
                             {group.latestGeneration?.resultImageUrl && (
-                              <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-stone-200 bg-stone-100 shrink-0 shadow-2xs">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (group.latestGeneration) setSelectedGen(group.latestGeneration);
+                                }}
+                                className="relative w-11 h-11 rounded-lg overflow-hidden border border-stone-200 bg-stone-100 shrink-0 shadow-2xs cursor-pointer hover:scale-105 hover:border-stone-900 transition-all"
+                                title="Click to view full high-res render"
+                              >
                                 <Image
                                   src={group.latestGeneration.resultImageUrl}
                                   alt="Latest concept"
                                   fill
+                                  unoptimized
                                   className="object-cover"
                                 />
                               </div>
@@ -763,9 +779,9 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: USER DETAIL TAB (All Generations for the Selected User) */}
+      {/* TAB 2: USER DETAIL VIEW (All Generations for the Selected User) */}
       {/* ========================================================================= */}
-      {activeTab === "user-detail" && currentUserGroup && (
+      {activeTab === "users" && selectedUserEmail && currentUserGroup && (
         <div className="flex flex-col gap-6">
           {/* User Profile Banner */}
           <div className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -794,31 +810,101 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab("users");
-                  setSelectedGenIds([]);
-                }}
-                className="px-3.5 py-1.5 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 text-xs font-semibold text-stone-700 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                onClick={handleCloseUserDetail}
+                className="px-3.5 py-2 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 text-xs font-semibold text-stone-700 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Back to All Users
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to All Clients
               </button>
             </div>
           </div>
 
-          {/* User's Generations Table */}
-          <div className="rounded-2xl overflow-hidden shadow-sm border border-stone-200/90 bg-white">
-            {filteredUserDetailGenerations.length === 0 ? (
-              <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
-                <FolderArchive className="w-12 h-12 text-stone-400" />
-                <p className="text-base font-serif font-bold text-stone-900">No active designs found for this client</p>
-                <p className="text-xs text-stone-500">
-                  {globalFilter ? "No images matched your search filter." : "This client has no active generations."}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
+          {/* User's Generations: Grid or Table Mode */}
+          {filteredUserDetailGenerations.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border border-stone-200/90 shadow-sm">
+              <FolderArchive className="w-12 h-12 text-stone-400" />
+              <p className="text-base font-serif font-bold text-stone-900">No active designs found for this client</p>
+              <p className="text-xs text-stone-500">
+                {globalFilter ? "No images matched your search filter." : "This client has no active generations."}
+              </p>
+            </div>
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredUserDetailGenerations.map((gen) => {
+                const isSelected = selectedGenIds.includes(gen.id);
+                const isDownloading = downloadingId === gen.id;
+                return (
+                  <div
+                    key={gen.id}
+                    className={`group relative rounded-2xl bg-white border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col ${
+                      isSelected ? "border-amber-500 ring-2 ring-amber-400/30" : "border-stone-200"
+                    }`}
+                  >
+                    <div
+                      onClick={() => setSelectedGen(gen)}
+                      className="relative aspect-square w-full bg-stone-100 cursor-pointer overflow-hidden"
+                    >
+                      <Image
+                        src={gen.resultImageUrl}
+                        alt={gen.prompt}
+                        fill
+                        unoptimized
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-stone-900/80 text-white backdrop-blur-xs">
+                        {gen.placement || "Bespoke"}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedGen(gen);
+                        }}
+                        className="absolute bottom-2.5 right-2.5 p-2 rounded-full bg-white/90 hover:bg-white text-stone-900 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        title="Enlarge"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 flex flex-col justify-between flex-1 gap-2.5">
+                      <p
+                        onClick={() => setSelectedGen(gen)}
+                        className="text-xs text-stone-700 font-light line-clamp-2 cursor-pointer hover:text-stone-900"
+                      >
+                        {gen.prompt}
+                      </p>
+                      <div className="flex items-center justify-between text-[11px] text-stone-400 font-mono pt-2 border-t border-stone-100">
+                        <span>{format(new Date(gen.createdAt), "MMM d, HH:mm")}</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(gen)}
+                            disabled={isDownloading}
+                            className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+                            title="Download"
+                          >
+                            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget({ generation: gen, mode: "active" })}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-700 transition-colors cursor-pointer"
+                            title="Move to Trash"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-stone-200/90 bg-white">
+              <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
                 <table className="w-full text-left text-sm text-stone-700">
-                  <thead className="bg-stone-50 border-b border-stone-200 text-[11px] font-mono uppercase tracking-wider text-stone-500">
+                  <thead className="sticky top-0 z-10 bg-stone-50 border-b border-stone-200 text-[11px] font-mono uppercase tracking-wider text-stone-500 shadow-2xs">
                     <tr>
                       <th className="w-10 p-4 text-center">
                         <input
@@ -885,6 +971,7 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
                                 src={gen.resultImageUrl}
                                 alt="Mosaic thumbnail"
                                 fill
+                                unoptimized
                                 className="object-cover"
                               />
                             </div>
@@ -945,167 +1032,255 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: ALL GENERATIONS VIEW (Flat List across All Users) */}
+      {/* TAB 2: ALL GENERATIONS VIEW (Flat List across All Users) */}
       {/* ========================================================================= */}
       {activeTab === "all" && (
-        <div className="rounded-2xl overflow-hidden shadow-sm border border-stone-200/90 bg-white">
+        <div>
           {filteredAllGenerations.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border border-stone-200/90 shadow-sm">
               <Layers className="w-12 h-12 text-stone-400" />
               <p className="text-base font-serif font-bold text-stone-900">No active generations found</p>
               <p className="text-xs text-stone-500">
                 {globalFilter ? "No generations matched your search." : "Generated images will appear here."}
               </p>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-stone-700">
-                <thead className="bg-stone-50 border-b border-stone-200 text-[11px] font-mono uppercase tracking-wider text-stone-500">
-                  <tr>
-                    <th className="w-10 p-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={
-                          filteredAllGenerations.length > 0 &&
-                          filteredAllGenerations.every((g) => selectedGenIds.includes(g.id))
-                        }
-                        onChange={() => {
-                          const ids = filteredAllGenerations.map((g) => g.id);
-                          const all = ids.every((id) => selectedGenIds.includes(id));
-                          if (all) {
-                            setSelectedGenIds((prev) => prev.filter((id) => !ids.includes(id)));
-                          } else {
-                            setSelectedGenIds((prev) => Array.from(new Set([...prev, ...ids])));
-                          }
-                        }}
-                        className="rounded border-stone-300 text-stone-900 focus:ring-stone-400 cursor-pointer"
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredAllGenerations.map((gen) => {
+                const isSelected = selectedGenIds.includes(gen.id);
+                const isDownloading = downloadingId === gen.id;
+                const email = gen.userEmail || gen.user?.email || "Guest User";
+
+                return (
+                  <div
+                    key={gen.id}
+                    className={`group relative rounded-2xl bg-white border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col ${
+                      isSelected ? "border-amber-500 ring-2 ring-amber-400/30" : "border-stone-200"
+                    }`}
+                  >
+                    <div
+                      onClick={() => setSelectedGen(gen)}
+                      className="relative aspect-square w-full bg-stone-100 cursor-pointer overflow-hidden"
+                    >
+                      <Image
+                        src={gen.resultImageUrl}
+                        alt={gen.prompt}
+                        fill
+                        unoptimized
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                    </th>
-                    <th className="p-4 font-semibold">Thumbnail</th>
-                    <th className="p-4 font-semibold">Timestamp</th>
-                    <th className="p-4 font-semibold">Verified Client Email</th>
-                    <th className="p-4 font-semibold">Placement</th>
-                    <th className="p-4 font-semibold">Prompt Text</th>
-                    <th className="p-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {filteredAllGenerations.map((gen) => {
-                    const isSelected = selectedGenIds.includes(gen.id);
-                    const isDownloading = downloadingId === gen.id;
-                    const email = gen.userEmail || gen.user?.email || "Guest User";
-
-                    return (
-                      <tr
-                        key={gen.id}
-                        className={`hover:bg-stone-50/70 transition-colors ${
-                          isSelected ? "bg-stone-50" : ""
-                        }`}
+                      <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-stone-900/80 text-white backdrop-blur-xs">
+                        {gen.placement || "Bespoke"}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedGen(gen);
+                        }}
+                        className="absolute bottom-2.5 right-2.5 p-2 rounded-full bg-white/90 hover:bg-white text-stone-900 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        title="Enlarge"
                       >
-                        {/* Checkbox */}
-                        <td className="p-4 align-middle text-center">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              const id = gen.id;
-                              setSelectedGenIds((prev) =>
-                                prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-                              );
-                            }}
-                            className="rounded border-stone-300 text-stone-900 focus:ring-stone-400 cursor-pointer"
-                          />
-                        </td>
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
 
-                        {/* Thumbnail */}
-                        <td className="p-4 align-middle">
-                          <div
-                            onClick={() => setSelectedGen(gen)}
-                            className="relative w-14 h-14 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 cursor-pointer hover:scale-105 hover:border-stone-900 transition-all shadow-2xs"
-                            title="Click to view full high-res render"
-                          >
-                            <Image
-                              src={gen.resultImageUrl}
-                              alt="Mosaic thumbnail"
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        </td>
-
-                        {/* Timestamp */}
-                        <td className="p-4 align-middle text-xs font-mono text-stone-500 whitespace-nowrap">
-                          {format(new Date(gen.createdAt), "MMM d, yyyy HH:mm")}
-                        </td>
-
-                        {/* Verified Email */}
-                        <td className="p-4 align-middle whitespace-nowrap">
+                    <div className="p-3.5 flex flex-col justify-between flex-1 gap-2.5">
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenUserDetail(email)}
+                          className="text-[11px] font-semibold text-amber-900 hover:underline flex items-center gap-1 mb-1 truncate max-w-full cursor-pointer"
+                        >
+                          <User className="w-3 h-3 text-amber-700 shrink-0" />
+                          <span className="truncate">{email}</span>
+                        </button>
+                        <p
+                          onClick={() => setSelectedGen(gen)}
+                          className="text-xs text-stone-700 font-light line-clamp-2 cursor-pointer hover:text-stone-900"
+                        >
+                          {gen.prompt}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-stone-400 font-mono pt-2 border-t border-stone-100">
+                        <span>{format(new Date(gen.createdAt), "MMM d, HH:mm")}</span>
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => handleOpenUserDetail(email)}
-                            className="text-xs font-semibold text-stone-900 hover:text-amber-700 transition-colors underline-offset-2 hover:underline cursor-pointer flex items-center gap-1.5"
+                            onClick={() => handleDownload(gen)}
+                            disabled={isDownloading}
+                            className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+                            title="Download"
                           >
-                            <User className="w-3 h-3 text-stone-400" />
-                            <span>{email}</span>
+                            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                           </button>
-                        </td>
-
-                        {/* Placement */}
-                        <td className="p-4 align-middle whitespace-nowrap">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-stone-100 border border-stone-200 text-stone-800">
-                            {gen.placement || "Bespoke"}
-                          </span>
-                        </td>
-
-                        {/* Prompt */}
-                        <td className="p-4 align-middle">
-                          <p
-                            onClick={() => setSelectedGen(gen)}
-                            className="text-xs text-stone-800 font-light line-clamp-2 max-w-md cursor-pointer hover:text-amber-800 transition-colors"
-                            title={gen.prompt}
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget({ generation: gen, mode: "active" })}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-700 transition-colors cursor-pointer"
+                            title="Move to Trash"
                           >
-                            {gen.prompt}
-                          </p>
-                        </td>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-stone-200/90 bg-white">
+              <div className="overflow-x-auto max-h-[calc(100vh-280px)] overflow-y-auto">
+                <table className="w-full text-left text-sm text-stone-700">
+                  <thead className="sticky top-0 z-10 bg-stone-50 border-b border-stone-200 text-[11px] font-mono uppercase tracking-wider text-stone-500 shadow-2xs">
+                    <tr>
+                      <th className="w-10 p-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={
+                            filteredAllGenerations.length > 0 &&
+                            filteredAllGenerations.every((g) => selectedGenIds.includes(g.id))
+                          }
+                          onChange={() => {
+                            const ids = filteredAllGenerations.map((g) => g.id);
+                            const all = ids.every((id) => selectedGenIds.includes(id));
+                            if (all) {
+                              setSelectedGenIds((prev) => prev.filter((id) => !ids.includes(id)));
+                            } else {
+                              setSelectedGenIds((prev) => Array.from(new Set([...prev, ...ids])));
+                            }
+                          }}
+                          className="rounded border-stone-300 text-stone-900 focus:ring-stone-400 cursor-pointer"
+                        />
+                      </th>
+                      <th className="p-4 font-semibold">Thumbnail</th>
+                      <th className="p-4 font-semibold">Timestamp</th>
+                      <th className="p-4 font-semibold">Verified Client Email</th>
+                      <th className="p-4 font-semibold">Placement</th>
+                      <th className="p-4 font-semibold">Prompt Text</th>
+                      <th className="p-4 font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {filteredAllGenerations.map((gen) => {
+                      const isSelected = selectedGenIds.includes(gen.id);
+                      const isDownloading = downloadingId === gen.id;
+                      const email = gen.userEmail || gen.user?.email || "Guest User";
 
-                        {/* Actions */}
-                        <td className="p-4 align-middle text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
+                      return (
+                        <tr
+                          key={gen.id}
+                          className={`hover:bg-stone-50/70 transition-colors ${
+                            isSelected ? "bg-stone-50" : ""
+                          }`}
+                        >
+                          {/* Checkbox */}
+                          <td className="p-4 align-middle text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                const id = gen.id;
+                                setSelectedGenIds((prev) =>
+                                  prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+                                );
+                              }}
+                              className="rounded border-stone-300 text-stone-900 focus:ring-stone-400 cursor-pointer"
+                            />
+                          </td>
+
+                          {/* Thumbnail */}
+                          <td className="p-4 align-middle">
+                            <div
+                              onClick={() => setSelectedGen(gen)}
+                              className="relative w-14 h-14 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 cursor-pointer hover:scale-105 hover:border-stone-900 transition-all shadow-2xs"
+                              title="Click to view full high-res render"
+                            >
+                              <Image
+                                src={gen.resultImageUrl}
+                                alt="Mosaic thumbnail"
+                                fill
+                                unoptimized
+                                className="object-cover"
+                              />
+                            </div>
+                          </td>
+
+                          {/* Timestamp */}
+                          <td className="p-4 align-middle text-xs font-mono text-stone-500 whitespace-nowrap">
+                            {format(new Date(gen.createdAt), "MMM d, yyyy HH:mm")}
+                          </td>
+
+                          {/* Verified Email */}
+                          <td className="p-4 align-middle whitespace-nowrap">
                             <button
                               type="button"
-                              onClick={() => handleDownload(gen)}
-                              disabled={isDownloading}
-                              className="p-2 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 transition-all cursor-pointer shadow-xs"
-                              title="Download Image"
+                              onClick={() => handleOpenUserDetail(email)}
+                              className="text-xs font-semibold text-stone-900 hover:text-amber-700 transition-colors underline-offset-2 hover:underline cursor-pointer flex items-center gap-1.5"
                             >
-                              {isDownloading ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Download className="w-3.5 h-3.5" />
-                              )}
+                              <User className="w-3 h-3 text-stone-400" />
+                              <span>{email}</span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteTarget({ generation: gen, mode: "active" })}
-                              className="p-2 rounded-xl bg-white hover:bg-red-50 text-stone-400 hover:text-red-700 border border-stone-300 hover:border-red-300 transition-all cursor-pointer shadow-xs"
-                              title="Move to Trash"
+                          </td>
+
+                          {/* Placement */}
+                          <td className="p-4 align-middle whitespace-nowrap">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-stone-100 border border-stone-200 text-stone-800">
+                              {gen.placement || "Bespoke"}
+                            </span>
+                          </td>
+
+                          {/* Prompt */}
+                          <td className="p-4 align-middle">
+                            <p
+                              onClick={() => setSelectedGen(gen)}
+                              className="text-xs text-stone-800 font-light line-clamp-2 max-w-md cursor-pointer hover:text-amber-800 transition-colors"
+                              title={gen.prompt}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                              {gen.prompt}
+                            </p>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-4 align-middle text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleDownload(gen)}
+                                disabled={isDownloading}
+                                className="p-2 rounded-xl bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 transition-all cursor-pointer shadow-xs"
+                                title="Download Image"
+                              >
+                                {isDownloading ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Download className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteTarget({ generation: gen, mode: "active" })}
+                                className="p-2 rounded-xl bg-white hover:bg-red-50 text-stone-400 hover:text-red-700 border border-stone-300 hover:border-red-300 transition-all cursor-pointer shadow-xs"
+                                title="Move to Trash"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -1125,9 +1300,9 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[calc(100vh-280px)] overflow-y-auto">
               <table className="w-full text-left text-sm text-stone-700">
-                <thead className="bg-red-50/50 border-b border-red-100 text-[11px] font-mono uppercase tracking-wider text-red-700">
+                <thead className="sticky top-0 z-10 bg-red-50/95 border-b border-red-100 text-[11px] font-mono uppercase tracking-wider text-red-700 shadow-2xs">
                   <tr>
                     <th className="w-10 p-4 text-center">
                       <input
@@ -1195,6 +1370,7 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
                               src={gen.resultImageUrl}
                               alt="Mosaic thumbnail"
                               fill
+                              unoptimized
                               className="object-cover"
                             />
                           </div>
@@ -1263,8 +1439,16 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
       {/* DELETE CONFIRMATION MODAL */}
       {/* ========================================================================= */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-md p-6 rounded-3xl bg-white border border-stone-200 shadow-2xl flex flex-col gap-5 text-stone-900">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-md animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteTarget(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-md p-6 rounded-3xl bg-white border border-stone-200 shadow-2xl flex flex-col gap-5 text-stone-900 animate-scaleUp"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600">
@@ -1277,7 +1461,7 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                className="text-stone-400 hover:text-stone-700"
+                className="text-stone-400 hover:text-stone-700 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1344,17 +1528,26 @@ export function GenerationsClient({ initialGenerations }: { initialGenerations: 
       {/* HIGH-RESOLUTION PREVIEW LIGHTBOX MODAL */}
       {/* ========================================================================= */}
       {selectedGen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-white border border-stone-200 rounded-3xl overflow-hidden shadow-2xl max-w-4xl w-full flex flex-col md:flex-row text-stone-900">
-            <div className="relative w-full md:w-2/3 h-64 md:h-[500px] bg-stone-100">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-950/80 backdrop-blur-md animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedGen(null);
+          }}
+        >
+          <div
+            className="bg-white border border-stone-200 rounded-3xl overflow-hidden shadow-2xl max-w-4xl w-full flex flex-col md:flex-row text-stone-900 max-h-[90vh] overflow-y-auto animate-scaleUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative w-full md:w-2/3 h-72 sm:h-96 md:h-[500px] bg-stone-100 shrink-0">
               <Image
                 src={selectedGen.resultImageUrl}
                 alt="High Res Mosaic Preview"
                 fill
+                unoptimized
                 className="object-contain"
               />
             </div>
-            <div className="w-full md:w-1/3 p-6 flex flex-col justify-between gap-4 overflow-y-auto max-h-[500px] border-t md:border-t-0 md:border-l border-stone-200">
+            <div className="w-full md:w-1/3 p-6 flex flex-col justify-between gap-4 overflow-y-auto border-t md:border-t-0 md:border-l border-stone-200 bg-white">
               <div className="flex flex-col gap-4">
                 <div className="flex justify-between items-start">
                   <div>
