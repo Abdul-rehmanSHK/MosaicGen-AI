@@ -10,6 +10,9 @@ export default async function AdminProductsPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.finderResult.findMany({
+      where: {
+        resultImageUrl: { not: null },
+      },
       orderBy: { createdAt: "desc" },
       take: 100,
     }),

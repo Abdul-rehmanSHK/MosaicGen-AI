@@ -30,6 +30,12 @@ import {
   Copy,
   Tag,
   SlidersHorizontal,
+  Download,
+  Maximize2,
+  UserCheck,
+  CheckSquare,
+  Square,
+  Mail,
 } from "lucide-react";
 
 export interface Product {
@@ -57,6 +63,8 @@ export interface QuizSubmission {
   color: string;
   space: string;
   generatedPrompt: string;
+  resultImageUrl?: string | null;
+  generationId?: string | null;
   createdAt: string;
 }
 
@@ -155,12 +163,121 @@ export function ProductsManagerClient({
   initialSubmissions?: QuizSubmission[];
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [submissions] = useState<QuizSubmission[]>(initialSubmissions);
+  const [submissions, setSubmissions] = useState<QuizSubmission[]>(
+    initialSubmissions.filter((s) => Boolean(s.resultImageUrl))
+  );
   const [activeTab, setActiveTab] = useState<"active" | "trash" | "submissions">("active");
 
   // Filtering & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStyle, setFilterStyle] = useState("all");
+
+  // Submissions State, Lightbox & Search
+  const [selectedSubmissions, setSelectedSubmissions] = useState<string[]>([]);
+  const [isDeletingSubmission, setIsDeletingSubmission] = useState(false);
+  const [submissionSearch, setSubmissionSearch] = useState("");
+  const [submissionFilterStyle, setSubmissionFilterStyle] = useState("all");
+  const [submissionLightbox, setSubmissionLightbox] = useState<QuizSubmission | null>(null);
+
+  // Filtered submissions list (only completed generations)
+  const filteredSubmissions = useMemo(() => {
+    return submissions.filter((sub) => {
+      if (!sub.resultImageUrl) return false;
+      const q = submissionSearch.trim().toLowerCase();
+      const matchesQ =
+        !q ||
+        (sub.userEmail && sub.userEmail.toLowerCase().includes(q)) ||
+        (sub.generatedPrompt && sub.generatedPrompt.toLowerCase().includes(q)) ||
+        (sub.style && sub.style.toLowerCase().includes(q)) ||
+        (sub.space && sub.space.toLowerCase().includes(q)) ||
+        (sub.color && sub.color.toLowerCase().includes(q)) ||
+        (sub.shape && sub.shape.toLowerCase().includes(q));
+
+      const matchesStyle =
+        submissionFilterStyle === "all" ||
+        sub.style?.toLowerCase() === submissionFilterStyle.toLowerCase();
+
+      return matchesQ && matchesStyle;
+    });
+  }, [submissions, submissionSearch, submissionFilterStyle]);
+
+  // Handle single submission delete
+  const handleDeleteSubmission = async (id: string) => {
+    if (!window.confirm("Are you sure you want to remove this finder quiz submission?")) return;
+    try {
+      setIsDeletingSubmission(true);
+      const res = await fetch(`/api/finder/result?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete quiz submission");
+      setSubmissions((prev) => prev.filter((s) => s.id !== id));
+      setSelectedSubmissions((prev) => prev.filter((i) => i !== id));
+      if (submissionLightbox?.id === id) setSubmissionLightbox(null);
+      showToast("Submission deleted successfully");
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Failed to delete submission");
+    } finally {
+      setIsDeletingSubmission(false);
+    }
+  };
+
+  // Handle bulk submission delete
+  const handleBulkDeleteSubmissions = async () => {
+    if (selectedSubmissions.length === 0) return;
+    if (!window.confirm(`Delete ${selectedSubmissions.length} selected quiz submissions?`)) return;
+    try {
+      setIsDeletingSubmission(true);
+      const res = await fetch(`/api/finder/result?ids=${encodeURIComponent(selectedSubmissions.join(","))}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete quiz submissions");
+      setSubmissions((prev) => prev.filter((s) => !selectedSubmissions.includes(s.id)));
+      setSelectedSubmissions([]);
+      showToast(`${selectedSubmissions.length} submissions removed`);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Failed to delete submissions");
+    } finally {
+      setIsDeletingSubmission(false);
+    }
+  };
+
+  // Handle clear all submissions
+  const handleClearAllSubmissions = async () => {
+    if (!window.confirm("Are you sure you want to clear all finder quiz submissions? This cannot be undone.")) return;
+    try {
+      setIsDeletingSubmission(true);
+      const res = await fetch("/api/finder/result?action=clear-all", { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to clear submissions");
+      setSubmissions([]);
+      setSelectedSubmissions([]);
+      setSubmissionLightbox(null);
+      showToast("All finder submissions cleared");
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Failed to clear submissions");
+    } finally {
+      setIsDeletingSubmission(false);
+    }
+  };
+
+  // Handle direct image download
+  const handleDownloadMosaic = async (url: string, filename?: string) => {
+    try {
+      showToast("Downloading mosaic preview...");
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename || `bespoke-mosaic-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      showToast("Download completed!");
+    } catch (err) {
+      console.error("Download failed:", err);
+      window.open(url, "_blank");
+    }
+  };
 
   // Editor View: null = list view; "create" = new product; Product = edit
   const [editorState, setEditorState] = useState<"create" | Product | null>(null);
@@ -1160,6 +1277,17 @@ export function ProductsManagerClient({
                 </button>
               )}
 
+              {activeTab === "submissions" && submissions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllSubmissions}
+                  disabled={isDeletingSubmission}
+                  className="px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" /> Clear All Submissions
+                </button>
+              )}
+
               {activeTab === "active" && (
                 <button
                   type="button"
@@ -1516,90 +1644,464 @@ export function ProductsManagerClient({
 
           {/* AESTHETIC QUIZ SUBMISSIONS TAB */}
           {activeTab === "submissions" && (
-            <div className="w-full rounded-2xl bg-white border border-stone-200 overflow-hidden shadow-xs">
-              {submissions.length === 0 ? (
-                <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
-                  <Compass className="w-12 h-12 text-stone-300" />
-                  <p className="text-sm font-serif text-stone-600">No Aesthetic Finder quiz submissions yet</p>
-                  <p className="text-xs text-stone-400">
-                    When visitors complete the 5-step quiz on /finder, their taste preferences and generated prompts appear here.
-                  </p>
+            <div className="flex flex-col gap-4">
+              {/* Search & Filter Toolbar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white border border-stone-200 shadow-xs">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={submissionSearch}
+                    onChange={(e) => setSubmissionSearch(e.target.value)}
+                    placeholder="Search submissions by email, prompt, aesthetic style, or surface..."
+                    className="w-full pl-9 pr-4 py-2 text-xs bg-stone-50 rounded-xl border border-stone-200 focus:outline-none focus:border-stone-400 transition-colors"
+                  />
+                  {submissionSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setSubmissionSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-stone-700">
-                    <thead className="bg-stone-50 text-stone-800 font-serif uppercase tracking-wider border-b border-stone-200">
-                      <tr>
-                        <th className="p-4">Submission Date</th>
-                        <th className="p-4">Client Email</th>
-                        <th className="p-4">Aesthetic Taste</th>
-                        <th className="p-4">Surface Space</th>
-                        <th className="p-4">Generated Synthesis Prompt</th>
-                        <th className="p-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100">
-                      {submissions.map((sub) => (
-                        <tr key={sub.id} className="hover:bg-stone-50/80 transition-colors">
-                          <td className="p-4 font-mono text-[11px] text-stone-500 whitespace-nowrap">
-                            {new Date(sub.createdAt).toLocaleString()}
-                          </td>
-                          <td className="p-4 font-medium text-stone-900">
-                            {sub.userEmail || (
-                              <span className="text-stone-400 italic">Anonymous Visitor</span>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1 flex-wrap">
-                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-800 text-[10px] font-medium border border-stone-200">
-                                {sub.style}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-800 text-[10px] font-medium border border-stone-200">
-                                {sub.color}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-800 text-[10px] font-medium border border-stone-200">
-                                {sub.shape}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-4 font-serif font-medium text-stone-800">
-                            {sub.space}
-                          </td>
-                          <td className="p-4 text-stone-600 max-w-sm">
-                            <p className="line-clamp-2 text-[11px] leading-relaxed">
-                              {sub.generatedPrompt}
-                            </p>
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(sub.generatedPrompt);
-                                  showToast("Prompt copied to clipboard!");
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs flex items-center gap-1 cursor-pointer"
-                                title="Copy Prompt"
-                              >
-                                <Copy className="w-3 h-3" /> Copy
-                              </button>
-                              <Link
-                                href={`/?mode=scratch&prompt=${encodeURIComponent(sub.generatedPrompt)}&placement=${encodeURIComponent(sub.space)}`}
-                                target="_blank"
-                                className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs flex items-center gap-1"
-                              >
-                                <Sparkles className="w-3 h-3" /> Studio
-                              </Link>
-                            </div>
-                          </td>
-                        </tr>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Filter className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <select
+                      value={submissionFilterStyle}
+                      onChange={(e) => setSubmissionFilterStyle(e.target.value)}
+                      className="pl-8 pr-7 py-2 text-xs bg-stone-50 rounded-xl border border-stone-200 focus:outline-none focus:border-stone-400 text-stone-700 cursor-pointer appearance-none"
+                    >
+                      <option value="all">All Styles</option>
+                      {AESTHETIC_STYLES.map((st) => (
+                        <option key={st} value={st.toLowerCase()}>
+                          {st} Style
+                        </option>
                       ))}
-                    </tbody>
-                  </table>
+                    </select>
+                  </div>
+
+                  <span className="text-[11px] font-mono text-stone-500 whitespace-nowrap pl-1">
+                    {filteredSubmissions.length} of {submissions.length} designs
+                  </span>
+                </div>
+              </div>
+
+              {/* Bulk Selection Toolbar */}
+              {selectedSubmissions.length > 0 && (
+                <div className="p-3.5 px-5 rounded-2xl bg-stone-900 text-white shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-white text-stone-900 font-mono font-bold text-xs flex items-center justify-center">
+                      {selectedSubmissions.length}
+                    </span>
+                    <span className="text-xs font-medium">
+                      {selectedSubmissions.length === 1 ? "1 submission selected" : `${selectedSubmissions.length} submissions selected`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={handleBulkDeleteSubmissions}
+                      disabled={isDeletingSubmission}
+                      className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete Selected
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSubmissions([])}
+                      className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs transition-all cursor-pointer"
+                    >
+                      Deselect
+                    </button>
+                  </div>
                 </div>
               )}
+
+              {/* Submissions Table */}
+              <div className="w-full rounded-2xl bg-white border border-stone-200 overflow-hidden shadow-xs">
+                {filteredSubmissions.length === 0 ? (
+                  <div className="p-14 text-center flex flex-col items-center justify-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400">
+                      <Compass className="w-7 h-7" />
+                    </div>
+                    <p className="text-base font-serif font-semibold text-stone-800">
+                      {submissions.length === 0
+                        ? "No completed Finder Quiz generations yet"
+                        : "No matching quiz generations found"}
+                    </p>
+                    <p className="text-xs text-stone-500 max-w-md leading-relaxed">
+                      {submissions.length === 0
+                        ? "Quiz results will automatically track and appear here once visitors run the AI synthesizer on /finder and completely render their bespoke mosaic designs."
+                        : "Try adjusting your search query or aesthetic style filter."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-stone-700">
+                      <thead className="bg-stone-50/80 text-stone-800 font-serif uppercase tracking-wider border-b border-stone-200 text-[11px]">
+                        <tr>
+                          <th className="p-4 w-10 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (selectedSubmissions.length === filteredSubmissions.length) {
+                                  setSelectedSubmissions([]);
+                                } else {
+                                  setSelectedSubmissions(filteredSubmissions.map((s) => s.id));
+                                }
+                              }}
+                              className="text-stone-400 hover:text-stone-700"
+                              title="Select / Deselect All"
+                            >
+                              {selectedSubmissions.length > 0 && selectedSubmissions.length === filteredSubmissions.length ? (
+                                <CheckSquare className="w-4 h-4 text-stone-900" />
+                              ) : (
+                                <Square className="w-4 h-4 text-stone-400" />
+                              )}
+                            </button>
+                          </th>
+                          <th className="p-4">Generated Mosaic</th>
+                          <th className="p-4">Client User</th>
+                          <th className="p-4">Aesthetic Specs</th>
+                          <th className="p-4">Surface Placement</th>
+                          <th className="p-4">Synthesis Prompt</th>
+                          <th className="p-4">Date Rendered</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {filteredSubmissions.map((sub) => {
+                          const isSelected = selectedSubmissions.includes(sub.id);
+                          return (
+                            <tr
+                              key={sub.id}
+                              className={`transition-colors ${
+                                isSelected ? "bg-stone-50" : "hover:bg-stone-50/70"
+                              }`}
+                            >
+                              <td className="p-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedSubmissions((prev) => prev.filter((i) => i !== sub.id));
+                                    } else {
+                                      setSelectedSubmissions((prev) => [...prev, sub.id]);
+                                    }
+                                  }}
+                                  className="text-stone-400 hover:text-stone-700"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-stone-900" />
+                                  ) : (
+                                    <Square className="w-4 h-4 text-stone-400" />
+                                  )}
+                                </button>
+                              </td>
+
+                              {/* Thumbnail preview */}
+                              <td className="p-4">
+                                <div
+                                  onClick={() => setSubmissionLightbox(sub)}
+                                  className="relative w-16 h-16 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 cursor-pointer group shadow-2xs hover:shadow-md transition-all shrink-0"
+                                  title="Click to view full preview"
+                                >
+                                  {sub.resultImageUrl ? (
+                                    <img
+                                      src={sub.resultImageUrl}
+                                      alt="Generated Mosaic"
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-stone-300">
+                                      <ImageIcon className="w-6 h-6" />
+                                    </div>
+                                  )}
+                                  <div className="absolute inset-0 bg-stone-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Maximize2 className="w-4 h-4 text-white" />
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Client user */}
+                              <td className="p-4">
+                                {sub.userEmail ? (
+                                  <div className="flex flex-col gap-1">
+                                    <div className="font-semibold text-stone-900 flex items-center gap-1.5">
+                                      <Mail className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                                      <span className="truncate max-w-[180px]">{sub.userEmail}</span>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80 w-fit">
+                                      <UserCheck className="w-3 h-3 text-emerald-600" /> Verified Client
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-full bg-stone-100 text-stone-600 font-mono text-[10px] border border-stone-200">
+                                    Guest Client
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Aesthetic specs */}
+                              <td className="p-4">
+                                <div className="flex items-center gap-1 flex-wrap max-w-xs">
+                                  <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-800 text-[10px] font-medium border border-stone-200 capitalize">
+                                    {sub.style}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-800 text-[10px] font-medium border border-stone-200 capitalize">
+                                    {sub.color}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-800 text-[10px] font-medium border border-stone-200 capitalize">
+                                    {sub.shape}
+                                  </span>
+                                </div>
+                              </td>
+
+                              {/* Surface space */}
+                              <td className="p-4">
+                                <span className="font-serif font-medium text-stone-800 capitalize bg-stone-50 px-2.5 py-1 rounded-lg border border-stone-200/80">
+                                  {sub.space}
+                                </span>
+                              </td>
+
+                              {/* Prompt */}
+                              <td className="p-4 text-stone-600 max-w-xs">
+                                <p
+                                  className="line-clamp-2 text-[11px] leading-relaxed cursor-pointer hover:text-stone-900"
+                                  onClick={() => setSubmissionLightbox(sub)}
+                                  title={sub.generatedPrompt}
+                                >
+                                  {sub.generatedPrompt}
+                                </p>
+                              </td>
+
+                              {/* Submission date */}
+                              <td className="p-4 font-mono text-[11px] text-stone-500 whitespace-nowrap">
+                                {new Date(sub.createdAt).toLocaleString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </td>
+
+                              {/* Actions */}
+                              <td className="p-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSubmissionLightbox(sub)}
+                                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
+                                    title="View Full Preview"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {sub.resultImageUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadMosaic(sub.resultImageUrl!, `finder-mosaic-${sub.style}-${sub.id}.png`)}
+                                      className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
+                                      title="Download Mosaic Image"
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(sub.generatedPrompt);
+                                      showToast("Prompt copied to clipboard!");
+                                    }}
+                                    className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
+                                    title="Copy Synthesis Prompt"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <Link
+                                    href={`/?mode=scratch&prompt=${encodeURIComponent(sub.generatedPrompt)}&placement=${encodeURIComponent(sub.space)}`}
+                                    target="_blank"
+                                    className="p-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white transition-colors flex items-center justify-center"
+                                    title="Open in AI Studio"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  </Link>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteSubmission(sub.id)}
+                                    disabled={isDeletingSubmission}
+                                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
+                                    title="Delete Submission"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2.5 SUBMISSION LIGHTBOX / DETAILS MODAL */}
+      {/* ========================================================================= */}
+      {submissionLightbox && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-stone-950/70 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-stone-200 shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-stone-100 sticky top-0 bg-white/95 backdrop-blur-md z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-stone-900 text-base">
+                    Finder Mosaic Concept
+                  </h3>
+                  <p className="text-[11px] text-stone-500 font-mono">
+                    Synthesized {new Date(submissionLightbox.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubmissionLightbox(null)}
+                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-600 cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col md:flex-row gap-6">
+              {/* Mosaic Preview */}
+              <div className="w-full md:w-1/2 flex flex-col gap-3">
+                <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shadow-inner group">
+                  {submissionLightbox.resultImageUrl ? (
+                    <img
+                      src={submissionLightbox.resultImageUrl}
+                      alt="Mosaic Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-stone-400">
+                      <ImageIcon className="w-12 h-12" />
+                    </div>
+                  )}
+                </div>
+
+                {submissionLightbox.resultImageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadMosaic(submissionLightbox.resultImageUrl!, `finder-mosaic-${submissionLightbox.id}.png`)}
+                    className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" /> Download High-Res Image
+                  </button>
+                )}
+              </div>
+
+              {/* Specs & Prompt Details */}
+              <div className="w-full md:w-1/2 flex flex-col justify-between gap-5">
+                <div className="flex flex-col gap-4">
+                  {/* Client Email */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                      Client Account
+                    </label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="font-medium text-stone-900 text-xs">
+                        {submissionLightbox.userEmail || "Guest Client (Unverified)"}
+                      </span>
+                      {submissionLightbox.userEmail && (
+                        <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Aesthetic DNA Tags */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                      Aesthetic DNA
+                    </label>
+                    <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-800 text-xs font-medium border border-stone-200 capitalize">
+                        Style: {submissionLightbox.style}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-800 text-xs font-medium border border-stone-200 capitalize">
+                        Color: {submissionLightbox.color}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-800 text-xs font-medium border border-stone-200 capitalize">
+                        Shape: {submissionLightbox.shape}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 text-xs font-serif font-medium border border-amber-200 capitalize">
+                        Space: {submissionLightbox.space}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Synthesis Prompt */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                        Generated Synthesis Prompt
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(submissionLightbox.generatedPrompt);
+                          showToast("Prompt copied!");
+                        }}
+                        className="text-[11px] text-stone-600 hover:text-stone-900 flex items-center gap-1 font-medium cursor-pointer"
+                      >
+                        <Copy className="w-3 h-3" /> Copy
+                      </button>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-xs text-stone-700 leading-relaxed font-sans max-h-40 overflow-y-auto">
+                      {submissionLightbox.generatedPrompt}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Modal Actions */}
+                <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                  <Link
+                    href={`/?mode=scratch&prompt=${encodeURIComponent(submissionLightbox.generatedPrompt)}&placement=${encodeURIComponent(submissionLightbox.space)}`}
+                    target="_blank"
+                    className="flex-1 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-serif font-medium flex items-center justify-center gap-2 transition-all shadow-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Open in AI Studio
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSubmission(submissionLightbox.id)}
+                    className="p-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors cursor-pointer"
+                    title="Delete Submission"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

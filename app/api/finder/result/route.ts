@@ -2,14 +2,31 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
-// POST: Save user quiz result (called from frontend /finder)
+// POST: Save user quiz result (called from frontend /finder ONLY when AI generation is complete)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { style, shape, color, space, generatedPrompt, userEmail } = body;
+    const {
+      style,
+      shape,
+      color,
+      space,
+      generatedPrompt,
+      userEmail,
+      resultImageUrl,
+      generationId,
+    } = body;
 
     if (!style || !shape || !color || !space) {
       return NextResponse.json({ error: "Missing quiz selection parameters" }, { status: 400 });
+    }
+
+    // Require completed image generation
+    if (!resultImageUrl) {
+      return NextResponse.json(
+        { error: "Image generation must be completed before saving finder quiz submission" },
+        { status: 400 }
+      );
     }
 
     const savedResult = await prisma.finderResult.create({
@@ -20,6 +37,8 @@ export async function POST(request: Request) {
         space,
         generatedPrompt: generatedPrompt || "",
         userEmail: userEmail || null,
+        resultImageUrl,
+        generationId: generationId || null,
       },
     });
 
@@ -30,7 +49,7 @@ export async function POST(request: Request) {
   }
 }
 
-// GET: Fetch all saved finder quiz results (for Admin Dashboard)
+// GET: Fetch saved finder quiz results with generated images (for Admin Dashboard)
 export async function GET() {
   try {
     const session = await auth();
@@ -39,6 +58,9 @@ export async function GET() {
     }
 
     const results = await prisma.finderResult.findMany({
+      where: {
+        resultImageUrl: { not: null },
+      },
       orderBy: { createdAt: "desc" },
     });
 

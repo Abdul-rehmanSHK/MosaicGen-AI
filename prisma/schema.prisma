@@ -170,6 +170,8 @@ model FinderResult {
   color           String
   space           String
   generatedPrompt String
+  resultImageUrl  String?
+  generationId    String?
   createdAt       DateTime @default(now())
 }
 

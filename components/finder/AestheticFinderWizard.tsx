@@ -361,24 +361,6 @@ function AestheticFinderContent({
     ? `Bespoke handcrafted architectural mosaic installation featuring ${promptSegments.join(", ")}, engineered with authentic Italian marble, Venetian smalti, and polished gold accents.`
     : `Bespoke handcrafted architectural mosaic installation in authentic Italian marble and Venetian smalti with polished gold accents.`;
 
-  // Automatically record quiz result to database for admin analytics
-  useEffect(() => {
-    if (isResultStep && selectedStyle && selectedShape && selectedColor && selectedSpace) {
-      fetch("/api/finder/result", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          style: selectedStyle,
-          shape: selectedShape,
-          color: selectedColor,
-          space: selectedSpace,
-          generatedPrompt: generatedVisionPrompt,
-          userEmail: verifiedEmail || null,
-        }),
-      }).catch((err) => console.error("Auto-recording quiz result failed:", err));
-    }
-  }, [isResultStep, selectedStyle, selectedShape, selectedColor, selectedSpace, verifiedEmail, generatedVisionPrompt]);
-
   // Execute AI Generation in-place on /finder
   const handleExecuteGeneration = async (emailOverride?: string) => {
     const emailToSend =
@@ -455,9 +437,10 @@ function AestheticFinderContent({
       setGeneratedResult(newGenResult);
 
       if (data.resultImageUrl) {
+        const genId = data.generationId || data.generation?.id || `new-${Date.now()}`;
         setGenerationsList((prev) => [
           {
-            id: data.generationId || `new-${Date.now()}`,
+            id: genId,
             resultImageUrl: data.resultImageUrl,
             prompt: data.promptApplied || generatedVisionPrompt,
             placement: spaceLabel || "Floor Medallion",
@@ -466,6 +449,22 @@ function AestheticFinderContent({
           },
           ...prev,
         ]);
+
+        // Track finder quiz submission ONLY once the mosaic image is completely generated
+        fetch("/api/finder/result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            style: selectedStyle,
+            shape: selectedShape,
+            color: selectedColor,
+            space: selectedSpace,
+            generatedPrompt: data.promptApplied || generatedVisionPrompt,
+            userEmail: emailToSend || verifiedEmail || null,
+            resultImageUrl: data.resultImageUrl,
+            generationId: typeof genId === "string" && !genId.startsWith("new-") ? genId : null,
+          }),
+        }).catch((err) => console.error("Tracking completed finder quiz result failed:", err));
       }
     } catch (err: any) {
       console.error("AI Generation error:", err);
