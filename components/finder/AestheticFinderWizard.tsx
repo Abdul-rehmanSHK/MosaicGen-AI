@@ -18,6 +18,8 @@ import {
   Loader2,
   AlertCircle,
   Mail,
+  ShieldCheck,
+  Sliders,
 } from "lucide-react";
 import { EmailOtpModal } from "@/components/studio/EmailOtpModal";
 import { LimitReachedModal } from "@/components/studio/LimitReachedModal";
@@ -97,7 +99,7 @@ function AestheticFinderContent({
   const [selectedColor, setSelectedColor] = useState<string>(paramColor);
   const [selectedSpace, setSelectedSpace] = useState<string>(paramSpace);
 
-  // Dynamic answers map supporting arbitrary steps added in CMS
+  // Dynamic answers map supporting arbitrary steps
   const [answers, setAnswers] = useState<Record<string, string>>({
     style: paramStyle,
     shape: paramShape,
@@ -290,7 +292,7 @@ function AestheticFinderContent({
     return (
       <>
         {parts[0]}
-        <em className="italic font-serif text-stone-700 font-normal">{highlight}</em>
+        <em className="italic font-serif text-stone-800 font-normal">{highlight}</em>
         {parts.slice(1).join(highlight)}
       </>
     );
@@ -318,7 +320,7 @@ function AestheticFinderContent({
 
   questionnaireSteps.forEach((s) => {
     const val = answers[s.key] || (s.key === "style" ? selectedStyle : s.key === "shape" ? selectedShape : s.key === "color" ? selectedColor : s.key === "space" ? selectedSpace : "");
-    if (val) {
+    if (val && val !== "any" && val !== "no-preference") {
       const opt = s.options.find((o) => o.value === val || o.label === val);
       const label = opt?.label || val;
       if (s.key === "style") promptSegments.push(`${label} aesthetic`);
@@ -426,7 +428,6 @@ function AestheticFinderContent({
 
       setGeneratedResult(newGenResult);
 
-      // Prepend to generations showcase so the new design appears below immediately
       if (data.resultImageUrl) {
         setGenerationsList((prev) => [
           {
@@ -478,677 +479,643 @@ function AestheticFinderContent({
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-8 sm:gap-10 py-6 px-4 sm:px-6 text-stone-900">
-      {/* ================= STEPPER PROGRESS BAR ================= */}
-      <div className="w-full flex flex-col gap-4">
-        <div className="flex items-baseline justify-between">
-          <p className="text-[10px] font-medium uppercase tracking-[0.32em] text-stone-500">
-            Step{" "}
-            <span className="text-stone-900 font-semibold tabular-nums">
-              0{currentStepIndex + 1}
-            </span>{" "}
-            of 0{initialSteps.length}
-          </p>
-          <p className="font-serif text-sm sm:text-base font-light italic text-stone-800">
-            {SCRIPT_NAMES[currentStepIndex] || currentStep?.title || "Step"}
-          </p>
+    <div className="w-full max-w-7xl mx-auto flex flex-col gap-8 sm:gap-10 px-4 sm:px-6 text-stone-900 animate-fadeIn">
+      {/* ================= HERO HEADER (MATCHING SITE STYLE) ================= */}
+      <div className="text-center flex flex-col items-center gap-2 pt-2 pb-2">
+        <div className="inline-flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-[0.22em] uppercase font-mono">
+          <Compass className="w-3.5 h-3.5 text-stone-600" /> FIND YOUR AESTHETIC
         </div>
-
-        {/* Stepper Dots & Track */}
-        <div className="relative flex items-center justify-between w-full px-2 sm:px-6">
-          {/* Background Track Line */}
-          <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-px bg-stone-200 -z-0" />
-          {/* Active Fill Line */}
-          <div
-            className="absolute left-8 top-1/2 -translate-y-1/2 h-px bg-stone-900 transition-all duration-300 ease-out -z-0"
-            style={{ width: `calc(${(currentStepIndex / (initialSteps.length - 1)) * 100}% - 2.5rem)` }}
-          />
-
-          {initialSteps.map((step, idx) => {
-            const isCompleted = idx < currentStepIndex;
-            const isCurrent = idx === currentStepIndex;
-
-            return (
-              <div
-                key={step.id || idx}
-                onClick={() => handleJumpToStep(idx)}
-                className="relative z-10 flex flex-col items-center gap-2 cursor-pointer group"
-              >
-                {/* Stepper Circle */}
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-mono transition-all duration-300 ${
-                    isCompleted
-                      ? "bg-stone-900 border-2 border-stone-900 text-white shadow-xs"
-                      : isCurrent
-                      ? "bg-white text-stone-900 font-bold border-2 border-stone-900 ring-4 ring-stone-900/10 shadow-md scale-105"
-                      : "bg-white border border-stone-300 text-stone-400 group-hover:border-stone-500 group-hover:text-stone-700 shadow-2xs"
-                  }`}
-                >
-                  {isCompleted ? (
-                    <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
-                  ) : (
-                    <span>0{idx + 1}</span>
-                  )}
-                </div>
-
-                {/* Step Label */}
-                <span
-                  className={`text-[10px] font-mono tracking-[0.22em] transition-colors uppercase ${
-                    isCurrent
-                      ? "text-stone-900 font-bold"
-                      : isCompleted
-                      ? "text-stone-700 font-medium"
-                      : "text-stone-400 group-hover:text-stone-600"
-                  }`}
-                >
-                  {STEP_NAMES[idx] || step.key}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ================= STEP HEADING & DESCRIPTIONS ================= */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-mono uppercase tracking-[0.2em] text-stone-500 font-semibold">
-          {currentStep?.subtitle || `STEP 0${currentStepIndex + 1} • ${STEP_NAMES[currentStepIndex] || currentStep?.key}`}
-        </span>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal text-stone-900 tracking-tight">
-          {renderStyledTitle(currentStep?.title || "Choose Your Aesthetic", currentStep?.highlightWord)}
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic font-normal tracking-tight text-stone-900">
+          Mosaic Aesthetic Studio
         </h1>
-        <p className="text-xs sm:text-sm text-stone-600 max-w-2xl mt-0.5 leading-relaxed">
-          {currentStep?.description}
+        <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl text-center leading-relaxed">
+          Answer five concise design preferences to discover an architectural mosaic concept tailored to your space.
         </p>
       </div>
 
-      {/* ================= STEP CONTENT ================= */}
-      <div className="w-full">
-        {/* Steps 1-4: INTERACTIVE QUESTIONNAIRE */}
-        {!isResultStep && (
-          <div
-            className={`grid gap-4 sm:gap-5 ${
-              currentStep?.key === "color"
-                ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-6"
-                : currentStep?.options?.length === 5
-                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
-                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
-            }`}
-          >
-            {currentStep?.options.map((opt) => {
-              const currentVal = answers[currentStep.key] || "";
-              const isSelected = currentVal === opt.value;
-              const isColor = currentStep?.key === "color";
-              const isNoPreference = opt.value === "any" || opt.value === "no-preference";
+      {/* ================= UNIFIED LUXURY CARD CONTAINER (MATCHING SITE STUDIO) ================= */}
+      <div className="w-full rounded-3xl bg-white border border-stone-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-6 sm:p-10 flex flex-col gap-8 transition-all">
+        {/* ================= STEPPER PROGRESS BAR (SITE STYLE) ================= */}
+        <div className="w-full flex flex-col gap-5 pb-6 border-b border-stone-100">
+          <div className="flex items-center justify-between text-xs font-mono text-stone-500 uppercase tracking-widest">
+            <span className="text-[11px] font-semibold text-stone-600">
+              STEP 0{currentStepIndex + 1} OF 0{initialSteps.length}
+            </span>
+            <span className="font-serif italic capitalize text-sm sm:text-base text-stone-900 font-normal">
+              {SCRIPT_NAMES[currentStepIndex] || currentStep?.title || "Step"}
+            </span>
+          </div>
 
-              // 1. Color Swatch Cards: clean white cards with centered circular swatch + label below
-              if (isColor) {
-                return (
-                  <div
-                    key={opt.id}
-                    onClick={() => handleSelectOption(opt.value)}
-                    className={`group relative rounded-2xl p-5 flex flex-col items-center justify-center gap-3.5 aspect-[4/5] cursor-pointer transition-all duration-300 shadow-2xs ${
-                      isSelected
-                        ? "border-2 border-stone-900 ring-4 ring-stone-900/10 bg-white scale-[1.02] shadow-md"
-                        : "border border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
-                    }`}
-                  >
-                    <div
-                      className="w-12 h-12 rounded-full border border-stone-200/60 shadow-inner transition-transform duration-300 group-hover:scale-105"
-                      style={{
-                        background: opt.colorHex || "#18181B",
-                      }}
-                    />
-                    <span className="text-xs font-sans font-medium text-stone-800 text-center tracking-tight leading-snug">
-                      {opt.label}
-                    </span>
-                    {isSelected && (
-                      <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-stone-900 text-white flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 stroke-[3]" />
-                      </div>
-                    )}
-                  </div>
-                );
-              }
+          {/* Stepper Dots & Track */}
+          <div className="relative flex items-center justify-between w-full px-2 sm:px-6">
+            {/* Background Track Line */}
+            <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-200 -z-0" />
+            {/* Active Fill Line */}
+            <div
+              className="absolute left-8 top-1/2 -translate-y-1/2 h-[2px] bg-stone-900 transition-all duration-500 -z-0"
+              style={{ width: `calc(${(currentStepIndex / (initialSteps.length - 1)) * 100}% - 2.5rem)` }}
+            />
 
-              // 2. Shape Step: "No preference" card without image
-              if (isNoPreference && !opt.imageUrl) {
-                return (
-                  <div
-                    key={opt.id}
-                    onClick={() => handleSelectOption(opt.value)}
-                    className={`group relative aspect-[3/4] rounded-2xl p-5 flex items-center justify-center cursor-pointer transition-all duration-300 shadow-2xs ${
-                      isSelected
-                        ? "border-2 border-stone-900 ring-4 ring-stone-900/10 bg-white scale-[1.02] shadow-md"
-                        : "border border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
-                    }`}
-                  >
-                    <span className="font-serif font-medium text-sm sm:text-base text-stone-900 text-center">
-                      No preference
-                    </span>
-                    {isSelected && (
-                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-xs">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                    )}
-                  </div>
-                );
-              }
+            {initialSteps.map((step, idx) => {
+              const isCompleted = idx < currentStepIndex;
+              const isCurrent = idx === currentStepIndex;
 
-              // 3. Image Cards (Styles, Shapes, Spaces)
               return (
                 <div
-                  key={opt.id}
-                  onClick={() => handleSelectOption(opt.value)}
-                  className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 shadow-2xs ${
-                    isSelected
-                      ? "border-2 border-stone-900 ring-4 ring-stone-900/10 scale-[1.02] shadow-md"
-                      : "border-stone-200/90 bg-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
-                  }`}
+                  key={step.id || idx}
+                  onClick={() => handleJumpToStep(idx)}
+                  className="relative z-10 flex flex-col items-center gap-2 cursor-pointer group"
                 >
-                  {opt.imageUrl ? (
-                    <img
-                      src={opt.imageUrl}
-                      alt={opt.label}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-stone-100 flex items-center justify-center text-stone-400 text-xs">
-                      {opt.label}
-                    </div>
-                  )}
-
-                  {/* Dark gradient for crisp text legibility */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-95 group-hover:opacity-90 transition-opacity" />
-
-                  {/* Bottom label & selection checkmark */}
-                  <div className="absolute inset-x-0 bottom-0 p-3.5 z-10 flex items-center justify-between gap-1.5">
-                    <span className="font-serif font-medium text-xs sm:text-sm text-white drop-shadow-sm leading-snug">
-                      {opt.label}
-                    </span>
-                    {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-white text-stone-900 flex items-center justify-center shadow-md shrink-0">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
+                  {/* Stepper Circle */}
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-mono transition-all duration-300 ${
+                      isCompleted
+                        ? "bg-stone-900 border-2 border-stone-900 text-white shadow-xs"
+                        : isCurrent
+                        ? "bg-stone-900 text-white font-bold border-2 border-stone-900 ring-4 ring-stone-900/10 shadow-md scale-105"
+                        : "bg-white border border-stone-300 text-stone-400 group-hover:border-stone-500 group-hover:text-stone-700 shadow-2xs"
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                    ) : (
+                      <span>0{idx + 1}</span>
                     )}
                   </div>
+
+                  {/* Step Label */}
+                  <span
+                    className={`text-[10px] font-mono tracking-wider transition-colors uppercase ${
+                      isCurrent
+                        ? "text-stone-900 font-bold"
+                        : isCompleted
+                        ? "text-stone-700 font-medium"
+                        : "text-stone-400 group-hover:text-stone-600"
+                    }`}
+                  >
+                    {STEP_NAMES[idx] || step.key}
+                  </span>
                 </div>
               );
             })}
           </div>
-        )}
+        </div>
 
-        {/* Step 5: RESULT */}
-        {isResultStep && (
-          <div className="w-full flex flex-col gap-10">
-            {/* 1. If currently generating, show the luxurious neural synthesis progress card */}
-            {isGenerating ? (
-              <div className="relative w-full p-8 sm:p-14 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col items-center justify-center gap-6 overflow-hidden min-h-[380px] text-center animate-fadeIn text-stone-900">
-                <div className="relative z-10 flex flex-col items-center gap-4">
-                  <div className="relative w-20 h-20 rounded-full bg-stone-100 border-2 border-stone-800 flex items-center justify-center shadow-md">
-                    <Loader2 className="w-8 h-8 text-stone-800 animate-spin" />
-                  </div>
+        {/* ================= STEP HEADING & DESCRIPTIONS ================= */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-mono uppercase tracking-[0.2em] text-stone-500 font-semibold">
+            {currentStep?.subtitle || `STEP 0${currentStepIndex + 1} • ${STEP_NAMES[currentStepIndex] || currentStep?.key}`}
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-normal text-stone-900 tracking-tight">
+            {renderStyledTitle(currentStep?.title || "Choose Your Aesthetic", currentStep?.highlightWord)}
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-500 max-w-2xl mt-0.5 leading-relaxed font-light">
+            {currentStep?.description}
+          </p>
+        </div>
 
-                  <div className="flex flex-col gap-1.5 max-w-lg">
-                    <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold">
-                      ARTISAN MOSAIC SYNTHESIS IN PROGRESS
-                    </span>
-                    <h3 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal italic">
-                      Generating Your Bespoke Mosaic
-                    </h3>
-                    <p className="text-xs sm:text-sm text-stone-600 font-light mt-1">
-                      {generationStep}
-                    </p>
-                  </div>
+        {/* ================= STEP CONTENT ================= */}
+        <div className="w-full">
+          {/* Steps 1-4: INTERACTIVE QUESTIONNAIRE */}
+          {!isResultStep && (
+            <div
+              className={`grid gap-4 sm:gap-5 ${
+                currentStep?.key === "color"
+                  ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-6"
+                  : currentStep?.options?.length === 5
+                  ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                  : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+              }`}
+            >
+              {currentStep?.options.map((opt) => {
+                const currentVal = answers[currentStep.key] || "";
+                const isSelected = currentVal === opt.value;
+                const isColor = currentStep?.key === "color";
+                const isNoPreference = opt.value === "any" || opt.value === "no-preference";
 
-                  {/* Selections Pill Badges */}
-                  <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
-                      Style: {styleLabel}
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
-                      Shape: {shapeLabel}
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
-                      Color: {colorLabel}
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
-                      Space: {spaceLabel}
-                    </span>
-                  </div>
-
-                  <div className="w-64 h-1.5 bg-stone-200 rounded-full overflow-hidden mt-3">
-                    <div className="w-full h-full bg-stone-900 animate-pulse" />
-                  </div>
-                </div>
-              </div>
-            ) : generatedResult ? (
-              /* 2. If generatedResult is present: Show the Generated Mosaic Masterpiece! */
-              <div className="relative w-full p-6 sm:p-10 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col gap-8 overflow-hidden text-stone-900 animate-fadeIn">
-                {/* Header */}
-                <div className="relative z-10 flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-stone-100 pb-5">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold flex items-center gap-2">
-                      <Sparkles className="w-3.5 h-3.5 text-stone-600" /> YOUR BESPOKE AI MOSAIC RESULT
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal italic">
-                      Architectural Mosaic Masterpiece Generated
-                    </h2>
-                    <p className="text-xs sm:text-sm text-stone-500">
-                      Rendered exclusively for your {styleLabel} aesthetic and {spaceLabel} surface geometry.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium text-xs flex items-center gap-1.5 shadow-2xs">
-                      <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-600" /> Synthesis Complete
-                    </span>
-                  </div>
-                </div>
-
-                {/* Main Generated Image & Info Split */}
-                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  {/* Left Column (7 cols): Large Generated Mosaic Display */}
-                  <div className="lg:col-span-7 flex flex-col gap-3">
+                // 1. Color Swatch Cards: Luxurious tactile material card with rich round swatch + typography
+                if (isColor) {
+                  return (
                     <div
-                      onClick={() => setIsLightboxOpen(true)}
-                      className="group relative w-full aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shadow-md cursor-zoom-in transition-all hover:border-stone-400 hover:shadow-xl"
+                      key={opt.id}
+                      onClick={() => handleSelectOption(opt.value)}
+                      className={`group relative rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-between aspect-[3/4] sm:aspect-[4/5] cursor-pointer transition-all duration-300 shadow-2xs ${
+                        isSelected
+                          ? "border-2 border-stone-900 ring-4 ring-stone-900/15 bg-white scale-[1.03] shadow-md"
+                          : "border border-stone-200/90 bg-gradient-to-b from-stone-50/70 to-white hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
+                      }`}
                     >
+                      <div className="flex-1 flex items-center justify-center w-full">
+                        <div
+                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white shadow-md flex items-center justify-center transition-transform duration-300 group-hover:scale-110 relative"
+                          style={{
+                            background: opt.colorHex || "#18181B",
+                          }}
+                        >
+                          {isSelected && (
+                            <div className="w-6 h-6 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-md">
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="w-full pt-2 border-t border-stone-100/80 text-center">
+                        <span className="font-serif font-semibold text-xs sm:text-sm text-stone-900 tracking-tight block">
+                          {opt.label}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // 2. Shape Step: "No preference" card styled as luxury architectural option
+                if (isNoPreference && !opt.imageUrl) {
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => handleSelectOption(opt.value)}
+                      className={`group relative aspect-[3/4] rounded-2xl p-5 flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all duration-300 shadow-2xs border-2 border-dashed ${
+                        isSelected
+                          ? "border-stone-900 ring-4 ring-stone-900/15 bg-white scale-[1.02] shadow-md"
+                          : "border-stone-300 bg-stone-50/50 hover:bg-white hover:border-stone-800 hover:scale-[1.01]"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 group-hover:text-stone-900 transition-colors">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <span className="font-serif italic font-medium text-sm sm:text-base text-stone-900 text-center">
+                        No preference
+                      </span>
+                      <span className="text-[10px] font-mono text-stone-400 uppercase tracking-widest text-center">
+                        Any Geometry
+                      </span>
+
+                      {isSelected && (
+                        <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-stone-900 text-white flex items-center justify-center shadow-xs">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // 3. Image Cards (Styles, Shapes, Spaces) with site's luxury treatment
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => handleSelectOption(opt.value)}
+                    className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border cursor-pointer transition-all duration-300 shadow-2xs ${
+                      isSelected
+                        ? "border-2 border-stone-900 ring-4 ring-stone-900/20 scale-[1.02] shadow-md"
+                        : "border-stone-200/90 bg-stone-100 hover:border-stone-400 hover:scale-[1.01] hover:shadow-xs"
+                    }`}
+                  >
+                    {opt.imageUrl ? (
                       <img
-                        src={generatedResult.resultImageUrl}
-                        alt={generatedResult.promptApplied}
+                        src={opt.imageUrl}
+                        alt={opt.label}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-4">
-                        <span className="text-xs font-serif text-white flex items-center gap-1.5 bg-stone-900/80 px-3 py-1.5 rounded-xl border border-white/20">
-                          <Maximize2 className="w-3.5 h-3.5" /> Click to view full resolution
-                        </span>
-                        <span className="text-[10px] font-mono text-white bg-stone-900/80 px-2.5 py-1 rounded-lg border border-white/20">
-                          Authentic Tesserae
-                        </span>
+                    ) : (
+                      <div className="w-full h-full bg-stone-100 flex items-center justify-center text-stone-400 text-xs font-mono">
+                        {opt.label}
                       </div>
-                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-stone-200 text-stone-800 font-mono text-xs font-semibold uppercase tracking-wider shadow-2xs">
-                        {spaceLabel || "Bespoke Mosaic"}
-                      </div>
-                    </div>
-                    <span className="text-[11px] text-stone-500 text-center font-mono flex items-center justify-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-stone-500" /> High-precision AI mosaic tesserae rendered with authentic marble & gold leaf
-                    </span>
-                  </div>
+                    )}
 
-                  {/* Right Column (5 cols): Taste Attributes, Prompt & Actions */}
-                  <div className="lg:col-span-5 flex flex-col gap-5 justify-between">
-                    {/* Taste Attributes */}
-                    <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-stone-50 border border-stone-200 shadow-2xs">
-                      {questionnaireSteps.map((step, idx) => {
-                        const val = answers[step.key] || (idx === 0 ? selectedStyle : idx === 1 ? selectedShape : idx === 2 ? selectedColor : idx === 3 ? selectedSpace : "");
-                        const label = getSelectedLabel(step.key, val);
-                        return (
-                          <div key={step.id || step.key} className="flex flex-col gap-0.5">
-                            <span className="text-[9px] font-mono uppercase tracking-widest text-stone-400 font-bold">
-                              {step.title || step.key}
-                            </span>
-                            <span className="text-xs font-serif font-bold text-stone-900 capitalize truncate">
-                              {label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {/* Dark gradient overlay for crisp contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-95 group-hover:opacity-90 transition-opacity" />
 
-                    {/* Applied Prompt */}
-                    <div className="p-4 rounded-xl bg-stone-50/70 border border-stone-200 flex flex-col gap-1.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 font-bold">
-                        Applied Artisan Vision Prompt
+                    {/* Bottom label & selection checkmark */}
+                    <div className="absolute inset-x-0 bottom-0 p-3.5 z-10 flex items-center justify-between gap-1.5">
+                      <span className="font-serif font-medium text-xs sm:text-sm text-white drop-shadow-sm leading-snug">
+                        {opt.label}
                       </span>
-                      <p className="text-xs text-stone-700 font-serif italic leading-relaxed">
-                        &ldquo;{generatedResult.promptApplied}&rdquo;
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-white text-stone-900 flex items-center justify-center shadow-md shrink-0">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Step 5: RESULT */}
+          {isResultStep && (
+            <div className="w-full flex flex-col gap-8">
+              {/* 1. If currently generating, show the luxurious neural synthesis progress card */}
+              {isGenerating ? (
+                <div className="relative w-full p-8 sm:p-14 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col items-center justify-center gap-6 overflow-hidden min-h-[380px] text-center animate-fadeIn text-stone-900">
+                  <div className="relative z-10 flex flex-col items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-full bg-stone-100 border-2 border-stone-800 flex items-center justify-center shadow-md">
+                      <Loader2 className="w-8 h-8 text-stone-800 animate-spin" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 max-w-lg">
+                      <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold">
+                        ARTISAN MOSAIC SYNTHESIS IN PROGRESS
+                      </span>
+                      <h3 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal italic">
+                        Generating Your Bespoke Mosaic
+                      </h3>
+                      <p className="text-xs sm:text-sm text-stone-600 font-light mt-1">
+                        {generationStep}
                       </p>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col gap-2.5 pt-2">
-                      <Link
-                        href={`/?mode=scratch&prompt=${encodeURIComponent(
-                          generatedResult.promptApplied
-                        )}&placement=${encodeURIComponent(spaceLabel || "Floor Medallion")}`}
-                        className="w-full py-3 px-4 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98]"
+                    {/* Selections Pill Badges */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                      <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
+                        Style: {styleLabel}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
+                        Shape: {shapeLabel}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
+                        Color: {colorLabel}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-medium">
+                        Space: {spaceLabel}
+                      </span>
+                    </div>
+
+                    <div className="w-64 h-1.5 bg-stone-200 rounded-full overflow-hidden mt-3">
+                      <div className="w-full h-full bg-stone-900 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              ) : generatedResult ? (
+                /* 2. Generated Mosaic Masterpiece Display */
+                <div className="relative w-full p-6 sm:p-10 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col gap-8 overflow-hidden text-stone-900 animate-fadeIn">
+                  {/* Header */}
+                  <div className="relative z-10 flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-stone-100 pb-5">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-stone-500 font-bold flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-stone-600" /> YOUR BESPOKE AI MOSAIC RESULT
+                      </span>
+                      <h2 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal italic">
+                        Architectural Mosaic Masterpiece Generated
+                      </h2>
+                      <p className="text-xs sm:text-sm text-stone-500">
+                        Rendered exclusively for your {styleLabel} aesthetic and {spaceLabel} surface geometry.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium text-xs flex items-center gap-1.5 shadow-2xs">
+                        <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-600" /> Synthesis Complete
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Main Generated Image & Info Split */}
+                  <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* Left Column (7 cols): Large Generated Mosaic Display */}
+                    <div className="lg:col-span-7 flex flex-col gap-3">
+                      <div
+                        onClick={() => setIsLightboxOpen(true)}
+                        className="group relative w-full aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shadow-md cursor-zoom-in transition-all hover:border-stone-400 hover:shadow-xl"
                       >
-                        <Sparkles className="w-4 h-4 text-white" />
-                        Customize & Inpaint in Studio
-                      </Link>
-
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => handleDownload(generatedResult.resultImageUrl, `zakiah-mosaic-${(styleLabel || "custom").toLowerCase()}-${(spaceLabel || "design").toLowerCase()}.jpg`)}
-                          className="py-2.5 px-3 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-200 cursor-pointer shadow-2xs"
-                        >
-                          <Download className="w-3.5 h-3.5 text-stone-600" />
-                          Download
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsInquiryModalOpen(true)}
-                          className="py-2.5 px-3 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-200 cursor-pointer shadow-2xs"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 text-stone-600" />
-                          Quote Inquiry
-                        </button>
+                        <img
+                          src={generatedResult.resultImageUrl}
+                          alt={generatedResult.promptApplied}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-4">
+                          <span className="text-xs font-serif text-white flex items-center gap-1.5 bg-stone-900/80 px-3 py-1.5 rounded-xl border border-white/20">
+                            <Maximize2 className="w-3.5 h-3.5" /> Click to view full resolution
+                          </span>
+                          <span className="text-[10px] font-mono text-white bg-stone-900/80 px-2.5 py-1 rounded-lg border border-white/20">
+                            Authentic Tesserae
+                          </span>
+                        </div>
+                        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-stone-200 text-stone-800 font-mono text-xs font-semibold uppercase tracking-wider shadow-2xs">
+                          {spaceLabel || "Bespoke Mosaic"}
+                        </div>
                       </div>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => handleExecuteGeneration()}
-                          disabled={isGenerating}
-                          className="flex-1 py-2 rounded-full bg-white hover:bg-stone-100 text-stone-800 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-300 cursor-pointer shadow-2xs"
-                        >
-                          <RefreshCw className="w-3 h-3 text-stone-500" />
-                          Generate Another Variation
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleReset}
-                          className="py-2 px-4 rounded-full bg-white hover:bg-stone-100 text-stone-500 hover:text-stone-900 text-[11px] transition-all border border-stone-200 cursor-pointer shadow-2xs"
-                        >
-                          Start Over
-                        </button>
-                      </div>
+                      <span className="text-[11px] text-stone-500 text-center font-mono flex items-center justify-center gap-1.5">
+                        <Sparkles className="w-3 h-3 text-stone-500" /> High-precision AI mosaic tesserae rendered with authentic marble & gold leaf
+                      </span>
                     </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* 3. Initial Result Card before Generation (Matches exact reference layout) */
-              <div className="relative w-full p-6 sm:p-8 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-6 text-stone-900 animate-fadeIn">
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.32em] text-stone-500 font-bold">
-                    YOUR TASTE
-                  </span>
-                  <h2 className="text-xl sm:text-2xl font-serif text-stone-900 font-normal">
-                    Based on your answers, you have an{" "}
-                    <em className="italic font-serif font-normal text-stone-800">
-                      exquisite aesthetic sense
-                    </em>
-                    .
-                  </h2>
-                </div>
 
-                {/* 4 Taste Columns matching exact reference */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1 pb-2">
-                  <div className="border-l-2 border-stone-300 pl-3">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
-                      COLLECTION
-                    </span>
-                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
-                      {styleLabel || "—"}
-                    </span>
-                  </div>
-
-                  <div className="border-l-2 border-stone-300 pl-3">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
-                      SHAPE
-                    </span>
-                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
-                      {shapeLabel === "any" || shapeLabel === "no-preference" ? "No preference" : shapeLabel || "—"}
-                    </span>
-                  </div>
-
-                  <div className="border-l-2 border-stone-300 pl-3">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
-                      COLOUR
-                    </span>
-                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
-                      {colorLabel || "—"}
-                    </span>
-                  </div>
-
-                  <div className="border-l-2 border-stone-300 pl-3">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-stone-400 block font-mono">
-                      PLACEMENT
-                    </span>
-                    <span className="mt-1 text-sm font-medium text-stone-900 block capitalize">
-                      {spaceLabel || "—"}
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-3xl">
-                  Press the button below to see a one-of-a-kind design that reflects your taste. Customisation can be made to any chosen mosaic, and we&apos;re always available for a free consultation.
-                </p>
-
-                {/* Email Verification Flow Banner */}
-                {!isVerified ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-stone-50 border border-stone-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-stone-200/80 flex items-center justify-center shrink-0">
-                        <Mail className="w-4 h-4 text-stone-700" />
+                    {/* Right Column (5 cols): Taste Attributes, Prompt & Actions */}
+                    <div className="lg:col-span-5 flex flex-col gap-5 justify-between">
+                      {/* Taste Attributes */}
+                      <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-stone-50 border border-stone-200 shadow-2xs">
+                        {questionnaireSteps.map((step, idx) => {
+                          const val = answers[step.key] || (idx === 0 ? selectedStyle : idx === 1 ? selectedShape : idx === 2 ? selectedColor : idx === 3 ? selectedSpace : "");
+                          const label = getSelectedLabel(step.key, val);
+                          return (
+                            <div key={step.id || step.key} className="flex flex-col gap-0.5">
+                              <span className="text-[9px] font-mono uppercase tracking-widest text-stone-400 font-bold">
+                                {step.title || step.key}
+                              </span>
+                              <span className="text-xs font-serif font-bold text-stone-900 capitalize truncate">
+                                {label}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-stone-900">Email Verification Required</span>
-                        <span className="text-[11px] text-stone-500">
-                          Verify your email to synthesize and view your bespoke AI mosaic concept.
+
+                      {/* Applied Prompt */}
+                      <div className="p-4 rounded-xl bg-stone-50/70 border border-stone-200 flex flex-col gap-1.5">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 font-bold">
+                          Applied Artisan Vision Prompt
                         </span>
+                        <p className="text-xs text-stone-700 font-serif italic leading-relaxed">
+                          &ldquo;{generatedResult.promptApplied}&rdquo;
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-col gap-2.5 pt-2">
+                        <Link
+                          href={`/?mode=scratch&prompt=${encodeURIComponent(
+                            generatedResult.promptApplied
+                          )}&placement=${encodeURIComponent(spaceLabel || "Floor Medallion")}`}
+                          className="w-full py-3 px-4 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98]"
+                        >
+                          <Sparkles className="w-4 h-4 text-white" />
+                          Customize & Inpaint in Studio
+                        </Link>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(generatedResult.resultImageUrl, `zakiah-mosaic-${(styleLabel || "custom").toLowerCase()}-${(spaceLabel || "design").toLowerCase()}.jpg`)}
+                            className="py-2.5 px-3 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-200 cursor-pointer shadow-2xs"
+                          >
+                            <Download className="w-3.5 h-3.5 text-stone-600" />
+                            Download
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsInquiryModalOpen(true)}
+                            className="py-2.5 px-3 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-200 cursor-pointer shadow-2xs"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-stone-600" />
+                            Quote Inquiry
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleExecuteGeneration()}
+                            disabled={isGenerating}
+                            className="flex-1 py-2 rounded-full bg-white hover:bg-stone-100 text-stone-800 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all border border-stone-300 cursor-pointer shadow-2xs"
+                          >
+                            <RefreshCw className="w-3 h-3 text-stone-500" />
+                            Generate Another Variation
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleReset}
+                            className="py-2 px-4 rounded-full bg-white hover:bg-stone-100 text-stone-500 hover:text-stone-900 text-[11px] transition-all border border-stone-200 cursor-pointer shadow-2xs"
+                          >
+                            Start Over
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              ) : (
+                /* 3. Initial Result Card before Generation (Refined Luxury Site Style) */
+                <div className="relative w-full p-6 sm:p-10 rounded-3xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-7 text-stone-900 animate-fadeIn">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-mono uppercase tracking-[0.24em] text-stone-500 font-bold flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-stone-700" /> YOUR AESTHETIC RESULT
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-serif text-stone-900 font-normal">
+                      Based on your answers, you have an <em className="italic font-serif font-normal text-stone-900">exquisite architectural sense</em>.
+                    </h2>
+                  </div>
+
+                  {/* 4 Luxury Dimension Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
+                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50/80 border border-stone-200/80 shadow-2xs flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400 font-bold">
+                        COLLECTION
+                      </span>
+                      <span className="text-sm sm:text-base font-serif font-bold text-stone-900 capitalize">
+                        {styleLabel || "—"}
+                      </span>
+                    </div>
+
+                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50/80 border border-stone-200/80 shadow-2xs flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400 font-bold">
+                        SHAPE
+                      </span>
+                      <span className="text-sm sm:text-base font-serif font-bold text-stone-900 capitalize">
+                        {shapeLabel === "any" || shapeLabel === "no-preference" ? "No preference" : shapeLabel || "—"}
+                      </span>
+                    </div>
+
+                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50/80 border border-stone-200/80 shadow-2xs flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400 font-bold">
+                        COLOUR
+                      </span>
+                      <span className="text-sm sm:text-base font-serif font-bold text-stone-900 capitalize">
+                        {colorLabel || "—"}
+                      </span>
+                    </div>
+
+                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50/80 border border-stone-200/80 shadow-2xs flex flex-col gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400 font-bold">
+                        PLACEMENT
+                      </span>
+                      <span className="text-sm sm:text-base font-serif font-bold text-stone-900 capitalize">
+                        {spaceLabel || "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-3xl font-light">
+                    Synthesize an authentic one-of-a-kind mosaic concept crafted specifically from your {styleLabel} aesthetic, {shapeLabel} composition, and {colorLabel} palette for {spaceLabel}.
+                  </p>
+
+                  {/* Email Verification Flow Banner */}
+                  {!isVerified ? (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-stone-50 border border-stone-200">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-full bg-stone-200/80 flex items-center justify-center shrink-0">
+                          <Mail className="w-5 h-5 text-stone-700" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs sm:text-sm font-semibold text-stone-900">Email Verification Required</span>
+                          <span className="text-xs text-stone-500">
+                            Verify your email to synthesize and view your bespoke AI mosaic concept.
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsOtpModalOpen(true)}
+                        className="px-6 py-2.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-sm cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-white" />
+                        Verify Email to Generate
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                          <Check className="w-4 h-4 text-emerald-700 stroke-[2.5]" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-emerald-900">Email Verified: {verifiedEmail}</span>
+                          <span className="text-[11px] text-emerald-700">Ready to synthesize your architectural concept.</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleGenerateClick}
+                        disabled={isGenerating}
+                        className="px-6 py-2 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center gap-2 transition-all shadow-sm cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-white" />
+                        Generate Mosaic Now
+                      </button>
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleGenerateClick}
+                      disabled={isGenerating}
+                      className="px-8 py-3.5 rounded-full bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs sm:text-sm flex items-center gap-2.5 transition-all shadow-md hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-white" />
+                      {isVerified ? "Generate My Bespoke Mosaic" : "Verify Email & Generate Mosaic"}
+                    </button>
 
                     <button
                       type="button"
-                      onClick={() => setIsOtpModalOpen(true)}
-                      className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-medium text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
+                      onClick={handleReset}
+                      className="px-5 py-3.5 rounded-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-medium flex items-center gap-2 transition-all border border-stone-300 shadow-2xs cursor-pointer"
                     >
-                      <Mail className="w-3.5 h-3.5 text-white" />
-                      Verify Email to Generate
+                      <RefreshCw className="w-3.5 h-3.5 text-stone-500" />
+                      Start over
                     </button>
                   </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                        <Check className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-emerald-900">Email Verified: {verifiedEmail}</span>
-                        <span className="text-[11px] text-emerald-700">Ready to synthesize your architectural concept.</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={handleGenerateClick}
-                    disabled={isGenerating}
-                    className="px-6 py-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-xs hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
-                  >
-                    <Sparkles className="w-4 h-4 text-white" />
-                    {isVerified ? "Generate my mosaic" : "Verify Email & Generate"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="px-4 py-3 text-stone-500 hover:text-stone-900 text-xs sm:text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-stone-400" />
-                    Start over
-                  </button>
                 </div>
-              </div>
-            )}
-
-            {/* ================= CATALOG MOSAIC RECOMMENDATIONS & STUDIO RESULTS ================= */}
-            {(() => {
-              // 1. Filter matching products from active catalog
-              const selStyle = (selectedStyle || answers["style"] || "").toLowerCase();
-              const selSpace = (selectedSpace || answers["space"] || "").toLowerCase();
-
-              const matchingProducts = availableProducts.filter((p) => {
-                let specs: any = {};
-                try {
-                  specs = typeof p.specs === "string" ? JSON.parse(p.specs || "{}") : p.specs || {};
-                } catch {
-                  specs = {};
-                }
-                if (specs.showOnFinder === false) return false;
-
-                const pStyle = (specs.style || p.category || "").toLowerCase();
-                const pSpace = (specs.space || "").toLowerCase();
-
-                if (selStyle && (pStyle.includes(selStyle) || selStyle.includes(pStyle))) return true;
-                if (selSpace && (pSpace.includes(selSpace) || selSpace.includes(pSpace))) return true;
-                return false;
-              });
-
-              const displayProducts = (matchingProducts.length > 0 ? matchingProducts : availableProducts).slice(0, 4);
-
-              // 2. Studio generations
-              const displayGenerations = (generationsList || []).slice(0, 4);
-
-              return (
-                <div className="flex flex-col gap-10 pt-4 border-t border-stone-200">
-                  {/* Matching Catalog Pieces */}
-                  {displayProducts.length > 0 && (
-                    <div className="flex flex-col gap-5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-500 font-semibold block">
-                            CURATED CATALOG PIECES
-                          </span>
-                          <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
-                            Recommended Pieces For Your Aesthetic
-                          </h3>
-                        </div>
-                        <p className="text-xs text-stone-500">
-                          Handcrafted Italian Tesserae matching your {styleLabel} aesthetic
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {displayProducts.map((prod) => (
-                          <div
-                            key={prod.id}
-                            className="group rounded-2xl bg-white border border-stone-200 hover:border-stone-400 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                          >
-                            <div className="relative aspect-[4/3] w-full bg-stone-100 overflow-hidden">
-                              <Image
-                                src={prod.sampleImageUrl}
-                                alt={prod.title}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                              />
-                              <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-stone-900 font-serif font-bold text-[10px] shadow-2xs">
-                                ${prod.pricePerSqFt}/sq.ft
-                              </div>
-                            </div>
-
-                            <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                              <div>
-                                <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider block font-medium">
-                                  {prod.category}
-                                </span>
-                                <h4 className="font-serif font-bold text-stone-900 text-sm line-clamp-1 mt-0.5">
-                                  {prod.title}
-                                </h4>
-                                <p className="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-relaxed">
-                                  {prod.description}
-                                </p>
-                              </div>
-
-                              <Link
-                                href={`/?mode=scratch&product=${prod.id}&prompt=${encodeURIComponent(
-                                  generatedVisionPrompt
-                                )}&placement=${encodeURIComponent(spaceLabel)}`}
-                                className="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs"
-                              >
-                                <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Generations Showcase */}
-                  {displayGenerations.length > 0 && (
-                    <div className="flex flex-col gap-5 pt-4 border-t border-stone-100">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-500 font-semibold block">
-                            STUDIO AI INSPIRATIONS
-                          </span>
-                          <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
-                            Neural Mosaics Generated For Similar Tastes
-                          </h3>
-                        </div>
-                        <p className="text-xs text-stone-500">
-                          Bespoke neural mosaic concepts synthesized in our studio
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {displayGenerations.map((gen) => (
-                          <div
-                            key={gen.id}
-                            className="group rounded-2xl bg-white border border-stone-200 hover:border-stone-400 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                          >
-                            <div className="relative aspect-[4/3] w-full bg-stone-100 overflow-hidden">
-                              <img
-                                src={gen.resultImageUrl}
-                                alt={gen.prompt}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                              />
-                              <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-stone-900 font-mono font-bold text-[10px] tracking-wider uppercase shadow-2xs">
-                                {gen.placement || "Bespoke"}
-                              </div>
-                              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 font-mono text-[9px] flex items-center gap-1 border border-stone-200">
-                                <Sparkles className="w-2.5 h-2.5" /> AI Render
-                              </div>
-                            </div>
-
-                            <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                              <div>
-                                <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider block font-medium">
-                                  Handcrafted AI Synthesis
-                                </span>
-                                <h4 className="font-serif font-bold text-stone-900 text-sm line-clamp-1 mt-0.5">
-                                  {gen.placement} Mosaic Concept
-                                </h4>
-                                <p className="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-relaxed font-light">
-                                  {gen.prompt}
-                                </p>
-                              </div>
-
-                              <Link
-                                href={`/?mode=scratch&prompt=${encodeURIComponent(
-                                  gen.prompt
-                                )}&placement=${encodeURIComponent(gen.placement || spaceLabel)}`}
-                                className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-stone-200"
-                              >
-                                <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ================= EDITORIAL DECORATIVE SLIDER INDICATOR (SITE STYLE) ================= */}
+      <div className="flex items-center justify-center gap-3 my-2 opacity-60">
+        <div className="h-[1px] w-24 bg-gradient-to-r from-transparent to-stone-300" />
+        <span className="w-1.5 h-1.5 rounded-full bg-stone-700 inline-block" />
+        <div className="h-[1px] w-24 bg-gradient-to-l from-transparent to-stone-300" />
+      </div>
+
+      {/* ================= CATALOG MOSAIC RECOMMENDATIONS & STUDIO REFERENCES ================= */}
+      {(() => {
+        const selStyle = (selectedStyle || answers["style"] || "").toLowerCase();
+        const selSpace = (selectedSpace || answers["space"] || "").toLowerCase();
+
+        const matchingProducts = availableProducts.filter((p) => {
+          let specs: any = {};
+          try {
+            specs = typeof p.specs === "string" ? JSON.parse(p.specs || "{}") : p.specs || {};
+          } catch {
+            specs = {};
+          }
+          if (specs.showOnFinder === false) return false;
+
+          const pStyle = (specs.style || p.category || "").toLowerCase();
+          const pSpace = (specs.space || "").toLowerCase();
+
+          if (selStyle && (pStyle.includes(selStyle) || selStyle.includes(pStyle))) return true;
+          if (selSpace && (pSpace.includes(selSpace) || selSpace.includes(pSpace))) return true;
+          return false;
+        });
+
+        const displayProducts = (matchingProducts.length > 0 ? matchingProducts : availableProducts).slice(0, 4);
+
+        if (displayProducts.length === 0) return null;
+
+        return (
+          <div className="w-full rounded-3xl bg-white border border-stone-200/90 shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-6 sm:p-10 flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-4">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-stone-500 font-semibold block flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-stone-600" /> CURATED MOSAIC REFERENCES
+                </span>
+                <h3 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 mt-1">
+                  Recommended Pieces For Your Aesthetic
+                </h3>
+              </div>
+              <p className="text-xs text-stone-500">
+                Handcrafted Italian Tesserae matching your {styleLabel || "architectural"} style
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {displayProducts.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="group rounded-2xl bg-white border border-stone-200 hover:border-stone-400 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div className="relative aspect-[4/3] w-full bg-stone-100 overflow-hidden">
+                    <Image
+                      src={prod.sampleImageUrl}
+                      alt={prod.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-stone-200 text-stone-900 font-serif font-bold text-[10px] shadow-2xs">
+                      ${prod.pricePerSqFt}/sq.ft
+                    </div>
+                  </div>
+
+                  <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider block font-medium">
+                        {prod.category}
+                      </span>
+                      <h4 className="font-serif font-bold text-stone-900 text-sm line-clamp-1 mt-0.5">
+                        {prod.title}
+                      </h4>
+                      <p className="text-[11px] text-stone-500 line-clamp-2 mt-1 leading-relaxed font-light">
+                        {prod.description}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/?mode=scratch&product=${prod.id}&prompt=${encodeURIComponent(
+                        generatedVisionPrompt
+                      )}&placement=${encodeURIComponent(spaceLabel)}`}
+                      className="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Use as Design Reference
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Fullscreen Lightbox Modal */}
       {isLightboxOpen && generatedResult && (
@@ -1202,38 +1169,30 @@ function AestheticFinderContent({
       <LimitReachedModal
         isOpen={isLimitReachedModalOpen}
         onClose={() => setIsLimitReachedModalOpen(false)}
-        email={limitModalEmail}
+        email={limitModalEmail || verifiedEmail}
         onUseDifferentEmail={() => {
           setIsLimitReachedModalOpen(false);
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("zm_verified_token");
-            localStorage.removeItem("zm_verified_email");
-          }
           setIsVerified(false);
           setVerifiedEmail("");
           setIsOtpModalOpen(true);
         }}
         onViewGenerations={() => {
           setIsLimitReachedModalOpen(false);
-          router.push("/");
+          setIsInquiryModalOpen(true);
         }}
       />
 
-      {/* Quote / Material Sample Inquiry Modal */}
+      {/* Quote / Specialist Inquiry Modal */}
       <InquiryModal
         isOpen={isInquiryModalOpen}
         onClose={() => setIsInquiryModalOpen(false)}
-        initialData={
-          generatedResult
-            ? {
-                generationId: generatedResult.id,
-                resultImageUrl: generatedResult.resultImageUrl,
-                prompt: generatedResult.promptApplied,
-                placement: spaceLabel || "Floor Medallion",
-                estimatedCost: generatedResult.estimatedCost,
-              }
-            : undefined
-        }
+        initialData={{
+          prompt: generatedResult ? generatedVisionPrompt : undefined,
+          placement: spaceLabel || "Floor Medallion",
+          estimatedCost: generatedResult?.estimatedCost || 5400,
+          generationId: generatedResult?.id,
+          resultImageUrl: generatedResult?.resultImageUrl,
+        }}
       />
     </div>
   );
