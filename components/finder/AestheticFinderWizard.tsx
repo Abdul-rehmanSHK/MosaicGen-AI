@@ -62,12 +62,18 @@ interface WizardProps {
   initialSteps: StepRecord[];
   availableProducts?: any[];
   availableGenerations?: GenerationItem[];
+  pageContent?: {
+    heading?: string;
+    bodyText?: string;
+    badge?: string;
+  };
 }
 
 export function AestheticFinderWizard({
   initialSteps,
   availableProducts = [],
   availableGenerations = [],
+  pageContent,
 }: WizardProps) {
   return (
     <Suspense fallback={<div className="p-12 text-center text-stone-700 font-serif">Loading Aesthetic Studio...</div>}>
@@ -75,6 +81,7 @@ export function AestheticFinderWizard({
         initialSteps={initialSteps}
         availableProducts={availableProducts}
         availableGenerations={availableGenerations}
+        pageContent={pageContent}
       />
     </Suspense>
   );
@@ -84,6 +91,7 @@ function AestheticFinderContent({
   initialSteps,
   availableProducts = [],
   availableGenerations = [],
+  pageContent,
 }: WizardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -501,13 +509,13 @@ function AestheticFinderContent({
       {/* ================= HERO HEADER (MATCHING SITE STYLE) ================= */}
       <div className="text-center flex flex-col items-center gap-2 pt-2 pb-2">
         <div className="inline-flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-[0.22em] uppercase font-mono">
-          <Compass className="w-3.5 h-3.5 text-stone-600" /> FIND YOUR AESTHETIC
+          <Compass className="w-3.5 h-3.5 text-stone-600" /> {pageContent?.badge || "FIND YOUR AESTHETIC"}
         </div>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic font-normal tracking-tight text-stone-900">
-          Mosaic Aesthetic Studio
+          {pageContent?.heading || "Mosaic Aesthetic Studio"}
         </h1>
         <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl text-center leading-relaxed">
-          Answer five concise design preferences to discover an architectural mosaic concept tailored to your space.
+          {pageContent?.bodyText || "Answer five concise design preferences to discover an architectural mosaic concept tailored to your space."}
         </p>
       </div>
 

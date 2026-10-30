@@ -97,8 +97,10 @@ export async function PUT(request: Request) {
 
     revalidateTag("products");
     revalidateTag("pages");
+    if (page.slug) revalidateTag(`page-${page.slug}`);
     revalidatePath("/");
     revalidatePath("/from-scratch");
+    revalidatePath("/finder");
     if (page.slug) revalidatePath(`/${page.slug}`);
 
     return NextResponse.json({ success: true, page });

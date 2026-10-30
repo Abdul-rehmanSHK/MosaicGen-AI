@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_STUDIO_PAGES } from "@/lib/defaultPages";
 
 /**
  * 1. Cached Products Catalog (Next.js 15 Tagged Caching)
@@ -42,14 +43,36 @@ export const getCachedPages = unstable_cache(
 export async function getCachedPageBySlug(slug: string) {
   return unstable_cache(
     async () => {
-      return prisma.page.findUnique({
+      let page = await prisma.page.findUnique({
         where: { slug },
       });
+
+      if (!page) {
+        const def = DEFAULT_STUDIO_PAGES.find((p) => p.slug === slug);
+        if (def) {
+          try {
+            page = await prisma.page.create({
+              data: {
+                title: def.title,
+                slug: def.slug,
+                templateType: def.templateType,
+                heading: def.heading,
+                bodyText: def.bodyText,
+                secondaryText: def.secondaryText,
+              },
+            });
+          } catch (e) {
+            console.error("Auto-seed error for page slug", slug, e);
+          }
+        }
+      }
+
+      return page;
     },
-    [`cached-page-${slug}`],
+    [`cached-page-${slug}-v3`],
     {
       tags: ["pages", `page-${slug}`],
-      revalidate: 3600,
+      revalidate: 60,
     }
   )();
 }

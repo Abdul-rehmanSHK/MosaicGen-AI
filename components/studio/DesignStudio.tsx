@@ -47,6 +47,11 @@ interface DesignStudioProps {
   startFromScratch?: boolean;
   initialSelectedProductId?: string;
   onOpenInquiryModal?: (generationData: { resultImageUrl: string; prompt: string; placement: string; estimatedCost: number }) => void;
+  pageContent?: {
+    heading?: string;
+    bodyText?: string;
+    badge?: string;
+  };
 }
 
 export interface PlacementInspiration {
@@ -94,7 +99,13 @@ const PLACEMENTS = [
 const FINISHES = ["Polished High-Gloss", "Satin Honed", "Antiqued Tumbled", "Textured Matte"];
 const GROUT_COLORS = ["Champagne Gold", "Pure Thassos White", "Charcoal Slate", "Platinum Silver"];
 
-export function DesignStudio({ initialProducts = [], startFromScratch = false, initialSelectedProductId, onOpenInquiryModal }: DesignStudioProps) {
+export function DesignStudio({
+  initialProducts = [],
+  startFromScratch = false,
+  initialSelectedProductId,
+  onOpenInquiryModal,
+  pageContent,
+}: DesignStudioProps) {
   const canvasRef = useRef<CanvasDrawRef>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: session } = useSession();
@@ -668,13 +679,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           {/* Scratch Studio Header */}
           <div className="text-center flex flex-col items-center gap-2 pt-2 pb-1">
             <div className="inline-flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-[0.22em] uppercase">
-              <Sparkles className="w-3.5 h-3.5 text-stone-500" /> IMAGINE FROM SCRATCH
+              <Sparkles className="w-3.5 h-3.5 text-stone-500" /> {pageContent?.badge || "IMAGINE FROM SCRATCH"}
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic font-normal tracking-tight text-stone-900">
-              Generative Architectural Mosaic Studio
+              {pageContent?.heading || "Generative Architectural Mosaic Studio"}
             </h1>
             <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl">
-              Articulate your architectural vision — synthesize bespoke, artisan-grade mosaic concepts in authentic Italian marble, Venetian smalti, and 24k gold leaf.
+              {pageContent?.bodyText || "Articulate your architectural vision — synthesize bespoke, artisan-grade mosaic concepts in authentic Italian marble, Venetian smalti, and 24k gold leaf."}
             </p>
           </div>
 
@@ -771,13 +782,13 @@ export function DesignStudio({ initialProducts = [], startFromScratch = false, i
           {/* Studio Header Banner matching Screenshot 3 */}
           <div className="text-center flex flex-col items-center gap-2 pt-2 pb-1">
             <div className="inline-flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-[0.22em] uppercase">
-              <Layers className="w-3.5 h-3.5 text-stone-500" /> CUSTOMIZE YOUR SPACE
+              <Layers className="w-3.5 h-3.5 text-stone-500" /> {pageContent?.badge || "CUSTOMIZE YOUR SPACE"}
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif italic font-normal tracking-tight text-stone-900">
-              AI Mosaic Studio
+              {pageContent?.heading || "AI Mosaic Studio"}
             </h1>
             <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl">
-              Upload a photo of your space — see a bespoke mosaic rendered into it.
+              {pageContent?.bodyText || "Upload a photo of your space — see a bespoke mosaic rendered into it."}
             </p>
           </div>
 

@@ -1,14 +1,20 @@
-import { getCachedPageProducts } from "@/lib/cache";
+import { getCachedPageProducts, getCachedPageBySlug } from "@/lib/cache";
 import { DesignStudio } from "@/components/studio/DesignStudio";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function FromScratchPage({
   searchParams,
 }: {
   searchParams: { product?: string; prompt?: string; placement?: string; verified?: string };
 }) {
-  const products = await getCachedPageProducts("from-scratch");
+  const [products, pageContent] = await Promise.all([
+    getCachedPageProducts("from-scratch"),
+    getCachedPageBySlug("from-scratch"),
+  ]);
 
   return (
     <main className="min-h-screen bg-[#f4f3f2] flex flex-col justify-between selection:bg-stone-300 selection:text-stone-900">
@@ -18,7 +24,12 @@ export default async function FromScratchPage({
         <DesignStudio 
           initialProducts={products} 
           startFromScratch={true} 
-          initialSelectedProductId={searchParams.product} 
+          initialSelectedProductId={searchParams.product}
+          pageContent={pageContent ? {
+            heading: pageContent.heading,
+            bodyText: pageContent.bodyText,
+            badge: pageContent.secondaryText || "IMAGINE FROM SCRATCH",
+          } : undefined}
         />
       </div>
 

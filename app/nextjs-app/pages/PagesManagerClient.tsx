@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -19,6 +19,7 @@ import {
   Eye,
   FileText,
   X,
+  Compass,
 } from "lucide-react";
 
 interface Product {
@@ -82,8 +83,29 @@ export function PagesManagerClient({
 
   const currentPage = pages.find((p) => p.id === activePageId) || pages[0];
 
+  const isCoreStudioPage = useMemo(() => {
+    if (!currentPage) return false;
+    return ["customize-space", "from-scratch", "finder"].includes(currentPage.slug);
+  }, [currentPage]);
+
+  // Resolve live page URL
+  const getLivePageUrl = (slug: string) => {
+    if (slug === "customize-space") return "/";
+    if (slug === "from-scratch") return "/from-scratch";
+    if (slug === "finder") return "/finder";
+    return `/${slug}`;
+  };
+
+  // Resolve user-friendly template name
+  const getTemplateName = (slug: string) => {
+    if (slug === "customize-space") return "Interactive Studio & Inpainting Template (Home)";
+    if (slug === "from-scratch") return "Generative Architectural Mosaic Template (/from-scratch)";
+    if (slug === "finder") return "Aesthetic Preference Wizard Template (/finder)";
+    return "Architectural Hero Showcase Template";
+  };
+
   // Parse selected product IDs for current page
-  const currentSelectedProductIds: string[] = React.useMemo(() => {
+  const currentSelectedProductIds: string[] = useMemo(() => {
     if (!currentPage || !currentPage.featuredProductIds) return [];
     try {
       return JSON.parse(currentPage.featuredProductIds);
@@ -179,7 +201,7 @@ export function PagesManagerClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save page changes");
 
-      showToast(`Page "${currentPage.title}" updated successfully!`);
+      showToast(`Page "${currentPage.title}" updated successfully! Changes are live on the website.`);
     } catch (err: any) {
       setError(err.message || "Failed to save page.");
     } finally {
@@ -232,10 +254,15 @@ export function PagesManagerClient({
     }
   };
 
-  // Delete current page
+  // Delete page
   const handleDeletePage = async (pageId: string) => {
     const pageToDelete = pages.find((p) => p.id === pageId);
     if (!pageToDelete) return;
+
+    if (["customize-space", "from-scratch", "finder"].includes(pageToDelete.slug)) {
+      alert("Core studio pages cannot be deleted.");
+      return;
+    }
 
     if (!confirm(`Are you sure you want to delete "${pageToDelete.title}" (/${pageToDelete.slug})?`)) {
       return;
@@ -263,18 +290,20 @@ export function PagesManagerClient({
     <div className="flex flex-col gap-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-obsidian-900 border border-gold-500/40 text-gold-300 text-xs shadow-2xl shadow-gold-500/10 animate-fadeIn">
-          <CheckCircle2 className="w-4 h-4 text-gold-400 shrink-0" />
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-stone-900 border border-stone-800 text-white text-xs shadow-2xl animate-fadeIn">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span className="font-medium">{toastMessage}</span>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* 1. TOP TABS: PAGES SELECTOR (EXACTLY LIKE AESTHETIC FINDER STEPS CMS) */}
+      {/* 1. TOP TABS: PAGES SELECTOR (3 Core Studio Pages + Add New Page) */}
       {/* ========================================================================= */}
-      <div className="flex flex-wrap items-center gap-2.5 p-2 rounded-2xl bg-obsidian-900 border border-neutral-800 shadow-lg">
-        {pages.map((pg, idx) => {
+      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white border border-stone-200/90 shadow-xs">
+        {pages.map((pg) => {
           const isActive = !isCreatingNew && pg.id === activePageId;
+          const routeLabel = pg.slug === "customize-space" ? "/" : `/${pg.slug}`;
+
           return (
             <button
               key={pg.id}
@@ -284,20 +313,20 @@ export function PagesManagerClient({
                 setActivePageId(pg.id);
                 setError(null);
               }}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                 isActive
-                  ? "bg-gold-500 text-obsidian-950 shadow-md shadow-gold-500/20 scale-[1.02]"
-                  : "text-neutral-400 hover:text-white hover:bg-obsidian-800"
+                  ? "bg-stone-900 text-white shadow-xs"
+                  : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
               <span className="truncate max-w-[200px]">{pg.title}</span>
               <span
-                className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  isActive ? "bg-obsidian-950/20 text-obsidian-950 font-bold" : "bg-obsidian-800 text-neutral-400"
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                  isActive ? "bg-stone-800 text-amber-300 font-bold" : "bg-stone-100 text-stone-600"
                 }`}
               >
-                {pg.slug === "customize-space" ? "/" : `/${pg.slug}`}
+                {routeLabel}
               </span>
             </button>
           );
@@ -310,10 +339,10 @@ export function PagesManagerClient({
             setIsCreatingNew(true);
             setError(null);
           }}
-          className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
             isCreatingNew
-              ? "bg-gold-500 text-obsidian-950 shadow-md shadow-gold-500/20 scale-[1.02]"
-              : "text-gold-400 hover:text-gold-300 hover:bg-gold-500/10 border border-dashed border-gold-500/30"
+              ? "bg-stone-900 text-white shadow-xs"
+              : "text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-dashed border-stone-300"
           }`}
         >
           <Plus className="w-3.5 h-3.5" /> Add New Page
@@ -325,18 +354,18 @@ export function PagesManagerClient({
       {/* ========================================================================= */}
       {isCreatingNew ? (
         <div className="flex flex-col gap-6 animate-fadeIn">
-          <div className="p-6 rounded-3xl bg-obsidian-900 border border-gold-500/30 shadow-xl flex flex-col gap-6">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+          <div className="p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-6">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-4">
               <div>
-                <span className="text-[10px] font-mono text-gold-400 uppercase tracking-widest block">
+                <span className="text-[10px] font-mono text-amber-800 uppercase tracking-widest block font-bold">
                   New Dynamic Architectural Page
                 </span>
-                <h2 className="text-xl font-serif font-bold text-white">Create New Page</h2>
+                <h2 className="text-xl font-serif font-bold text-stone-900">Create New Page</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreatingNew(false)}
-                className="px-3 py-1.5 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-neutral-400 hover:text-white text-xs"
+                className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium cursor-pointer"
               >
                 Cancel
               </button>
@@ -345,7 +374,7 @@ export function PagesManagerClient({
             <form onSubmit={handleCreatePage} className="flex flex-col gap-6 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Page Title</label>
+                  <label className="text-stone-700 font-medium">Page Title</label>
                   <input
                     type="text"
                     required
@@ -355,120 +384,72 @@ export function PagesManagerClient({
                       setNewTitle(e.target.value);
                       setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"));
                     }}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 text-sm font-medium"
+                    className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 text-sm font-medium"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">URL Slug (e.g. /modern-gallery)</label>
+                  <label className="text-stone-700 font-medium">URL Slug (e.g. modern-gallery)</label>
                   <input
                     type="text"
                     required
                     placeholder="modern-gallery"
                     value={newSlug}
                     onChange={(e) => setNewSlug(e.target.value)}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 font-mono text-xs"
+                    className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 font-mono text-xs"
                   />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-neutral-300 font-medium">Page Template</label>
-                <div className="p-3.5 rounded-xl border bg-gold-500/10 border-gold-400/40 text-white flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gold-500/20 text-gold-300">
-                    <Layers className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="font-serif font-bold text-sm text-gold-300 block">
-                      Architectural Hero Showcase Template
-                    </span>
-                    <span className="text-[11px] text-neutral-400">
-                      High-impact parallax hero banner with narrative craftsmanship story and featured mosaic catalog grid.
-                    </span>
-                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Main Headline / Heading</label>
+                  <label className="text-stone-700 font-medium">Main Headline / Heading</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Masterpieces in Marble & Byzantine Glass"
                     value={newHeading}
                     onChange={(e) => setNewHeading(e.target.value)}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400"
+                    className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Hero Image URL (or upload WebP)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      required
-                      value={newHeroImageUrl}
-                      onChange={(e) => setNewHeroImageUrl(e.target.value)}
-                      className="flex-1 p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 font-mono text-xs"
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e.target.files, true)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingImage}
-                      className="px-3 py-2.5 rounded-xl bg-obsidian-800 hover:bg-gold-500/20 text-gold-300 border border-neutral-700 text-xs flex items-center gap-1.5 transition-all shrink-0"
-                    >
-                      {isUploadingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
-                      Upload WebP
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Body Text / Editorial Paragraph</label>
-                  <textarea
-                    rows={3}
-                    required
-                    placeholder="Describe the collection, space architectural application, and mosaic techniques..."
-                    value={newBodyText}
-                    onChange={(e) => setNewBodyText(e.target.value)}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 resize-none leading-relaxed"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Secondary Supporting Text (Subtitle/Notes)</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Additional installation notes, custom sizing details, or craft story..."
+                  <label className="text-stone-700 font-medium">Category Badge / Kicker Text</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. BESPOKE MOSAIC ATELIER"
                     value={newSecondaryText}
                     onChange={(e) => setNewSecondaryText(e.target.value)}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 resize-none leading-relaxed"
+                    className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 font-mono uppercase text-xs"
                   />
                 </div>
               </div>
 
-              {/* Product Selection for Bottom of Page */}
-              <div className="flex flex-col gap-3 pt-4 border-t border-neutral-800">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-stone-700 font-medium">Editorial Body Description</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Describe the collection, space architectural application, and mosaic techniques..."
+                  value={newBodyText}
+                  onChange={(e) => setNewBodyText(e.target.value)}
+                  className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Product Selection */}
+              <div className="flex flex-col gap-3 pt-4 border-t border-stone-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-serif font-bold text-white text-sm">
+                    <h3 className="font-serif font-bold text-stone-900 text-sm">
                       Select Products to Showcase at the Bottom of This Page
                     </h3>
-                    <p className="text-[11px] text-neutral-400">
+                    <p className="text-[11px] text-stone-500">
                       Choose which catalog mosaic references will appear in the showcase section.
                     </p>
                   </div>
-                  <span className="text-xs font-mono text-gold-400">
+                  <span className="text-xs font-mono text-amber-800 font-bold">
                     {newSelectedProductIds.length} products selected
                   </span>
                 </div>
@@ -480,23 +461,23 @@ export function PagesManagerClient({
                       <div
                         key={prod.id}
                         onClick={() => handleToggleNewProductSelection(prod.id)}
-                        className={`group relative rounded-xl bg-obsidian-950 border overflow-hidden cursor-pointer transition-all flex flex-col ${
+                        className={`group relative rounded-xl bg-white border overflow-hidden cursor-pointer transition-all flex flex-col ${
                           isSelected
-                            ? "border-gold-400 ring-2 ring-gold-500/30"
-                            : "border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
+                            ? "border-stone-900 ring-2 ring-stone-900/10 shadow-xs"
+                            : "border-stone-200 hover:border-stone-300 opacity-70 hover:opacity-100"
                         }`}
                       >
                         <div className="relative aspect-square w-full">
                           <Image src={prod.sampleImageUrl} alt={prod.title} fill className="object-cover" />
                           {isSelected && (
-                            <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-gold-500 text-obsidian-950 flex items-center justify-center font-bold text-xs shadow">
+                            <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow">
                               <Check className="w-3 h-3" />
                             </div>
                           )}
                         </div>
                         <div className="p-2 flex flex-col">
-                          <span className="font-bold text-white truncate text-[11px]">{prod.title}</span>
-                          <span className="text-[10px] text-gold-400 font-mono">${prod.pricePerSqFt}/sq.ft</span>
+                          <span className="font-bold text-stone-900 truncate text-[11px]">{prod.title}</span>
+                          <span className="text-[10px] text-stone-500 font-mono">${prod.pricePerSqFt}/sq.ft</span>
                         </div>
                       </div>
                     );
@@ -505,7 +486,7 @@ export function PagesManagerClient({
               </div>
 
               {error && (
-                <div className="p-3 bg-red-950/60 border border-red-500/30 rounded-xl text-red-300 text-xs">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs">
                   {error}
                 </div>
               )}
@@ -514,14 +495,14 @@ export function PagesManagerClient({
                 <button
                   type="button"
                   onClick={() => setIsCreatingNew(false)}
-                  className="px-4 py-2.5 rounded-xl bg-obsidian-800 text-neutral-300 text-xs"
+                  className="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 shadow-lg shadow-gold-500/20"
+                  className="px-6 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   Publish Page
@@ -532,43 +513,48 @@ export function PagesManagerClient({
         </div>
       ) : currentPage ? (
         /* ========================================================================= */
-        /* 3. ACTIVE PAGE DIRECT IN-SECTION FIELD EDITOR (LIKE FINDER CMS STEPS) */
+        /* 3. ACTIVE PAGE CMS FIELD EDITOR */
         /* ========================================================================= */
         <div className="flex flex-col gap-6 animate-fadeIn">
           {/* Header Action Bar */}
-          <div className="p-5 rounded-3xl bg-obsidian-900 border border-gold-500/30 shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gold-500/10 border border-gold-500/30 flex items-center justify-center text-gold-400">
+          <div className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-800 shrink-0">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-serif font-bold text-white">{currentPage.title}</h2>
-                  <span className="text-[11px] font-mono text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-serif font-bold text-stone-900">{currentPage.title}</h2>
+                  <span className="text-[11px] font-mono text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-semibold">
                     {currentPage.slug === "customize-space" ? "/" : `/${currentPage.slug}`}
                   </span>
+                  {isCoreStudioPage && (
+                    <span className="text-[10px] font-mono text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full border border-stone-200">
+                      Core Studio Page
+                    </span>
+                  )}
                 </div>
-                <p className="text-[11px] text-neutral-400 mt-0.5">
-                  Template: <strong className="text-gold-300">Architectural Hero Showcase</strong>
+                <p className="text-[11px] text-stone-500 mt-0.5">
+                  Template: <strong className="text-stone-800">{getTemplateName(currentPage.slug)}</strong>
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <Link
-                href={currentPage.slug === "customize-space" ? "/" : `/${currentPage.slug}`}
+                href={getLivePageUrl(currentPage.slug)}
                 target="_blank"
-                className="px-3 py-2 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-medium flex items-center gap-1.5 transition-all"
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs"
                 title="View live page on website"
               >
-                <Eye className="w-3.5 h-3.5 text-gold-400" /> View Live Page <ExternalLink className="w-3 h-3 text-neutral-500" />
+                <Eye className="w-3.5 h-3.5 text-stone-500" /> View Live Page <ExternalLink className="w-3 h-3 text-stone-400" />
               </Link>
 
-              {currentPage.slug !== "customize-space" && currentPage.slug !== "from-scratch" && (
+              {!isCoreStudioPage && (
                 <button
                   type="button"
                   onClick={() => handleDeletePage(currentPage.id)}
-                  className="p-2 rounded-xl bg-obsidian-800 hover:bg-red-950/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors"
+                  className="p-2 rounded-xl bg-white hover:bg-red-50 text-stone-400 hover:text-red-700 border border-stone-300 hover:border-red-300 transition-colors cursor-pointer shadow-xs"
                   title="Delete this page"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -579,7 +565,7 @@ export function PagesManagerClient({
                 type="button"
                 onClick={handleSaveCurrentPage}
                 disabled={isSaving}
-                className="px-5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center gap-2 shadow-lg shadow-gold-500/20 transition-all cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save Changes
@@ -587,91 +573,104 @@ export function PagesManagerClient({
             </div>
           </div>
 
-          {/* Form Fields: All Page Data in Direct Section */}
+          {/* Form Fields */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left 8 Cols: Content Fields */}
             <div className="lg:col-span-8 flex flex-col gap-6">
               {/* General Settings Card */}
-              <div className="p-6 rounded-3xl bg-obsidian-900 border border-neutral-800 shadow-xl flex flex-col gap-4 text-xs">
-                <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
-                  <Layers className="w-4 h-4 text-gold-400" />
-                  <h3 className="font-serif font-bold text-white text-base">Page Header & Metadata</h3>
+              <div className="p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-4 text-xs">
+                <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
+                  <Layers className="w-4 h-4 text-amber-700" />
+                  <h3 className="font-serif font-bold text-stone-900 text-base">Page Content & Live Headings</h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-neutral-300 font-medium">Page Title</label>
+                    <label className="text-stone-700 font-semibold">Page Title</label>
                     <input
                       type="text"
                       value={currentPage.title}
                       onChange={(e) => handleFieldChange("title", e.target.value)}
-                      className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 text-sm font-medium"
+                      className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 text-sm font-medium"
                     />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-neutral-300 font-medium">URL Slug (Identifier)</label>
+                    <label className="text-stone-700 font-semibold">
+                      URL Slug {isCoreStudioPage && "(Core System Identifier)"}
+                    </label>
                     <input
                       type="text"
                       value={currentPage.slug}
+                      disabled={isCoreStudioPage}
                       onChange={(e) => handleFieldChange("slug", e.target.value)}
-                      className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 font-mono text-xs"
+                      className={`p-3 rounded-xl border font-mono text-xs ${
+                        isCoreStudioPage
+                          ? "bg-stone-100 text-stone-500 border-stone-200 cursor-not-allowed"
+                          : "bg-stone-50 text-stone-900 border-stone-200 focus:outline-none focus:border-stone-900"
+                      }`}
                     />
                   </div>
                 </div>
 
+                {/* Main Headline */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Layout Template</label>
-                  <div className="p-3 rounded-xl border bg-gold-500/10 border-gold-400/40 text-white flex items-center gap-2.5">
-                    <Layers className="w-4 h-4 text-gold-400" />
-                    <span className="font-semibold text-xs text-gold-200">Architectural Hero Showcase Template</span>
-                    <span className="text-[10px] text-neutral-400 font-mono ml-auto">Active Template</span>
+                  <div className="flex justify-between items-center">
+                    <label className="text-stone-800 font-semibold">Main Headline (H1)</label>
+                    <span className="text-[10px] text-stone-400">Rendered in large luxury serif on the page</span>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Main Headline</label>
                   <input
                     type="text"
                     value={currentPage.heading}
                     onChange={(e) => handleFieldChange("heading", e.target.value)}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 font-serif font-bold text-sm"
+                    className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 font-serif font-bold text-base"
+                    placeholder="e.g. AI Mosaic Studio"
                   />
                 </div>
 
+                {/* Editorial Body Text */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Editorial Body Text</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-stone-800 font-semibold">Editorial Subtitle / Description</label>
+                    <span className="text-[10px] text-stone-400">Rendered beneath the main headline</span>
+                  </div>
                   <textarea
                     rows={3}
                     value={currentPage.bodyText}
                     onChange={(e) => handleFieldChange("bodyText", e.target.value)}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 resize-none leading-relaxed"
+                    className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 resize-none leading-relaxed text-xs"
+                    placeholder="e.g. Upload a photo of your space — see a bespoke mosaic rendered into it."
                   />
                 </div>
 
+                {/* Category Badge / Kicker Text */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-neutral-300 font-medium">Secondary Supporting Text / Story</label>
-                  <textarea
-                    rows={2}
+                  <div className="flex justify-between items-center">
+                    <label className="text-stone-800 font-semibold">Category Badge / Kicker Text</label>
+                    <span className="text-[10px] text-stone-400">Uppercase pill badge displayed above the headline</span>
+                  </div>
+                  <input
+                    type="text"
                     value={currentPage.secondaryText || ""}
                     onChange={(e) => handleFieldChange("secondaryText", e.target.value)}
-                    className="p-3 rounded-xl bg-obsidian-950 border border-neutral-800 text-white focus:outline-none focus:border-gold-400 resize-none leading-relaxed"
+                    className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 focus:outline-none focus:border-stone-900 font-mono uppercase text-xs tracking-wider"
+                    placeholder="e.g. CUSTOMIZE YOUR SPACE, IMAGINE FROM SCRATCH, FIND YOUR AESTHETIC"
                   />
                 </div>
               </div>
 
-              {/* Product Selection for Bottom of Page Card */}
-              <div className="p-6 rounded-3xl bg-obsidian-900 border border-neutral-800 shadow-xl flex flex-col gap-4 text-xs">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-neutral-800 pb-3">
+              {/* Showcase Mosaic Catalog Grid */}
+              <div className="p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-4 text-xs">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-stone-100 pb-3">
                   <div>
-                    <h3 className="font-serif font-bold text-white text-base">
-                      Products to Showcase at Bottom of Page
+                    <h3 className="font-serif font-bold text-stone-900 text-base">
+                      Mosaic Pieces to Showcase at Bottom of Page
                     </h3>
-                    <p className="text-[11px] text-neutral-400">
-                      Check the mosaic items below that should appear in this page's showcase section.
+                    <p className="text-[11px] text-stone-500">
+                      Check which catalog references will appear in the curated bottom showcase grid on this page.
                     </p>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 font-mono text-xs self-start sm:self-auto">
+                  <span className="px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-800 font-mono text-xs self-start sm:self-auto font-semibold">
                     {currentSelectedProductIds.length} Selected
                   </span>
                 </div>
@@ -685,24 +684,24 @@ export function PagesManagerClient({
                       <div
                         key={prod.id}
                         onClick={() => handleToggleProductSelection(prod.id)}
-                        className={`group relative rounded-2xl bg-obsidian-950 border overflow-hidden cursor-pointer transition-all flex flex-col ${
+                        className={`group relative rounded-2xl bg-white border overflow-hidden cursor-pointer transition-all flex flex-col ${
                           isSelected
-                            ? "border-gold-400 ring-2 ring-gold-500/30 shadow-lg"
-                            : "border-neutral-800 hover:border-neutral-700 opacity-60 hover:opacity-100"
+                            ? "border-stone-900 ring-2 ring-stone-900/10 shadow-xs"
+                            : "border-stone-200 hover:border-stone-300 opacity-60 hover:opacity-100"
                         }`}
                       >
-                        <div className="relative aspect-square w-full bg-obsidian-900">
+                        <div className="relative aspect-square w-full bg-stone-100">
                           <Image src={prod.sampleImageUrl} alt={prod.title} fill className="object-cover" />
                           {isSelected && (
-                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-gold-500 text-obsidian-950 flex items-center gap-1 font-bold text-[10px] shadow">
+                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-stone-900 text-white flex items-center gap-1 font-bold text-[10px] shadow">
                               <Check className="w-3 h-3" /> #{selectedIndex + 1}
                             </div>
                           )}
                         </div>
                         <div className="p-2.5 flex flex-col gap-0.5">
-                          <span className="font-serif font-bold text-white truncate text-xs">{prod.title}</span>
-                          <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
-                            <span className="text-gold-400">${prod.pricePerSqFt}/sq.ft</span>
+                          <span className="font-serif font-bold text-stone-900 truncate text-xs">{prod.title}</span>
+                          <div className="flex items-center justify-between text-[10px] font-mono text-stone-500">
+                            <span className="text-amber-800 font-bold">${prod.pricePerSqFt}/sq.ft</span>
                             <span className="truncate max-w-[70px]">{prod.category}</span>
                           </div>
                         </div>
@@ -713,20 +712,63 @@ export function PagesManagerClient({
               </div>
             </div>
 
-            {/* Right 4 Cols: Hero Image & Live Preview Card */}
+            {/* Right 4 Cols: Live Preview & Hero Image Card */}
             <div className="lg:col-span-4 flex flex-col gap-6">
+              {/* Live Preview Card */}
+              <div className="p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-4 text-xs">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 font-bold">
+                    Frontend Live Preview
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
+
+                {/* Rendered Preview Mockup */}
+                <div className="p-5 rounded-xl bg-stone-50 border border-stone-200 text-center flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 font-semibold">
+                    {currentPage.secondaryText || "CATEGORY BADGE"}
+                  </span>
+                  <h4 className="text-lg font-serif italic text-stone-900 font-normal leading-tight">
+                    {currentPage.heading || "Page Headline"}
+                  </h4>
+                  <p className="text-[11px] text-stone-500 line-clamp-3 leading-relaxed font-light">
+                    {currentPage.bodyText || "Page description and subtitle..."}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveCurrentPage}
+                    disabled={isSaving}
+                    className="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-serif font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save Changes
+                  </button>
+
+                  <Link
+                    href={getLivePageUrl(currentPage.slug)}
+                    target="_blank"
+                    className="w-full py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-center"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> View on Live Site
+                  </Link>
+                </div>
+              </div>
+
               {/* Hero Image Card */}
-              <div className="sticky top-6 p-6 rounded-3xl bg-obsidian-900 border border-gold-500/30 shadow-xl flex flex-col gap-4 text-xs">
-                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex flex-col gap-4 text-xs">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 text-gold-400" />
-                    <h4 className="font-serif font-bold text-white text-sm">Hero Image</h4>
+                    <ImageIcon className="w-4 h-4 text-stone-600" />
+                    <h4 className="font-serif font-bold text-stone-900 text-sm">Hero Image</h4>
                   </div>
-                  <span className="text-[10px] font-mono text-emerald-400">• WebP optimized</span>
+                  <span className="text-[10px] font-mono text-emerald-600">• WebP optimized</span>
                 </div>
 
                 {/* Thumbnail Preview */}
-                <div className="relative aspect-[16/9] w-full rounded-2xl bg-obsidian-950 border border-neutral-800 overflow-hidden shadow">
+                <div className="relative aspect-[16/9] w-full rounded-xl bg-stone-100 border border-stone-200 overflow-hidden shadow-2xs">
                   {currentPage.heroImageUrl ? (
                     <Image
                       src={currentPage.heroImageUrl}
@@ -735,7 +777,7 @@ export function PagesManagerClient({
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-600">
+                    <div className="w-full h-full flex items-center justify-center text-stone-400 text-xs">
                       No hero image set
                     </div>
                   )}
@@ -753,7 +795,7 @@ export function PagesManagerClient({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingImage}
-                  className="w-full py-2.5 rounded-xl bg-obsidian-800 hover:bg-gold-500/20 text-gold-300 border border-neutral-700 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
                 >
                   {isUploadingImage ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -765,31 +807,21 @@ export function PagesManagerClient({
 
                 {/* Hero URL Input */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-neutral-400 font-medium text-[11px]">Hero Image URL</label>
+                  <label className="text-stone-600 font-medium text-[11px]">Hero Image URL</label>
                   <input
                     type="text"
                     value={currentPage.heroImageUrl || ""}
                     onChange={(e) => handleFieldChange("heroImageUrl", e.target.value)}
-                    className="p-2.5 rounded-xl bg-obsidian-950 border border-neutral-800 text-white font-mono text-[11px] focus:outline-none focus:border-gold-400"
+                    className="p-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-900 font-mono text-[11px] focus:outline-none focus:border-stone-900"
+                    placeholder="https://..."
                   />
                 </div>
-
-                {/* Save Button */}
-                <button
-                  type="button"
-                  onClick={handleSaveCurrentPage}
-                  disabled={isSaving}
-                  className="w-full mt-2 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-obsidian-950 font-serif font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-gold-500/20 transition-all cursor-pointer"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Save All Changes
-                </button>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center text-neutral-400">
+        <div className="p-12 text-center text-stone-400">
           No pages found. Click "Add New Page" to create your first page.
         </div>
       )}

@@ -1,9 +1,11 @@
-import { getCachedPageProducts } from "@/lib/cache";
+import { getCachedPageProducts, getCachedPageBySlug } from "@/lib/cache";
 import { DesignStudio } from "@/components/studio/DesignStudio";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function StudioPage({
   searchParams,
@@ -19,7 +21,10 @@ export default async function StudioPage({
     redirect(`/from-scratch${queryString}`);
   }
 
-  const products = await getCachedPageProducts("customize-space");
+  const [products, pageContent] = await Promise.all([
+    getCachedPageProducts("customize-space"),
+    getCachedPageBySlug("customize-space"),
+  ]);
 
   const initialProductId = searchParams.product;
 
@@ -31,7 +36,12 @@ export default async function StudioPage({
         <DesignStudio 
           initialProducts={products} 
           startFromScratch={false} 
-          initialSelectedProductId={initialProductId} 
+          initialSelectedProductId={initialProductId}
+          pageContent={pageContent ? {
+            heading: pageContent.heading,
+            bodyText: pageContent.bodyText,
+            badge: pageContent.secondaryText || "CUSTOMIZE YOUR SPACE",
+          } : undefined}
         />
       </div>
 

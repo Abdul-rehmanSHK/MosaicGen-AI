@@ -1,10 +1,12 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
+import { getCachedPageBySlug } from "@/lib/cache";
 import { defaultFinderSteps } from "@/lib/finderDefaultData";
 import { AestheticFinderWizard } from "@/components/finder/AestheticFinderWizard";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function parseProductSpecs(specsStr: string | null | undefined) {
@@ -139,6 +141,8 @@ export default async function FinderPage() {
     createdAt: g.createdAt.toISOString(),
   }));
 
+  const pageContent = await getCachedPageBySlug("finder");
+
   return (
     <div className="min-h-screen bg-[#f4f3f2] text-stone-900 flex flex-col justify-between selection:bg-stone-300 selection:text-stone-900 relative">
       {/* Sitewide Navbar */}
@@ -150,6 +154,11 @@ export default async function FinderPage() {
           initialSteps={synchronizedSteps}
           availableProducts={products}
           availableGenerations={serializedGenerations}
+          pageContent={pageContent ? {
+            heading: pageContent.heading,
+            bodyText: pageContent.bodyText,
+            badge: pageContent.secondaryText || "FIND YOUR AESTHETIC",
+          } : undefined}
         />
       </main>
 
