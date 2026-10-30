@@ -86,8 +86,13 @@ export function InpaintingMaskModal({
             </button>
             <button
               type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 rounded-xl font-medium text-xs bg-stone-900 hover:bg-stone-800 text-white flex items-center gap-2 transition-all shadow-md active:scale-[0.98]"
+              onClick={() => {
+                if (canvasRef.current?.hasDrawnMask?.()) {
+                  onMaskDrawn?.();
+                }
+                onClose();
+              }}
+              className="px-6 py-2.5 rounded-xl font-medium text-xs bg-stone-900 hover:bg-stone-800 text-white flex items-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer"
             >
               <Check className="w-3.5 h-3.5 stroke-[3]" />
               Save Mask & Done

@@ -258,19 +258,22 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
         return null;
       }
       try {
-        // Create black & white mask canvas
+        // Create clean binary mask canvas: pure white (#FFFFFF) on drawn strokes, pure black (#000000) on unmasked background
         const maskCanvas = document.createElement("canvas");
         maskCanvas.width = canvas.width;
         maskCanvas.height = canvas.height;
         const maskCtx = maskCanvas.getContext("2d");
         if (!maskCtx) return null;
 
-        maskCtx.fillStyle = "#000000";
-        maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
-
+        // 1. Draw user's painted strokes onto transparent canvas
         maskCtx.drawImage(canvas, 0, 0);
+        // 2. Turn all painted brush strokes pure opaque white
         maskCtx.globalCompositeOperation = "source-in";
         maskCtx.fillStyle = "#FFFFFF";
+        maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+        // 3. Fill all unpainted background with pure opaque black
+        maskCtx.globalCompositeOperation = "destination-over";
+        maskCtx.fillStyle = "#000000";
         maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
 
         return maskCanvas.toDataURL("image/png");

@@ -489,7 +489,8 @@ export function DesignStudio({
 
     try {
       // Only extract mask if not scratch mode AND user actually drew an inpainting mask
-      const maskBase64 = (!isScratch && hasDrawnMask && canvasRef.current?.getMaskBase64)
+      const hasActiveMask = Boolean(hasDrawnMask || canvasRef.current?.hasDrawnMask?.());
+      const maskBase64 = (!isScratch && hasActiveMask && canvasRef.current?.getMaskBase64)
         ? canvasRef.current.getMaskBase64()
         : null;
 

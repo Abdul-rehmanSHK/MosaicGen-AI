@@ -122,8 +122,217 @@ export const GROUT_ARCHITECTURAL_SPECS: Record<string, { promptSpec: string; hex
   }
 };
 
+function parsePromptAndStyle(prompt: string, placement: string) {
+  const p = (prompt || "").toLowerCase();
+
+  // 1. Color Palette Detection
+  let primaryColors = ["#48CAE4", "#0096C7", "#0077B6", "#90E0EF", "#00B4D8"]; // Default Sea-Glass Cyan
+  let accentColor = "#CAF0F8";
+  let metallicColor = "#A0E7E5";
+  let themeName = "Iridescent Sea-Glass";
+
+  if (p.includes("zellige") || p.includes("moroccan") || p.includes("terracotta") || p.includes("saffron") || p.includes("marrakech")) {
+    primaryColors = ["#C86D51", "#E76F51", "#F4A261", "#E9C46A", "#264653"];
+    accentColor = "#2A9D8F";
+    metallicColor = "#E9C46A";
+    themeName = "Moroccan Terracotta";
+  } else if (p.includes("gold") || p.includes("calacatta") || p.includes("brass") || p.includes("sunburst") || p.includes("medallion") || p.includes("baroque")) {
+    primaryColors = ["#D4AF37", "#F3E5AB", "#C5A059", "#B8860B", "#FDFBF7"];
+    accentColor = "#996515";
+    metallicColor = "#FFD700";
+    themeName = "Calacatta Gold";
+  } else if (p.includes("emerald") || p.includes("botanical") || p.includes("jade") || p.includes("forest") || p.includes("green") || p.includes("deco")) {
+    primaryColors = ["#1B4D3E", "#2E8B57", "#52796F", "#354F52", "#84A98C"];
+    accentColor = "#D4AF37";
+    metallicColor = "#C5A059";
+    themeName = "Emerald Botanical";
+  } else if (p.includes("lapis") || p.includes("blue") || p.includes("azure") || p.includes("cobalt") || p.includes("navy") || p.includes("sapphire")) {
+    primaryColors = ["#1E3A8A", "#1D4ED8", "#2563EB", "#3B82F6", "#60A5FA"];
+    accentColor = "#D4AF37";
+    metallicColor = "#F3E5AB";
+    themeName = "Lapis Lazuli";
+  } else if (p.includes("noir") || p.includes("black") || p.includes("charcoal") || p.includes("marquina") || p.includes("monochrome") || p.includes("slate")) {
+    primaryColors = ["#18181B", "#27272A", "#3F3F46", "#F4F4F5", "#A1A1AA"];
+    accentColor = "#E4E4E7";
+    metallicColor = "#D4AF37";
+    themeName = "Nero Marquina";
+  } else if (p.includes("ruby") || p.includes("rose") || p.includes("burgundy") || p.includes("wine") || p.includes("copper")) {
+    primaryColors = ["#9F1239", "#BE123C", "#E11D48", "#FB7185", "#881337"];
+    accentColor = "#FDA4AF";
+    metallicColor = "#FFD700";
+    themeName = "Venetian Ruby";
+  } else if (p.includes("sea-glass") || p.includes("wave") || p.includes("ocean") || p.includes("aqua") || p.includes("teal") || p.includes("cyan") || p.includes("water") || p.includes("ripple")) {
+    primaryColors = ["#48CAE4", "#0096C7", "#0077B6", "#90E0EF", "#00B4D8"];
+    accentColor = "#CAF0F8";
+    metallicColor = "#A0E7E5";
+    themeName = "Iridescent Sea-Glass";
+  }
+
+  // 2. Motif / Pattern Detection
+  let motif = "wave";
+  if (p.includes("medallion") || p.includes("sunburst") || p.includes("radial") || p.includes("rosette") || placement === "Floor Medallion") {
+    motif = "medallion";
+  } else if (p.includes("zellige") || p.includes("moroccan") || p.includes("star") || p.includes("arabesque")) {
+    motif = "zellige";
+  } else if (p.includes("herringbone") || p.includes("chevron")) {
+    motif = "herringbone";
+  } else if (p.includes("wave") || p.includes("flowing") || p.includes("ocean") || p.includes("water") || p.includes("ripple") || p.includes("sea")) {
+    motif = "wave";
+  } else if (p.includes("geometric") || p.includes("diamond")) {
+    motif = "geometric";
+  } else {
+    motif = placement === "Floor Medallion" ? "medallion" : "wave";
+  }
+
+  return { primaryColors, accentColor, metallicColor, themeName, motif };
+}
+
+function generateArtisanMosaicSvg(
+  width: number,
+  height: number,
+  styles: ReturnType<typeof parsePromptAndStyle>,
+  finish: string,
+  groutHex: string,
+  groutBorder: string
+): string {
+  const { primaryColors, accentColor, metallicColor, motif } = styles;
+  const isHighGloss = finish === "Polished High-Gloss";
+  const isTumbled = finish === "Antiqued Tumbled";
+  const rx = isTumbled ? 4 : 1.5;
+
+  const elements: string[] = [];
+
+  if (motif === "wave") {
+    // Flowing sinusoidal currents of hand-cut tesserae chips (Opus Vermiculatum)
+    const tileSize = Math.max(16, Math.min(26, Math.round(width / 35)));
+    const waveFreq = 0.012;
+    const waveAmp = 28;
+
+    for (let y = -tileSize; y < height + tileSize * 2; y += tileSize) {
+      const rowIdx = Math.floor(y / tileSize);
+      for (let x = -tileSize; x < width + tileSize; x += tileSize) {
+        const waveOffset = Math.sin(x * waveFreq + rowIdx * 0.35) * waveAmp;
+        const curY = y + waveOffset;
+        if (curY < -tileSize || curY > height + tileSize) continue;
+
+        const bandIdx = Math.abs(Math.floor((y + waveOffset * 1.4) / 40)) % primaryColors.length;
+        const isAccent = (x * 7 + y * 3) % 19 === 0;
+        const col = isAccent ? metallicColor : primaryColors[bandIdx];
+
+        // Hand-cut organic jitter
+        const jx = ((x * 17 + y * 11) % 5) - 2;
+        const jy = ((x * 11 + y * 17) % 5) - 2;
+        const w = tileSize - 3.2;
+        const h = tileSize - 3.2;
+
+        elements.push(`
+          <rect x="${x + jx}" y="${curY + jy}" width="${w}" height="${h}" rx="${rx}"
+                fill="${col}" stroke="${groutBorder}" stroke-width="0.75" />
+          ${isHighGloss ? `<circle cx="${x + jx + 4}" cy="${curY + jy + 4}" r="1.8" fill="#FFFFFF" opacity="0.45" />` : ''}
+        `);
+      }
+    }
+  } else if (motif === "medallion") {
+    // Concentric radial opus sectile rings
+    const cx = width / 2;
+    const cy = height / 2;
+    const maxRadius = Math.max(width, height) * 0.75;
+    const ringSpacing = Math.max(16, Math.min(24, Math.round(width / 40)));
+
+    for (let r = 8; r < maxRadius; r += ringSpacing) {
+      const circumference = 2 * Math.PI * r;
+      const chipSize = ringSpacing - 3;
+      const count = Math.max(8, Math.floor(circumference / (ringSpacing + 1)));
+      const ringIdx = Math.floor(r / ringSpacing);
+      const ringColor = primaryColors[ringIdx % primaryColors.length];
+
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * 2 * Math.PI;
+        const tx = cx + Math.cos(angle) * r;
+        const ty = cy + Math.sin(angle) * r;
+
+        if (tx < -30 || tx > width + 30 || ty < -30 || ty > height + 30) continue;
+
+        const deg = (angle * 180) / Math.PI;
+        const isSpecial = (i % 6 === 0 && ringIdx % 2 === 0);
+        const col = isSpecial ? metallicColor : ringColor;
+
+        elements.push(`
+          <rect x="${tx - chipSize / 2}" y="${ty - chipSize / 2}" width="${chipSize}" height="${chipSize}" rx="${rx}"
+                transform="rotate(${deg} ${tx} ${ty})"
+                fill="${col}" stroke="${groutBorder}" stroke-width="0.75" />
+          ${isHighGloss ? `<circle cx="${tx - 2}" cy="${ty - 2}" r="1.6" fill="#FFF" opacity="0.4" />` : ''}
+        `);
+      }
+    }
+  } else if (motif === "zellige") {
+    // Moroccan geometric 8-point stars and interlocking tesserae
+    const tileSize = Math.max(22, Math.min(32, Math.round(width / 25)));
+    for (let y = 0; y < height + tileSize; y += tileSize) {
+      const row = Math.floor(y / tileSize);
+      for (let x = 0; x < width + tileSize; x += tileSize) {
+        const col = Math.floor(x / tileSize);
+        const isStarCenter = (row + col) % 2 === 0;
+        const color = isStarCenter ? primaryColors[0] : primaryColors[(row + col) % primaryColors.length];
+
+        elements.push(`
+          <rect x="${x + 2}" y="${y + 2}" width="${tileSize - 4}" height="${tileSize - 4}" rx="${rx}"
+                transform="rotate(${isStarCenter ? 45 : 0} ${x + tileSize / 2} ${y + tileSize / 2})"
+                fill="${color}" stroke="${groutBorder}" stroke-width="0.9" />
+          ${isStarCenter ? `<circle cx="${x + tileSize / 2}" cy="${y + tileSize / 2}" r="2.8" fill="${metallicColor}" opacity="0.9" />` : ''}
+        `);
+      }
+    }
+  } else {
+    // Classic staggered Opus Tessellatum brickwork
+    const tileW = Math.max(18, Math.min(28, Math.round(width / 32)));
+    const tileH = Math.max(18, Math.min(28, Math.round(width / 32)));
+
+    for (let y = 0; y < height + tileH; y += tileH) {
+      const row = Math.floor(y / tileH);
+      const offsetX = (row % 2 === 0) ? 0 : tileW / 2;
+      for (let x = -tileW; x < width + tileW; x += tileW) {
+        const colIdx = Math.abs((x * 5 + y * 13)) % primaryColors.length;
+        const color = primaryColors[colIdx];
+        const isAccent = (x + y) % 8 === 0;
+        const finalColor = isAccent ? metallicColor : color;
+
+        elements.push(`
+          <rect x="${x + offsetX + 1.5}" y="${y + 1.5}" width="${tileW - 3}" height="${tileH - 3}" rx="${rx}"
+                fill="${finalColor}" stroke="${groutBorder}" stroke-width="0.75" />
+          ${isHighGloss ? `<circle cx="${x + offsetX + 5}" cy="${y + 5}" r="1.8" fill="#FFF" opacity="0.4" />` : ''}
+        `);
+      }
+    }
+  }
+
+  return `
+  <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="specularGleam" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="${isHighGloss ? '0.35' : '0.1'}" />
+        <stop offset="65%" stop-color="#FFFFFF" stop-opacity="0.0" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="${isHighGloss ? '0.32' : '0.15'}" />
+      </radialGradient>
+      <filter id="tileRelief">
+        <feDropShadow dx="0.5" dy="0.8" stdDeviation="0.6" flood-color="#000000" flood-opacity="0.22" />
+      </filter>
+    </defs>
+    <!-- Grout Matrix Bed -->
+    <rect width="${width}" height="${height}" fill="${groutHex}" />
+    <!-- Hand-cut Tesserae Layer -->
+    <g filter="url(#tileRelief)">
+      ${elements.join('\n')}
+    </g>
+    <!-- Architectural Light & Specular Vignette -->
+    <rect width="${width}" height="${height}" fill="url(#specularGleam)" style="mix-blend-mode: overlay;" />
+  </svg>
+  `;
+}
+
 async function compositeMosaicOntoRoomPhoto(params: {
   inputImageBase64: string;
+  maskBase64?: string;
   placement: string;
   prompt: string;
   finish: string;
@@ -140,42 +349,143 @@ async function compositeMosaicOntoRoomPhoto(params: {
     const metadata = await sharp(imageBuffer).metadata();
     if (!metadata.width || !metadata.height) return null;
 
-    const box = params.box_2d || [380, 200, 750, 800];
-    const top = Math.max(0, Math.round((box[0] / 1000) * metadata.height));
-    const left = Math.max(0, Math.round((box[1] / 1000) * metadata.width));
-    const height = Math.max(20, Math.round(((box[2] - box[0]) / 1000) * metadata.height));
-    const width = Math.max(20, Math.round(((box[3] - box[1]) / 1000) * metadata.width));
+    const imgWidth = metadata.width;
+    const imgHeight = metadata.height;
 
-    const pLower = params.prompt.toLowerCase();
-    const isMoroccan = pLower.includes("zellige") || pLower.includes("moroccan") || pLower.includes("terracotta") || pLower.includes("indigo");
-    const isGold = pLower.includes("gold") || pLower.includes("calacatta") || pLower.includes("baroque") || pLower.includes("sunburst");
-    const isGreen = pLower.includes("emerald") || pLower.includes("deco") || pLower.includes("botanical");
-
-    const tileColor1 = isMoroccan ? "#C86D51" : isGold ? "#D4AF37" : isGreen ? "#1B4D3E" : "#8A7968";
-    const tileColor2 = isMoroccan ? "#264653" : isGold ? "#F3E5AB" : isGreen ? "#2E8B57" : "#4A5568";
-    const tileColor3 = isMoroccan ? "#E9C46A" : isGold ? "#996515" : isGreen ? "#0D2818" : "#EDF2F7";
-
-    // Surface finish styling parameters
     const finishKey = params.finish in FINISH_ARCHITECTURAL_SPECS ? params.finish : "Polished High-Gloss";
     const isHighGloss = finishKey === "Polished High-Gloss";
-    const isTumbled = finishKey === "Antiqued Tumbled";
-    const isMatte = finishKey === "Textured Matte";
-
-    // Grout configuration
     const groutConfig = GROUT_ARCHITECTURAL_SPECS[params.groutColor] || GROUT_ARCHITECTURAL_SPECS["Champagne Gold"];
     const grout = groutConfig.hexColor;
     const groutBorder = groutConfig.borderColor;
-    const groutHighlight = groutConfig.highlightColor;
-    const groutOpacity = groutConfig.opacity;
 
-    // Specular highlight opacity based on finish
-    const specularOpacity = isHighGloss ? 0.65 : isTumbled ? 0.2 : isMatte ? 0.08 : 0.35;
-    const tileRadius = isTumbled ? 4 : isMatte ? 1 : 2;
+    const styles = parsePromptAndStyle(params.prompt, params.placement);
+
+    // =========================================================================
+    // CASE A: User painted an inpainting mask (strict mask-guided composite)
+    // =========================================================================
+    if (params.maskBase64) {
+      console.log("[COMPOSITOR] 🎨 Synthesizing full-resolution mosaic texture for inpainting mask...");
+      
+      let mosaicBuffer: Buffer = Buffer.alloc(0);
+      let usedRealImage = false;
+
+      // If user selected an authentic reference product, resize that product texture
+      if (params.referenceProductImageUrl) {
+        try {
+          let refBuffer: Buffer | null = null;
+          if (params.referenceProductImageUrl.startsWith("data:image")) {
+            refBuffer = Buffer.from(params.referenceProductImageUrl.split(",")[1], "base64");
+          } else if (params.referenceProductImageUrl.startsWith("http")) {
+            const res = await fetch(params.referenceProductImageUrl);
+            if (res.ok) refBuffer = Buffer.from(await res.arrayBuffer());
+          }
+          if (refBuffer) {
+            mosaicBuffer = await sharp(refBuffer).resize(imgWidth, imgHeight, { fit: "cover" }).png().toBuffer();
+            usedRealImage = true;
+          }
+        } catch (err) {
+          console.warn("[COMPOSITOR REFERENCE IMAGE NOTICE]:", err);
+        }
+      }
+
+      if (!usedRealImage) {
+        const svgString = generateArtisanMosaicSvg(imgWidth, imgHeight, styles, finishKey, grout, groutBorder);
+        mosaicBuffer = await sharp(Buffer.from(svgString)).png().toBuffer();
+      }
+
+      // Decode and resize user painted inpainting mask
+      const maskRawBase64 = params.maskBase64.includes(",")
+        ? params.maskBase64.split(",")[1]
+        : params.maskBase64;
+      const userMaskBuffer = Buffer.from(maskRawBase64, "base64");
+
+      const resizedMask = await sharp(userMaskBuffer)
+        .resize(imgWidth, imgHeight, { fit: "fill" })
+        .ensureAlpha()
+        .raw()
+        .toBuffer();
+
+      const rawMosaic = await sharp(mosaicBuffer)
+        .resize(imgWidth, imgHeight, { fit: "fill" })
+        .removeAlpha()
+        .raw()
+        .toBuffer();
+
+      // Interleave mosaic RGB with mask Alpha: White / gold strokes = 255 (mosaic visible), Black/transparent = 0 (room photo untouched)
+      const rgbaBuffer = Buffer.alloc(imgWidth * imgHeight * 4);
+      let maskedPixelCount = 0;
+
+      for (let i = 0; i < imgWidth * imgHeight; i++) {
+        const mr = resizedMask[i * 4];
+        const mg = resizedMask[i * 4 + 1];
+        const mb = resizedMask[i * 4 + 2];
+        const ma = resizedMask[i * 4 + 3];
+
+        const isMasked = ma > 25 && (mr > 30 || mg > 30 || mb > 30);
+        if (isMasked) maskedPixelCount++;
+
+        rgbaBuffer[i * 4] = rawMosaic[i * 3];
+        rgbaBuffer[i * 4 + 1] = rawMosaic[i * 3 + 1];
+        rgbaBuffer[i * 4 + 2] = rawMosaic[i * 3 + 2];
+        rgbaBuffer[i * 4 + 3] = isMasked ? 255 : 0;
+      }
+
+      console.log(`[COMPOSITOR] Inpainting applied to ${maskedPixelCount} masked pixels (${Math.round((maskedPixelCount / (imgWidth * imgHeight)) * 100)}% of space photo)`);
+
+      const maskedMosaic = await sharp(rgbaBuffer, {
+        raw: { width: imgWidth, height: imgHeight, channels: 4 }
+      }).png().toBuffer();
+
+      const composited = await sharp(imageBuffer)
+        .composite([{ input: maskedMosaic, blend: "over" }])
+        .jpeg({ quality: 92 })
+        .toBuffer();
+
+      return `data:image/jpeg;base64,${composited.toString("base64")}`;
+    }
+
+    // =========================================================================
+    // CASE B: No mask painted - target detected surface box or placement plane
+    // =========================================================================
+    let top = 0;
+    let left = 0;
+    let width = imgWidth;
+    let height = imgHeight;
+
+    if (params.box_2d && params.box_2d.length === 4) {
+      top = Math.max(0, Math.round((params.box_2d[0] / 1000) * imgHeight));
+      left = Math.max(0, Math.round((params.box_2d[1] / 1000) * imgWidth));
+      height = Math.max(30, Math.round(((params.box_2d[2] - params.box_2d[0]) / 1000) * imgHeight));
+      width = Math.max(30, Math.round(((params.box_2d[3] - params.box_2d[1]) / 1000) * imgWidth));
+    } else {
+      // Architectural perspective bounds based on placement type
+      if (params.placement === "Floor Medallion" || params.placement.toLowerCase().includes("floor")) {
+        top = Math.round(imgHeight * 0.52);
+        left = Math.round(imgWidth * 0.18);
+        width = Math.round(imgWidth * 0.64);
+        height = Math.round(imgHeight * 0.42);
+      } else if (params.placement === "Backsplash") {
+        top = Math.round(imgHeight * 0.32);
+        left = Math.round(imgWidth * 0.12);
+        width = Math.round(imgWidth * 0.76);
+        height = Math.round(imgHeight * 0.38);
+      } else if (params.placement === "Pool") {
+        top = Math.round(imgHeight * 0.44);
+        left = Math.round(imgWidth * 0.10);
+        width = Math.round(imgWidth * 0.80);
+        height = Math.round(imgHeight * 0.50);
+      } else {
+        // Accent Wall / Auto-detect
+        top = Math.round(imgHeight * 0.16);
+        left = Math.round(imgWidth * 0.14);
+        width = Math.round(imgWidth * 0.72);
+        height = Math.round(imgHeight * 0.62);
+      }
+    }
 
     let mosaicBuffer: Buffer = Buffer.alloc(0);
     let usedRealImage = false;
 
-    // If a reference product mosaic artwork is provided, composite the actual authentic mosaic!
     if (params.referenceProductImageUrl) {
       try {
         let refBuffer: Buffer | null = null;
@@ -183,74 +493,20 @@ async function compositeMosaicOntoRoomPhoto(params: {
           refBuffer = Buffer.from(params.referenceProductImageUrl.split(",")[1], "base64");
         } else if (params.referenceProductImageUrl.startsWith("http")) {
           const res = await fetch(params.referenceProductImageUrl);
-          if (res.ok) {
-            refBuffer = Buffer.from(await res.arrayBuffer());
-          }
+          if (res.ok) refBuffer = Buffer.from(await res.arrayBuffer());
         }
         if (refBuffer) {
-          const resizedRef = await sharp(refBuffer)
-            .resize(width, height, { fit: "cover" })
-            .png()
-            .toBuffer();
-
-          const overlaySvg = `
-          <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <radialGradient id="vignette" cx="45%" cy="45%" r="55%">
-                <stop offset="0%" stop-color="#FFFFFF" stop-opacity="${isHighGloss ? '0.35' : '0.1'}" />
-                <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.0" />
-                <stop offset="100%" stop-color="#000000" stop-opacity="${isHighGloss ? '0.35' : '0.2'}" />
-              </radialGradient>
-            </defs>
-            <rect width="${width}" height="${height}" rx="6" fill="url(#vignette)" style="mix-blend-mode: overlay;" />
-            <rect width="${width}" height="${height}" rx="6" fill="none" stroke="${groutBorder}" stroke-width="2.5" opacity="0.85" />
-          </svg>
-          `;
-          const overlayBuffer = await sharp(Buffer.from(overlaySvg)).resize(width, height).png().toBuffer();
-
-          mosaicBuffer = await sharp(resizedRef)
-            .composite([{ input: overlayBuffer, blend: "over" }])
-            .png()
-            .toBuffer();
+          mosaicBuffer = await sharp(refBuffer).resize(width, height, { fit: "cover" }).png().toBuffer();
           usedRealImage = true;
         }
       } catch (err) {
-        console.warn("[COMPOSITOR REAL IMAGE COMPOSITE NOTICE]:", err);
+        console.warn("[COMPOSITOR REAL IMAGE NOTICE]:", err);
       }
     }
 
     if (!usedRealImage) {
-      const svgPattern = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="tesserae" width="32" height="32" patternUnits="userSpaceOnUse">
-            <rect width="32" height="32" fill="${grout}" opacity="${groutOpacity}" />
-            <rect x="2" y="2" width="13" height="13" rx="${tileRadius}" fill="${tileColor1}" stroke="${groutBorder}" stroke-width="0.75" />
-            <rect x="17" y="2" width="13" height="13" rx="${tileRadius}" fill="${tileColor2}" stroke="${groutBorder}" stroke-width="0.75" />
-            <rect x="2" y="17" width="13" height="13" rx="${tileRadius}" fill="${tileColor3}" stroke="${groutBorder}" stroke-width="0.75" />
-            <rect x="17" y="17" width="13" height="13" rx="${tileRadius}" fill="${tileColor1}" stroke="${groutBorder}" stroke-width="0.75" />
-            ${specularOpacity > 0.1 ? `
-            <circle cx="6" cy="6" r="2.5" fill="#FFF" opacity="${specularOpacity}" />
-            <circle cx="21" cy="21" r="2.5" fill="#FFF" opacity="${specularOpacity}" />
-            <line x1="2" y1="2" x2="15" y2="2" stroke="${groutHighlight}" stroke-width="0.75" opacity="0.8" />
-            ` : ''}
-          </pattern>
-          <radialGradient id="vignette" cx="45%" cy="45%" r="55%">
-            <stop offset="0%" stop-color="#FFFFFF" stop-opacity="${isHighGloss ? '0.45' : '0.15'}" />
-            <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.0" />
-            <stop offset="100%" stop-color="#000000" stop-opacity="${isHighGloss ? '0.4' : '0.25'}" />
-          </radialGradient>
-        </defs>
-        <rect width="${width}" height="${height}" rx="6" fill="url(#tesserae)" />
-        <rect width="${width}" height="${height}" rx="6" fill="url(#vignette)" style="mix-blend-mode: overlay;" />
-        <rect width="${width}" height="${height}" rx="6" fill="none" stroke="${groutBorder}" stroke-width="3" opacity="0.9" />
-      </svg>
-      `;
-
-      mosaicBuffer = await sharp(Buffer.from(svgPattern))
-        .resize(width, height)
-        .png()
-        .toBuffer();
+      const svgPattern = generateArtisanMosaicSvg(width, height, styles, finishKey, grout, groutBorder);
+      mosaicBuffer = await sharp(Buffer.from(svgPattern)).resize(width, height).png().toBuffer();
     }
 
     const composited = await sharp(imageBuffer)
@@ -301,9 +557,32 @@ export async function processMosaicGeneration(
 
   let resultImageUrl = "";
 
-  // 1. Try Google Gemini Image Generation if GEMINI_API_KEY is configured
+  // 1. Top Priority for Inpainting Mask: When user draws a mask on their space photo,
+  // execute pixel-perfect inpainting directly onto the masked region while preserving their room/portrait 100%!
+  if (isRoomInpainting && inputImageBase64 && params.maskBase64) {
+    console.log("=======================================================");
+    console.log("[INPAINTING PIPELINE] 🎯 Processing user-drawn Inpainting Mask composite...");
+    console.log("[INPAINTING PROMPT]:", prompt);
+    console.log("=======================================================");
+    const composited = await compositeMosaicOntoRoomPhoto({
+      inputImageBase64,
+      maskBase64: params.maskBase64,
+      placement,
+      prompt,
+      finish,
+      groutColor,
+      box_2d: params.surfaceDetection?.box_2d,
+      referenceProductImageUrl: params.referenceProductImageUrl,
+    });
+    if (composited) {
+      resultImageUrl = composited;
+      console.log("[INPAINTING SUCCESS] ✅ Inpainting mask composited seamlessly onto uploaded space photo!");
+    }
+  }
+
+  // 2. Try Google Gemini Image Generation if GEMINI_API_KEY is configured (for scratch generations or unmasked spaces)
   const geminiApiKey = process.env.GEMINI_API_KEY;
-  if (geminiApiKey) {
+  if (!resultImageUrl && geminiApiKey) {
     const geminiModel = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
     console.log("=======================================================");
     console.log(`[GEMINI AI PIPELINE] 🚀 Executing Gemini Image Generation (${geminiModel})...`);
@@ -389,7 +668,7 @@ export async function processMosaicGeneration(
     }
   }
 
-  // 2. Fallback to OpenAI DALL-E 3 if available and Gemini didn't return an image
+  // 3. Fallback to OpenAI DALL-E 3 if available and Gemini didn't return an image
   if (!resultImageUrl && openai) {
     console.log("=======================================================");
     console.log("[OPENAI AI PIPELINE] 🚀 Executing DALL-E 3 Image Generation...");
@@ -412,10 +691,11 @@ export async function processMosaicGeneration(
     }
   }
 
-  // 3. Fallback: If user uploaded a room photo, composite the bespoke mosaic into the detected surface boundary of their room
+  // 4. Space Photo Compositor: If user uploaded a room photo, composite the bespoke mosaic into the detected surface boundary
   if (!resultImageUrl && isRoomInpainting && inputImageBase64) {
     const composited = await compositeMosaicOntoRoomPhoto({
       inputImageBase64,
+      maskBase64: params.maskBase64,
       placement,
       prompt,
       finish,
@@ -429,13 +709,28 @@ export async function processMosaicGeneration(
     }
   }
 
-  // 4. Fallback: If user selected an authentic reference mosaic design, serve that design!
+  // 5. From-Scratch Artisan Mosaic Generator: When no photo uploaded, synthesize high-resolution 1024x1024 artisan mosaic artwork
+  if (!resultImageUrl && !isRoomInpainting) {
+    try {
+      const sharp = (await import("sharp")).default;
+      const styles = parsePromptAndStyle(prompt, placement);
+      const groutConfig = GROUT_ARCHITECTURAL_SPECS[groutColor] || GROUT_ARCHITECTURAL_SPECS["Champagne Gold"];
+      const svgArt = generateArtisanMosaicSvg(1024, 1024, styles, finish, groutConfig.hexColor, groutConfig.borderColor);
+      const artBuf = await sharp(Buffer.from(svgArt)).jpeg({ quality: 92 }).toBuffer();
+      resultImageUrl = `data:image/jpeg;base64,${artBuf.toString("base64")}`;
+      console.log(`[MOSAIC PIPELINE] 🎨 Synthesized 1024x1024 bespoke artisan mosaic render for '${styles.themeName}' (${styles.motif})!`);
+    } catch (artErr) {
+      console.warn("[MOSAIC PIPELINE SYNTHESIS NOTICE]:", artErr);
+    }
+  }
+
+  // 6. Fallback: If user selected an authentic reference mosaic design, serve that design!
   if (!resultImageUrl && params.referenceProductImageUrl) {
     resultImageUrl = params.referenceProductImageUrl;
     console.log(`[MOSAIC PIPELINE] 🎨 Served selected authentic mosaic design '${params.referenceProductTitle || params.placement}'!`);
   }
 
-  // 5. Fallback: Curated authentic mosaic tile artworks based strictly on the user's prompt & placement
+  // 7. Fallback: Curated authentic mosaic tile artworks based strictly on the user's prompt & placement
   if (!resultImageUrl) {
     const pLower = prompt.toLowerCase();
     // If prompt is Moroccan Zellige / Terracotta / Indigo in bedroom/floor/backsplash space:
