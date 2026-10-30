@@ -60,7 +60,7 @@ export async function getSiteAppearance(): Promise<SiteAppearanceData> {
           footerCopyright: "© 2026 Zakiah Marble. All Rights Reserved.",
           footerContactEmail: "concierge@zakiahmarble.com",
           footerContactPhone: "+923129448844",
-          footerAddress: "2159 Voorhees Town Center, NJ, USA • 34 2C2 College Road, Township , Lahore",
+          footerAddress: "34 2C2 College Road, Township , Lahore",
           footerLinksJson: JSON.stringify(DEFAULT_FOOTER_LINKS),
           socialLinksJson: JSON.stringify({
             instagram: "https://instagram.com",
@@ -88,7 +88,7 @@ export async function getSiteAppearance(): Promise<SiteAppearanceData> {
       footerCopyright: "© 2026 Zakiah Marble. All Rights Reserved.",
       footerContactEmail: "concierge@zakiahmarble.com",
       footerContactPhone: "+923129448844",
-      footerAddress: "2159 Voorhees Town Center, NJ, USA • 34 2C2 College Road, Township , Lahore",
+      footerAddress: "34 2C2 College Road, Township , Lahore",
       footerLinksJson: JSON.stringify(DEFAULT_FOOTER_LINKS),
       socialLinksJson: JSON.stringify({}),
       updatedAt: new Date(),

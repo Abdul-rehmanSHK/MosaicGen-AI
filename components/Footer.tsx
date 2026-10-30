@@ -18,6 +18,10 @@ export async function Footer() {
   const brandName = appearance.footerBrandName || "Zakiah Marble";
   const description = appearance.footerDescription || "At Zakiah Marble, we specialize in creating bespoke, high-quality custom mosaic designs.";
   const phone = appearance.footerContactPhone || "+923129448844";
+  const address = (appearance.footerAddress || "34 2C2 College Road, Township , Lahore")
+    .replace(/2159\s+Voorhees\s+Town\s+Center,\s*NJ,\s*USA\s*[•·-]?\s*/gi, "")
+    .replace(/[•·-]\s*2159\s+Voorhees\s+Town\s+Center,\s*NJ,\s*USA/gi, "")
+    .trim() || "34 2C2 College Road, Township , Lahore";
 
   return (
     <footer className="w-full bg-[#f4f3f2] border-t border-stone-200 py-12 text-stone-700 transition-colors relative">
@@ -78,16 +82,9 @@ export async function Footer() {
                 </a>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-3 text-stone-500 pt-0.5">
-              <span className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                2159 Voorhees Town Center, NJ, USA
-              </span>
-              <span className="hidden sm:inline text-stone-300">•</span>
-              <span className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                34 2C2 College Road, Township , Lahore
-              </span>
+            <div className="flex items-center gap-1.5 text-stone-500 pt-0.5">
+              <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+              <span>{address}</span>
             </div>
           </div>
 
