@@ -157,7 +157,10 @@ export function AppearanceManagerClient({
 
       const data = await res.json();
       setAppearance(data.appearance);
-      showToast("Appearance & navigation settings saved successfully!");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("appearance_updated"));
+      }
+      showToast("Appearance & navigation settings saved successfully! Live site updated.");
     } catch (e: any) {
       alert(e.message || "Failed to save appearance settings.");
     } finally {

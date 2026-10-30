@@ -62,31 +62,39 @@ export function Navbar() {
   }, [session]);
 
   useEffect(() => {
-    fetch("/api/appearance")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.appearance) {
-          let menu: MenuItem[] = [];
-          try {
-            menu = JSON.parse(data.appearance.headerMenuJson || "[]");
-          } catch {
-            menu = [];
-          }
+    const fetchAppearance = () => {
+      fetch("/api/appearance", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.appearance) {
+            let menu: MenuItem[] = [];
+            try {
+              menu = JSON.parse(data.appearance.headerMenuJson || "[]");
+            } catch {
+              menu = [];
+            }
 
-          setAppearance({
-            headerBrandName: data.appearance.headerBrandName || "Zakiah Mosaics",
-            headerTagline: data.appearance.headerTagline || "Bespoke Surface Studio",
-            headerLogoUrl: data.appearance.headerLogoUrl || null,
-            headerMenu: menu.length > 0 ? menu : [
-              { label: "Customize your space", url: "/" },
-              { label: "Imagine from scratch", url: "/from-scratch" },
-              { label: "Find your aesthetic", url: "/finder" },
-              { label: "Contact Us", url: "https://zakiahmarble.com/contact-us/", external: true },
-            ],
-          });
-        }
-      })
-      .catch(() => {});
+            setAppearance({
+              headerBrandName: data.appearance.headerBrandName || "Zakiah Mosaics",
+              headerTagline: data.appearance.headerTagline || "Bespoke Surface Studio",
+              headerLogoUrl: data.appearance.headerLogoUrl || null,
+              headerMenu: menu.length > 0 ? menu : [
+                { label: "Customize your space", url: "/" },
+                { label: "Imagine from scratch", url: "/from-scratch" },
+                { label: "Find your aesthetic", url: "/finder" },
+                { label: "Contact Us", url: "https://zakiahmarble.com/contact-us/", external: true },
+              ],
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchAppearance();
+    window.addEventListener("appearance_updated", fetchAppearance);
+    return () => {
+      window.removeEventListener("appearance_updated", fetchAppearance);
+    };
   }, []);
 
   const isNavActive = (path: string) => pathname === path;

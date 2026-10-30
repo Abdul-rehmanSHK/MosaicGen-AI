@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/logger";
@@ -91,6 +92,13 @@ export async function PUT(request: Request) {
         footerLogoUrl,
       },
     });
+
+    // Invalidate caches across the entire site layout and pages immediately
+    revalidateTag("appearance");
+    revalidatePath("/", "layout");
+    revalidatePath("/");
+    revalidatePath("/from-scratch");
+    revalidatePath("/finder");
 
     return NextResponse.json({ success: true, appearance: updated });
   } catch (error: any) {
