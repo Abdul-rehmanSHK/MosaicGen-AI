@@ -122,26 +122,129 @@ export const GROUT_ARCHITECTURAL_SPECS: Record<string, { promptSpec: string; hex
   }
 };
 
-function parsePromptAndStyle(prompt: string, placement: string) {
-  const p = (prompt || "").toLowerCase();
+export interface MosaicStyleSpec {
+  themeName: string;
+  tileShape: "star_and_cross" | "fish_scale" | "hexagon" | "herringbone" | "wave" | "medallion" | "diamond" | "subway";
+  material: "glass" | "marble" | "ceramic" | "stone" | "metallic";
+  primaryColors: string[];
+  accentColor: string;
+  metallicColor: string;
+}
 
-  // 1. Color Palette Detection
-  let primaryColors = ["#48CAE4", "#0096C7", "#0077B6", "#90E0EF", "#00B4D8"]; // Default Sea-Glass Cyan
+export async function parseDesignPromptWithAI(prompt: string, placement: string): Promise<MosaicStyleSpec> {
+  const p = (prompt || "").toLowerCase();
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2800);
+
+      const sysPrompt = `You are an elite architectural luxury mosaic tile designer.
+Analyze the prompt and placement, and output the visual design parameters.
+User Prompt: "${prompt}"
+Placement: "${placement}"
+
+Return ONLY valid JSON matching this schema:
+{
+  "themeName": "Descriptive title for this mosaic style",
+  "tileShape": "one of: star_and_cross, fish_scale, hexagon, herringbone, wave, medallion, diamond, subway",
+  "material": "one of: glass, marble, ceramic, stone, metallic",
+  "primaryColors": ["#hex1", "#hex2", "#hex3"],
+  "accentColor": "#hex",
+  "metallicColor": "#hex"
+}`;
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: sysPrompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed.primaryColors) && parsed.primaryColors.length > 0) {
+            console.log(`[AI DESIGN PARSER] ✨ Gemini extracted mosaic design spec: Theme="${parsed.themeName}", Shape=${parsed.tileShape}, Colors=${parsed.primaryColors.join(",")}`);
+            return {
+              themeName: parsed.themeName || "Bespoke Architectural Mosaic",
+              tileShape: parsed.tileShape || getFallbackTileShape(p, placement),
+              material: parsed.material || "glass",
+              primaryColors: parsed.primaryColors,
+              accentColor: parsed.accentColor || "#D4AF37",
+              metallicColor: parsed.metallicColor || "#E5C378",
+            };
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn("[AI DESIGN PARSER NOTICE]: Using local architectural design extractor:", err?.message || err);
+    }
+  }
+
+  return parsePromptAndStyleRuleBased(p, placement);
+}
+
+function getFallbackTileShape(p: string, placement: string): MosaicStyleSpec["tileShape"] {
+  if (p.includes("star") || p.includes("cross") || p.includes("zellige") || p.includes("moroccan") || p.includes("riad")) {
+    return "star_and_cross";
+  }
+  if (p.includes("fish") || p.includes("scale") || p.includes("fan") || p.includes("scallop") || p.includes("seigaiha")) {
+    return "fish_scale";
+  }
+  if (p.includes("hex") || p.includes("honeycomb") || p.includes("beehive")) {
+    return "hexagon";
+  }
+  if (p.includes("herringbone") || p.includes("chevron") || p.includes("parquet")) {
+    return "herringbone";
+  }
+  if (p.includes("medallion") || p.includes("sunburst") || p.includes("radial") || p.includes("rosette") || placement === "Floor Medallion") {
+    return "medallion";
+  }
+  if (p.includes("subway") || p.includes("brick") || p.includes("staggered")) {
+    return "subway";
+  }
+  if (p.includes("diamond") || p.includes("rhomb") || p.includes("argyle") || p.includes("lozenge")) {
+    return "diamond";
+  }
+  return placement === "Floor Medallion" ? "medallion" : "wave";
+}
+
+function parsePromptAndStyleRuleBased(p: string, placement: string): MosaicStyleSpec {
+  let primaryColors = ["#48CAE4", "#0096C7", "#0077B6", "#90E0EF", "#00B4D8"];
   let accentColor = "#CAF0F8";
   let metallicColor = "#A0E7E5";
   let themeName = "Iridescent Sea-Glass";
 
-  if (p.includes("zellige") || p.includes("moroccan") || p.includes("terracotta") || p.includes("saffron") || p.includes("marrakech")) {
+  if ((p.includes("teal") || p.includes("turquoise")) && (p.includes("black") || p.includes("noir") || p.includes("dark"))) {
+    primaryColors = ["#008080", "#18181B", "#0A5C5C", "#27272A", "#00A896"];
+    accentColor = "#D4AF37";
+    metallicColor = "#E5C378";
+    themeName = "Teal & Noir Riad";
+  } else if (p.includes("teal") || p.includes("turquoise") || p.includes("cyan")) {
+    primaryColors = ["#008080", "#009688", "#00695C", "#26A69A", "#80CBC4"];
+    accentColor = "#D4AF37";
+    metallicColor = "#FFD700";
+    themeName = "Mediterranean Teal";
+  } else if (p.includes("zellige") || p.includes("moroccan") || p.includes("terracotta") || p.includes("saffron") || p.includes("marrakech")) {
     primaryColors = ["#C86D51", "#E76F51", "#F4A261", "#E9C46A", "#264653"];
     accentColor = "#2A9D8F";
     metallicColor = "#E9C46A";
     themeName = "Moroccan Terracotta";
-  } else if (p.includes("gold") || p.includes("calacatta") || p.includes("brass") || p.includes("sunburst") || p.includes("medallion") || p.includes("baroque")) {
+  } else if (p.includes("gold") || p.includes("calacatta") || p.includes("brass") || p.includes("sunburst") || p.includes("baroque")) {
     primaryColors = ["#D4AF37", "#F3E5AB", "#C5A059", "#B8860B", "#FDFBF7"];
     accentColor = "#996515";
     metallicColor = "#FFD700";
     themeName = "Calacatta Gold";
-  } else if (p.includes("emerald") || p.includes("botanical") || p.includes("jade") || p.includes("forest") || p.includes("green") || p.includes("deco")) {
+  } else if (p.includes("emerald") || p.includes("botanical") || p.includes("jade") || p.includes("forest") || p.includes("green")) {
     primaryColors = ["#1B4D3E", "#2E8B57", "#52796F", "#354F52", "#84A98C"];
     accentColor = "#D4AF37";
     metallicColor = "#C5A059";
@@ -156,84 +259,128 @@ function parsePromptAndStyle(prompt: string, placement: string) {
     accentColor = "#E4E4E7";
     metallicColor = "#D4AF37";
     themeName = "Nero Marquina";
-  } else if (p.includes("ruby") || p.includes("rose") || p.includes("burgundy") || p.includes("wine") || p.includes("copper")) {
+  } else if (p.includes("ruby") || p.includes("rose") || p.includes("burgundy") || p.includes("wine") || p.includes("copper") || p.includes("pink")) {
     primaryColors = ["#9F1239", "#BE123C", "#E11D48", "#FB7185", "#881337"];
     accentColor = "#FDA4AF";
     metallicColor = "#FFD700";
     themeName = "Venetian Ruby";
-  } else if (p.includes("sea-glass") || p.includes("wave") || p.includes("ocean") || p.includes("aqua") || p.includes("teal") || p.includes("cyan") || p.includes("water") || p.includes("ripple")) {
-    primaryColors = ["#48CAE4", "#0096C7", "#0077B6", "#90E0EF", "#00B4D8"];
-    accentColor = "#CAF0F8";
-    metallicColor = "#A0E7E5";
-    themeName = "Iridescent Sea-Glass";
   }
 
-  // 2. Motif / Pattern Detection
-  let motif = "wave";
-  if (p.includes("medallion") || p.includes("sunburst") || p.includes("radial") || p.includes("rosette") || placement === "Floor Medallion") {
-    motif = "medallion";
-  } else if (p.includes("zellige") || p.includes("moroccan") || p.includes("star") || p.includes("arabesque")) {
-    motif = "zellige";
-  } else if (p.includes("herringbone") || p.includes("chevron")) {
-    motif = "herringbone";
-  } else if (p.includes("wave") || p.includes("flowing") || p.includes("ocean") || p.includes("water") || p.includes("ripple") || p.includes("sea")) {
-    motif = "wave";
-  } else if (p.includes("geometric") || p.includes("diamond")) {
-    motif = "geometric";
-  } else {
-    motif = placement === "Floor Medallion" ? "medallion" : "wave";
-  }
-
-  return { primaryColors, accentColor, metallicColor, themeName, motif };
+  const tileShape = getFallbackTileShape(p, placement);
+  return {
+    themeName,
+    tileShape,
+    material: "glass",
+    primaryColors,
+    accentColor,
+    metallicColor,
+  };
 }
 
 function generateArtisanMosaicSvg(
   width: number,
   height: number,
-  styles: ReturnType<typeof parsePromptAndStyle>,
+  styles: MosaicStyleSpec,
   finish: string,
   groutHex: string,
   groutBorder: string
 ): string {
-  const { primaryColors, accentColor, metallicColor, motif } = styles;
+  const { primaryColors, accentColor, metallicColor, tileShape } = styles;
   const isHighGloss = finish === "Polished High-Gloss";
   const isTumbled = finish === "Antiqued Tumbled";
-  const rx = isTumbled ? 4 : 1.5;
+  const rx = isTumbled ? 4 : 2;
 
   const elements: string[] = [];
 
-  if (motif === "wave") {
-    // Flowing sinusoidal currents of hand-cut tesserae chips (Opus Vermiculatum)
-    const tileSize = Math.max(16, Math.min(26, Math.round(width / 35)));
-    const waveFreq = 0.012;
-    const waveAmp = 28;
+  if (tileShape === "star_and_cross") {
+    // Authentic Moroccan Zellige Interlocking 8-Point Stars & Crosses
+    const s = Math.max(34, Math.min(52, Math.round(width / 22)));
+    for (let y = -s; y < height + s * 2; y += s) {
+      const row = Math.floor(y / s);
+      for (let x = -s; x < width + s * 2; x += s) {
+        const col = Math.floor(x / s);
+        const isStar = (row + col) % 2 === 0;
+        const cx = x + s / 2;
+        const cy = y + s / 2;
 
-    for (let y = -tileSize; y < height + tileSize * 2; y += tileSize) {
-      const rowIdx = Math.floor(y / tileSize);
-      for (let x = -tileSize; x < width + tileSize; x += tileSize) {
-        const waveOffset = Math.sin(x * waveFreq + rowIdx * 0.35) * waveAmp;
-        const curY = y + waveOffset;
-        if (curY < -tileSize || curY > height + tileSize) continue;
-
-        const bandIdx = Math.abs(Math.floor((y + waveOffset * 1.4) / 40)) % primaryColors.length;
-        const isAccent = (x * 7 + y * 3) % 19 === 0;
-        const col = isAccent ? metallicColor : primaryColors[bandIdx];
-
-        // Hand-cut organic jitter
-        const jx = ((x * 17 + y * 11) % 5) - 2;
-        const jy = ((x * 11 + y * 17) % 5) - 2;
-        const w = tileSize - 3.2;
-        const h = tileSize - 3.2;
-
+        if (isStar) {
+          const starColor = primaryColors[0] || "#008080";
+          const starSize = s * 0.7;
+          elements.push(`
+            <rect x="${cx - starSize / 2}" y="${cy - starSize / 2}" width="${starSize}" height="${starSize}" rx="${rx}"
+                  fill="${starColor}" stroke="${groutBorder}" stroke-width="0.8" />
+            <rect x="${cx - starSize / 2}" y="${cy - starSize / 2}" width="${starSize}" height="${starSize}" rx="${rx}"
+                  transform="rotate(45 ${cx} ${cy})" fill="${starColor}" stroke="${groutBorder}" stroke-width="0.8" />
+            <circle cx="${cx}" cy="${cy}" r="2.8" fill="${metallicColor}" opacity="0.9" />
+            ${isHighGloss ? `<circle cx="${cx - 3}" cy="${cy - 3}" r="1.4" fill="#FFFFFF" opacity="0.5" />` : ''}
+          `);
+        } else {
+          const crossColor = primaryColors[1] || primaryColors[0] || "#1C1C1C";
+          const barLong = s * 0.74;
+          const barShort = s * 0.28;
+          elements.push(`
+            <rect x="${cx - barShort / 2}" y="${cy - barLong / 2}" width="${barShort}" height="${barLong}" rx="${rx}"
+                  fill="${crossColor}" stroke="${groutBorder}" stroke-width="0.8" />
+            <rect x="${cx - barLong / 2}" y="${cy - barShort / 2}" width="${barLong}" height="${barShort}" rx="${rx}"
+                  fill="${crossColor}" stroke="${groutBorder}" stroke-width="0.8" />
+          `);
+        }
+      }
+    }
+  } else if (tileShape === "fish_scale") {
+    // Scalloped Fan / Fish Scale Mosaic
+    const r = Math.max(22, Math.min(36, Math.round(width / 26)));
+    for (let y = -r; y < height + r * 2; y += r * 0.72) {
+      const row = Math.floor(y / (r * 0.72));
+      const xOffset = (row % 2 === 0) ? 0 : r;
+      for (let x = -r + xOffset; x < width + r * 2; x += r * 2) {
+        const colIdx = Math.abs((Math.floor(x / r) * 7 + row * 11)) % primaryColors.length;
+        const color = primaryColors[colIdx];
         elements.push(`
-          <rect x="${x + jx}" y="${curY + jy}" width="${w}" height="${h}" rx="${rx}"
-                fill="${col}" stroke="${groutBorder}" stroke-width="0.75" />
-          ${isHighGloss ? `<circle cx="${x + jx + 4}" cy="${curY + jy + 4}" r="1.8" fill="#FFFFFF" opacity="0.45" />` : ''}
+          <path d="M ${x} ${y + r} C ${x} ${y} ${x + r} ${y - r * 0.3} ${x + r} ${y - r * 0.3} C ${x + r} ${y - r * 0.3} ${x + r * 2} ${y} ${x + r * 2} ${y + r} Z"
+                fill="${color}" stroke="${groutBorder}" stroke-width="0.85" />
+          ${isHighGloss ? `<circle cx="${x + r}" cy="${y + r * 0.3}" r="2" fill="#FFFFFF" opacity="0.4" />` : ''}
         `);
       }
     }
-  } else if (motif === "medallion") {
-    // Concentric radial opus sectile rings
+  } else if (tileShape === "hexagon") {
+    // Honeycomb Hexagonal Tesserae
+    const r = Math.max(16, Math.min(28, Math.round(width / 32)));
+    const w = Math.sqrt(3) * r;
+    for (let y = -r; y < height + r * 2; y += r * 1.5) {
+      const row = Math.floor(y / (r * 1.5));
+      const xOffset = (row % 2 === 0) ? 0 : w / 2;
+      for (let x = -w + xOffset; x < width + w * 2; x += w) {
+        const pts: string[] = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3;
+          pts.push(`${(x + r * Math.sin(angle)).toFixed(1)},${(y + r * Math.cos(angle)).toFixed(1)}`);
+        }
+        const colIdx = Math.abs((row * 7 + Math.floor(x / w) * 13)) % primaryColors.length;
+        elements.push(`
+          <polygon points="${pts.join(' ')}" fill="${primaryColors[colIdx]}" stroke="${groutBorder}" stroke-width="0.85" />
+          ${isHighGloss ? `<circle cx="${x}" cy="${y}" r="2" fill="#FFFFFF" opacity="0.35" />` : ''}
+        `);
+      }
+    }
+  } else if (tileShape === "herringbone") {
+    // 45-Degree Angled Architectural Herringbone Parquetry
+    const tw = Math.max(12, Math.min(20, Math.round(width / 42)));
+    const tl = tw * 3;
+    for (let y = -tl; y < height + tl * 2; y += tl * 0.8) {
+      for (let x = -tl; x < width + tl * 2; x += tl * 0.8) {
+        const col1 = primaryColors[Math.abs(Math.floor(x / tl) + Math.floor(y / tl)) % primaryColors.length];
+        const col2 = primaryColors[Math.abs(Math.floor(x / tl) + Math.floor(y / tl) + 1) % primaryColors.length];
+        elements.push(`
+          <rect x="${x}" y="${y}" width="${tw}" height="${tl}" rx="${rx}" transform="rotate(45 ${x} ${y})"
+                fill="${col1}" stroke="${groutBorder}" stroke-width="0.75" />
+          <rect x="${x + tw * 1.5}" y="${y}" width="${tw}" height="${tl}" rx="${rx}" transform="rotate(-45 ${x + tw * 1.5} ${y})"
+                fill="${col2}" stroke="${groutBorder}" stroke-width="0.75" />
+        `);
+      }
+    }
+  } else if (tileShape === "medallion") {
+    // Concentric Radial Opus Sectile Rings & Sunburst
     const cx = width / 2;
     const cy = height / 2;
     const maxRadius = Math.max(width, height) * 0.75;
@@ -265,42 +412,63 @@ function generateArtisanMosaicSvg(
         `);
       }
     }
-  } else if (motif === "zellige") {
-    // Moroccan geometric 8-point stars and interlocking tesserae
-    const tileSize = Math.max(22, Math.min(32, Math.round(width / 25)));
-    for (let y = 0; y < height + tileSize; y += tileSize) {
-      const row = Math.floor(y / tileSize);
-      for (let x = 0; x < width + tileSize; x += tileSize) {
-        const col = Math.floor(x / tileSize);
-        const isStarCenter = (row + col) % 2 === 0;
-        const color = isStarCenter ? primaryColors[0] : primaryColors[(row + col) % primaryColors.length];
+  } else if (tileShape === "subway") {
+    // Classic Staggered Architectural Brick Tiles
+    const tileW = Math.max(26, Math.min(48, Math.round(width / 24)));
+    const tileH = Math.round(tileW * 0.5);
 
+    for (let y = -tileH; y < height + tileH * 2; y += tileH) {
+      const row = Math.floor(y / tileH);
+      const offsetX = (row % 2 === 0) ? 0 : tileW / 2;
+      for (let x = -tileW; x < width + tileW; x += tileW) {
+        const colIdx = Math.abs((Math.floor(x / tileW) * 5 + row * 11)) % primaryColors.length;
         elements.push(`
-          <rect x="${x + 2}" y="${y + 2}" width="${tileSize - 4}" height="${tileSize - 4}" rx="${rx}"
-                transform="rotate(${isStarCenter ? 45 : 0} ${x + tileSize / 2} ${y + tileSize / 2})"
-                fill="${color}" stroke="${groutBorder}" stroke-width="0.9" />
-          ${isStarCenter ? `<circle cx="${x + tileSize / 2}" cy="${y + tileSize / 2}" r="2.8" fill="${metallicColor}" opacity="0.9" />` : ''}
+          <rect x="${x + offsetX + 1.5}" y="${y + 1.5}" width="${tileW - 3}" height="${tileH - 3}" rx="${rx}"
+                fill="${primaryColors[colIdx]}" stroke="${groutBorder}" stroke-width="0.8" />
+          ${isHighGloss ? `<line x1="${x + offsetX + 4}" y1="${y + 4}" x2="${x + offsetX + tileW - 6}" y2="${y + 4}" stroke="#FFFFFF" stroke-width="1.2" opacity="0.35" />` : ''}
+        `);
+      }
+    }
+  } else if (tileShape === "diamond") {
+    // Tilted Diamond / Rhombic Jewel Tiles
+    const s = Math.max(22, Math.min(36, Math.round(width / 28)));
+    for (let y = -s; y < height + s * 2; y += s) {
+      const row = Math.floor(y / s);
+      const xOffset = (row % 2 === 0) ? 0 : s / 2;
+      for (let x = -s + xOffset; x < width + s * 2; x += s) {
+        const colIdx = Math.abs((Math.floor(x / s) * 3 + row * 7)) % primaryColors.length;
+        elements.push(`
+          <rect x="${x}" y="${y}" width="${s * 0.7}" height="${s * 0.7}" rx="${rx}" transform="rotate(45 ${x} ${y})"
+                fill="${primaryColors[colIdx]}" stroke="${groutBorder}" stroke-width="0.8" />
         `);
       }
     }
   } else {
-    // Classic staggered Opus Tessellatum brickwork
-    const tileW = Math.max(18, Math.min(28, Math.round(width / 32)));
-    const tileH = Math.max(18, Math.min(28, Math.round(width / 32)));
+    // Flowing Sinusoidal Wave Currents (Opus Vermiculatum)
+    const tileSize = Math.max(16, Math.min(26, Math.round(width / 35)));
+    const waveFreq = 0.012;
+    const waveAmp = 28;
 
-    for (let y = 0; y < height + tileH; y += tileH) {
-      const row = Math.floor(y / tileH);
-      const offsetX = (row % 2 === 0) ? 0 : tileW / 2;
-      for (let x = -tileW; x < width + tileW; x += tileW) {
-        const colIdx = Math.abs((x * 5 + y * 13)) % primaryColors.length;
-        const color = primaryColors[colIdx];
-        const isAccent = (x + y) % 8 === 0;
-        const finalColor = isAccent ? metallicColor : color;
+    for (let y = -tileSize; y < height + tileSize * 2; y += tileSize) {
+      const rowIdx = Math.floor(y / tileSize);
+      for (let x = -tileSize; x < width + tileSize; x += tileSize) {
+        const waveOffset = Math.sin(x * waveFreq + rowIdx * 0.35) * waveAmp;
+        const curY = y + waveOffset;
+        if (curY < -tileSize || curY > height + tileSize) continue;
+
+        const bandIdx = Math.abs(Math.floor((y + waveOffset * 1.4) / 40)) % primaryColors.length;
+        const isAccent = (x * 7 + y * 3) % 19 === 0;
+        const col = isAccent ? metallicColor : primaryColors[bandIdx];
+
+        const jx = ((x * 17 + y * 11) % 5) - 2;
+        const jy = ((x * 11 + y * 17) % 5) - 2;
+        const w = tileSize - 3.2;
+        const h = tileSize - 3.2;
 
         elements.push(`
-          <rect x="${x + offsetX + 1.5}" y="${y + 1.5}" width="${tileW - 3}" height="${tileH - 3}" rx="${rx}"
-                fill="${finalColor}" stroke="${groutBorder}" stroke-width="0.75" />
-          ${isHighGloss ? `<circle cx="${x + offsetX + 5}" cy="${y + 5}" r="1.8" fill="#FFF" opacity="0.4" />` : ''}
+          <rect x="${x + jx}" y="${curY + jy}" width="${w}" height="${h}" rx="${rx}"
+                fill="${col}" stroke="${groutBorder}" stroke-width="0.75" />
+          ${isHighGloss ? `<circle cx="${x + jx + 4}" cy="${curY + jy + 4}" r="1.8" fill="#FFFFFF" opacity="0.45" />` : ''}
         `);
       }
     }
@@ -358,7 +526,7 @@ async function compositeMosaicOntoRoomPhoto(params: {
     const grout = groutConfig.hexColor;
     const groutBorder = groutConfig.borderColor;
 
-    const styles = parsePromptAndStyle(params.prompt, params.placement);
+    const styles = await parseDesignPromptWithAI(params.prompt, params.placement);
 
     // =========================================================================
     // CASE A: User painted an inpainting mask (strict mask-guided composite)
@@ -744,12 +912,12 @@ export async function processMosaicGeneration(
   if (!resultImageUrl && !isRoomInpainting) {
     try {
       const sharp = (await import("sharp")).default;
-      const styles = parsePromptAndStyle(prompt, placement);
+      const styles = await parseDesignPromptWithAI(prompt, placement);
       const groutConfig = GROUT_ARCHITECTURAL_SPECS[groutColor] || GROUT_ARCHITECTURAL_SPECS["Champagne Gold"];
       const svgArt = generateArtisanMosaicSvg(1024, 1024, styles, finish, groutConfig.hexColor, groutConfig.borderColor);
       const artBuf = await sharp(Buffer.from(svgArt)).jpeg({ quality: 92 }).toBuffer();
       resultImageUrl = `data:image/jpeg;base64,${artBuf.toString("base64")}`;
-      console.log(`[MOSAIC PIPELINE] 🎨 Synthesized 1024x1024 bespoke artisan mosaic render for '${styles.themeName}' (${styles.motif})!`);
+      console.log(`[MOSAIC PIPELINE] 🎨 Synthesized 1024x1024 bespoke artisan mosaic render for '${styles.themeName}' (${styles.tileShape})!`);
     } catch (artErr) {
       console.warn("[MOSAIC PIPELINE SYNTHESIS NOTICE]:", artErr);
     }

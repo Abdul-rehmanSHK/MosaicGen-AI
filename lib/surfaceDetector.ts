@@ -97,18 +97,20 @@ export async function detectArchitecturalSurface(params: {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (apiKey) {
-    // Try Gemini 3.5 Flash first, then fallback to Gemini 3.1 Flash Lite
-    const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
+    // Try Gemini 3.1 Flash Lite (active fast multimodal vision) then Gemini 2.5 Flash Lite
+    const modelsToTry = ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite"];
 
     const visionPrompt = `You are an elite architectural computer vision specialist for luxury mosaic design.
-Your task is to detect and segment the target architectural surface: "${targetSurface}".
+Your task is to detect and segment the target architectural surface: "${targetSurface}" within the provided interior or exterior room photo.
+${designPrompt ? `The client's mosaic design concept is: "${designPrompt}". Orient and size the bounding area appropriately for this design.` : ""}
 
 Domain knowledge & surface detection instructions:
 - Target surface: "${targetSurface}".
 ${knownDefinition ? `- Specific guidance: ${knownDefinition.guidance}` : `- Analyze the room composition and identify the exact surface corresponding to "${targetSurface}".`}
 - You must locate the bounding area where a mosaic inlay would naturally be installed on this surface.
-- Output normalized coordinates in the scale 0 to 1000:
-  - box_2d: [ymin, xmin, ymax, xmax] where (0,0) is top-left and (1000,1000) is bottom-right.
+- IMPORTANT: Coordinates MUST be strictly confined within the boundaries of the photograph.
+- Output normalized coordinates in the scale 0 to 1000 (0 is top/left, 1000 is bottom/right):
+  - box_2d: [ymin, xmin, ymax, xmax] where all values are between 0 and 1000.
   - polygon: 4 to 8 normalized [x, y] vertex coordinates outlining the perspective plane of the surface.
 
 Return ONLY a valid JSON object with the following schema:
@@ -161,17 +163,31 @@ If the exact surface cannot be found, find the most logical architectural surfac
           if (text) {
             const parsed = JSON.parse(text);
             if (Array.isArray(parsed.box_2d) && parsed.box_2d.length === 4) {
+              const clampedBox: [number, number, number, number] = [
+                Math.max(0, Math.min(980, Math.round(Number(parsed.box_2d[0]) || 0))),
+                Math.max(0, Math.min(980, Math.round(Number(parsed.box_2d[1]) || 0))),
+                Math.max(20, Math.min(1000, Math.round(Number(parsed.box_2d[2]) || 1000))),
+                Math.max(20, Math.min(1000, Math.round(Number(parsed.box_2d[3]) || 1000))),
+              ];
+
+              const clampedPolygon = Array.isArray(parsed.polygon)
+                ? parsed.polygon.map((pt: any) => [
+                    Math.max(0, Math.min(1000, Math.round(Number(pt[0]) || 0))),
+                    Math.max(0, Math.min(1000, Math.round(Number(pt[1]) || 0))),
+                  ] as [number, number])
+                : [
+                    [clampedBox[1], clampedBox[0]] as [number, number],
+                    [clampedBox[3], clampedBox[0]] as [number, number],
+                    [clampedBox[3], clampedBox[2]] as [number, number],
+                    [clampedBox[1], clampedBox[2]] as [number, number],
+                  ];
+
               console.log(`[AI SURFACE DETECTOR] ✅ Successfully detected "${targetSurface}" with ${model}! Confidence: ${parsed.confidence || 0.9}`);
               return {
                 detected: Boolean(parsed.detected ?? true),
                 surfaceName: parsed.surfaceName || targetSurface,
-                box_2d: parsed.box_2d,
-                polygon: parsed.polygon || [
-                  [parsed.box_2d[1], parsed.box_2d[0]],
-                  [parsed.box_2d[3], parsed.box_2d[0]],
-                  [parsed.box_2d[3], parsed.box_2d[2]],
-                  [parsed.box_2d[1], parsed.box_2d[2]]
-                ],
+                box_2d: clampedBox,
+                polygon: clampedPolygon,
                 description: parsed.description || `Detected ${targetSurface} surface plane in room photo`,
                 confidence: Number(parsed.confidence) || 0.92,
                 perspectiveType: parsed.perspectiveType || perspectiveType,

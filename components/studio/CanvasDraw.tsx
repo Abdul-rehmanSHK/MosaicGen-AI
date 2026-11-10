@@ -35,14 +35,35 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
   const [backgroundImageElement, setBackgroundImageElement] = useState<HTMLImageElement | null>(null);
   const [hasMaskStrokes, setHasMaskStrokes] = useState<boolean>(false);
 
-  // Initialize canvas resolution
+  // Initialize canvas resolution and aspect ratio matching uploaded space photo
   const updateCanvasSize = () => {
-    if (containerRef.current && imageCanvasRef.current && drawCanvasRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const width = rect.width > 0 ? Math.round(rect.width) : 800;
-      const height = rect.height > 0 ? Math.round(rect.height) : Math.max(Math.round(width * 0.65), 320);
-
+    if (imageCanvasRef.current && drawCanvasRef.current) {
       const drawCanvas = drawCanvasRef.current;
+      const imageCanvas = imageCanvasRef.current;
+
+      let width = 800;
+      let height = 500;
+
+      if (backgroundImageElement && backgroundImageElement.naturalWidth > 0 && backgroundImageElement.naturalHeight > 0) {
+        // High-resolution image canvas matching EXACT natural dimensions of the uploaded photo
+        const natW = backgroundImageElement.naturalWidth;
+        const natH = backgroundImageElement.naturalHeight;
+        // Clamp maximum canvas internal dimension to 1600px for optimal memory and silky smooth drawing
+        const maxDim = 1600;
+        if (natW > maxDim || natH > maxDim) {
+          const scale = maxDim / Math.max(natW, natH);
+          width = Math.round(natW * scale);
+          height = Math.round(natH * scale);
+        } else {
+          width = natW;
+          height = natH;
+        }
+      } else if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        width = rect.width > 0 ? Math.round(rect.width) : 800;
+        height = Math.round(width * 0.625);
+      }
+
       let tempCanvas: HTMLCanvasElement | null = null;
       if (hasMaskStrokes && drawCanvas.width > 0 && drawCanvas.height > 0) {
         tempCanvas = document.createElement("canvas");
@@ -52,8 +73,8 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
         tempCtx?.drawImage(drawCanvas, 0, 0);
       }
 
-      imageCanvasRef.current.width = width;
-      imageCanvasRef.current.height = height;
+      imageCanvas.width = width;
+      imageCanvas.height = height;
       drawCanvas.width = width;
       drawCanvas.height = height;
 
@@ -82,27 +103,8 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
     if (backgroundImageElement && backgroundImageElement.width > 0 && backgroundImageElement.height > 0) {
       try {
-        // Draw image cleanly to fit nicely within canvas without aggressive cropping or distortion
-        const hRatio = canvas.width / backgroundImageElement.width;
-        const vRatio = canvas.height / backgroundImageElement.height;
-        const ratio = Math.min(hRatio, vRatio);
-        const centerShift_x = (canvas.width - backgroundImageElement.width * ratio) / 2;
-        const centerShift_y = (canvas.height - backgroundImageElement.height * ratio) / 2;
-
-        ctx.fillStyle = "#F4F3F2";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.drawImage(
-          backgroundImageElement,
-          0,
-          0,
-          backgroundImageElement.width,
-          backgroundImageElement.height,
-          centerShift_x,
-          centerShift_y,
-          backgroundImageElement.width * ratio,
-          backgroundImageElement.height * ratio
-        );
+        // Draw image filling 100% of the canvas from corner to corner - ZERO empty sidebars, ZERO letterboxing
+        ctx.drawImage(backgroundImageElement, 0, 0, canvas.width, canvas.height);
       } catch (err) {
         console.warn("Error drawing background image onto canvas:", err);
       }
@@ -212,13 +214,14 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
       clientY = e.clientY;
     }
 
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX = canvas.width / (rect.width || 1);
+    const scaleY = canvas.height / (rect.height || 1);
 
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
-    };
+    // Strictly clamp within canvas/photo bounds
+    const x = Math.max(0, Math.min(canvas.width, (clientX - rect.left) * scaleX));
+    const y = Math.max(0, Math.min(canvas.height, (clientY - rect.top) * scaleY));
+
+    return { x, y };
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -236,8 +239,8 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
     if (mode === "draw") {
       ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = "rgba(203, 167, 65, 0.75)"; // Gold mask preview overlay
-      ctx.fillStyle = "rgba(203, 167, 65, 0.75)";
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.78)"; // Luxurious architectural gold mask overlay
+      ctx.fillStyle = "rgba(212, 175, 55, 0.78)";
       setHasMaskStrokes(true);
       if (onMaskDrawn) onMaskDrawn();
     } else {
@@ -258,7 +261,8 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
         return null;
       }
       try {
-        // Create clean binary mask canvas: pure white (#FFFFFF) on drawn strokes, pure black (#000000) on unmasked background
+        // Create clean binary mask canvas matching photo resolution 1:1
+        // Pure white (#FFFFFF) on drawn strokes, pure black (#000000) on unmasked background
         const maskCanvas = document.createElement("canvas");
         maskCanvas.width = canvas.width;
         maskCanvas.height = canvas.height;
@@ -286,7 +290,7 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
       const canvas = imageCanvasRef.current;
       if (!canvas || canvas.width <= 0 || canvas.height <= 0) return null;
       try {
-        return canvas.toDataURL("image/png");
+        return canvas.toDataURL("image/jpeg", 0.95);
       } catch (err) {
         console.warn("Input image base64 export failed:", err);
         return null;
@@ -311,19 +315,19 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
       ctx.save();
       ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "rgba(203, 167, 65, 0.72)"; // Luxurious gold mask overlay
-      ctx.strokeStyle = "rgba(235, 199, 90, 0.95)";
+      ctx.fillStyle = "rgba(212, 175, 55, 0.72)"; // Luxurious gold mask overlay
+      ctx.strokeStyle = "rgba(245, 210, 105, 0.95)";
       ctx.lineWidth = 2.5;
 
       if (polygon && polygon.length >= 3) {
         ctx.beginPath();
-        const startX = (polygon[0][0] / 1000) * canvas.width;
-        const startY = (polygon[0][1] / 1000) * canvas.height;
+        const startX = Math.max(0, Math.min(canvas.width, (polygon[0][0] / 1000) * canvas.width));
+        const startY = Math.max(0, Math.min(canvas.height, (polygon[0][1] / 1000) * canvas.height));
         ctx.moveTo(startX, startY);
 
         for (let i = 1; i < polygon.length; i++) {
-          const ptX = (polygon[i][0] / 1000) * canvas.width;
-          const ptY = (polygon[i][1] / 1000) * canvas.height;
+          const ptX = Math.max(0, Math.min(canvas.width, (polygon[i][0] / 1000) * canvas.width));
+          const ptY = Math.max(0, Math.min(canvas.height, (polygon[i][1] / 1000) * canvas.height));
           ctx.lineTo(ptX, ptY);
         }
         ctx.closePath();
@@ -331,10 +335,16 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
         ctx.stroke();
       } else if (box_2d && box_2d.length === 4) {
         const [ymin, xmin, ymax, xmax] = box_2d;
-        const x = (xmin / 1000) * canvas.width;
-        const y = (ymin / 1000) * canvas.height;
-        const w = ((xmax - xmin) / 1000) * canvas.width;
-        const h = ((ymax - ymin) / 1000) * canvas.height;
+        // Strictly clamp within photo boundaries
+        const cXmin = Math.max(0, Math.min(990, xmin));
+        const cYmin = Math.max(0, Math.min(990, ymin));
+        const cXmax = Math.max(cXmin + 10, Math.min(1000, xmax));
+        const cYmax = Math.max(cYmin + 10, Math.min(1000, ymax));
+
+        const x = (cXmin / 1000) * canvas.width;
+        const y = (cYmin / 1000) * canvas.height;
+        const w = ((cXmax - cXmin) / 1000) * canvas.width;
+        const h = ((cYmax - cYmin) / 1000) * canvas.height;
 
         ctx.beginPath();
         const radius = Math.min(12, w / 4, h / 4);
@@ -356,15 +366,15 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
   return (
     <div className="w-full flex flex-col gap-4">
       {/* Toolbar Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-obsidian-900/90 border border-gold-500/20 backdrop-blur-md">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-stone-900 border border-stone-800 text-white shadow-md">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setMode("draw")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               mode === "draw"
-                ? "bg-gold-500 text-obsidian-950 shadow-md shadow-gold-500/20"
-                : "bg-obsidian-800 text-neutral-300 hover:bg-obsidian-700"
+                ? "bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-500/20"
+                : "bg-stone-800 text-stone-300 hover:bg-stone-700"
             }`}
           >
             <Paintbrush className="w-3.5 h-3.5" /> Mask Brush
@@ -372,10 +382,10 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
           <button
             type="button"
             onClick={() => setMode("erase")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
               mode === "erase"
-                ? "bg-gold-500 text-obsidian-950 shadow-md shadow-gold-500/20"
-                : "bg-obsidian-800 text-neutral-300 hover:bg-obsidian-700"
+                ? "bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-500/20"
+                : "bg-stone-800 text-stone-300 hover:bg-stone-700"
             }`}
           >
             <Eraser className="w-3.5 h-3.5" /> Eraser
@@ -383,7 +393,7 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
           <button
             type="button"
             onClick={clearCanvas}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-obsidian-800 text-red-400 hover:bg-red-950/40 flex items-center gap-1.5 transition-all"
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-800 text-rose-300 hover:bg-rose-950/40 flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" /> Clear Mask
           </button>
@@ -391,54 +401,74 @@ export const CanvasDraw = forwardRef<CanvasDrawRef, CanvasDrawProps>(({ onImageU
 
         {/* Brush Size Slider */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-neutral-400 font-medium">Brush Size:</span>
+          <span className="text-xs text-stone-400 font-medium">Brush Size:</span>
           <input
             type="range"
             min="10"
-            max="100"
+            max="120"
             value={brushSize}
             onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="w-24 accent-gold-500 cursor-pointer"
+            className="w-24 accent-amber-500 cursor-pointer"
           />
-          <span className="text-xs font-mono text-gold-400 w-6">{brushSize}px</span>
+          <span className="text-xs font-mono text-amber-400 w-8">{brushSize}px</span>
         </div>
 
         {/* File Upload Button */}
         <div className="flex items-center gap-2">
-          <label className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gold-500/10 text-gold-300 border border-gold-500/30 hover:bg-gold-500/20 cursor-pointer flex items-center gap-1.5 transition-all">
-            <Upload className="w-3.5 h-3.5" /> Upload Room Photo
+          <label className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 cursor-pointer flex items-center gap-1.5 transition-all">
+            <Upload className="w-3.5 h-3.5 text-amber-400" /> Upload Room Photo
             <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
           </label>
         </div>
       </div>
 
+      {/* Interactive Canvas Container - Sized 1:1 to image aspect ratio */}
+      <div className="w-full flex items-center justify-center overflow-hidden py-1">
+        <div
+          ref={containerRef}
+          style={
+            backgroundImageElement && backgroundImageElement.naturalWidth > 0
+              ? {
+                  aspectRatio: `${backgroundImageElement.naturalWidth} / ${backgroundImageElement.naturalHeight}`,
+                  maxHeight: "min(62vh, 520px)",
+                  maxWidth: "100%",
+                  width: "auto",
+                }
+              : {
+                  aspectRatio: "16 / 10",
+                  maxHeight: "min(55vh, 460px)",
+                  width: "100%",
+                }
+          }
+          className="relative rounded-2xl overflow-hidden border border-amber-500/40 shadow-xl bg-stone-100 flex items-center justify-center cursor-crosshair mx-auto transition-all"
+        >
+          <canvas
+            ref={imageCanvasRef}
+            className="absolute inset-0 z-0 w-full h-full block"
+            style={{ width: "100%", height: "100%" }}
+          />
+          <canvas
+            ref={drawCanvasRef}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+            className="absolute inset-0 z-10 w-full h-full touch-none block"
+            style={{ width: "100%", height: "100%" }}
+          />
 
-      {/* Interactive Canvas Container */}
-      <div
-        ref={containerRef}
-        className="relative w-full rounded-2xl overflow-hidden border border-gold-500/30 shadow-2xl bg-obsidian-950 min-h-[380px] flex items-center justify-center cursor-crosshair"
-      >
-        <canvas ref={imageCanvasRef} className="absolute inset-0 z-0 w-full h-full object-cover" />
-        <canvas
-          ref={drawCanvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-          className="absolute inset-0 z-10 w-full h-full touch-none"
-        />
-
-        {!hasBackgroundImage && (
-          <div className="absolute z-20 pointer-events-none text-center px-4 py-3 rounded-xl bg-obsidian-950/80 backdrop-blur-md border border-gold-500/20">
-            <p className="text-sm font-semibold text-gold-300">Scratch Design Mode Active</p>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Draw your target mosaic boundary above or upload a room photo
-            </p>
-          </div>
-        )}
+          {!hasBackgroundImage && (
+            <div className="absolute z-20 pointer-events-none text-center px-4 py-3 rounded-xl bg-stone-900/80 backdrop-blur-md border border-amber-500/30 text-white">
+              <p className="text-sm font-semibold text-amber-300">Scratch Design Mode Active</p>
+              <p className="text-xs text-stone-300 mt-0.5">
+                Draw your target mosaic boundary above or upload a room photo
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
