@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       finish,
       groutColor,
       surfaceDetection,
+      finderPreferences,
       email: rawBodyEmail,
       verifiedToken: bodyVerifiedToken,
     } = validationResult.data;
@@ -240,6 +241,7 @@ export async function POST(request: Request) {
       finish,
       groutColor,
       surfaceDetection: surfaceDetection || undefined,
+      finderPreferences: finderPreferences || undefined,
     });
 
     // -------------------------------------------------------------------------

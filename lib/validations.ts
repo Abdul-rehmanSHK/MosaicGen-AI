@@ -72,6 +72,16 @@ export const AIGenerationRequestSchema = z.object({
     .optional()
     .nullable(),
 
+  finderPreferences: z
+    .object({
+      style: z.string().optional(),
+      shape: z.string().optional(),
+      color: z.string().optional(),
+      space: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
+
   maskUrl: z
     .string()
     .url("Image mask must be a valid URL.")

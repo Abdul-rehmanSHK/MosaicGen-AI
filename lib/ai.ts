@@ -25,6 +25,12 @@ export interface GenerateMosaicParams {
     confidence?: number;
     architecturalGuideline?: string;
   };
+  finderPreferences?: {
+    style?: string;
+    shape?: string;
+    color?: string;
+    space?: string;
+  };
 }
 
 export interface GenerateMosaicResult {
@@ -131,8 +137,18 @@ export interface MosaicStyleSpec {
   metallicColor: string;
 }
 
-export async function parseDesignPromptWithAI(prompt: string, placement: string): Promise<MosaicStyleSpec> {
+export async function parseDesignPromptWithAI(
+  prompt: string,
+  placement: string,
+  finderPreferences?: { style?: string; shape?: string; color?: string; space?: string }
+): Promise<MosaicStyleSpec> {
   const p = (prompt || "").toLowerCase();
+
+  // If explicit finderPreferences are supplied, use deterministic architectural palette & shape rules directly
+  if (finderPreferences && (finderPreferences.color || finderPreferences.style || finderPreferences.shape)) {
+    return parsePromptAndStyleRuleBased(p, placement, finderPreferences);
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (apiKey) {
@@ -190,7 +206,7 @@ Return ONLY valid JSON matching this schema:
     }
   }
 
-  return parsePromptAndStyleRuleBased(p, placement);
+  return parsePromptAndStyleRuleBased(p, placement, finderPreferences);
 }
 
 function getFallbackTileShape(p: string, placement: string): MosaicStyleSpec["tileShape"] {
@@ -218,55 +234,99 @@ function getFallbackTileShape(p: string, placement: string): MosaicStyleSpec["ti
   return placement === "Floor Medallion" ? "medallion" : "wave";
 }
 
-function parsePromptAndStyleRuleBased(p: string, placement: string): MosaicStyleSpec {
+function parsePromptAndStyleRuleBased(
+  p: string,
+  placement: string,
+  finderPreferences?: { style?: string; shape?: string; color?: string; space?: string }
+): MosaicStyleSpec {
+  const colorPref = (finderPreferences?.color || "").toLowerCase();
+  const stylePref = (finderPreferences?.style || "").toLowerCase();
+  const shapePref = (finderPreferences?.shape || "").toLowerCase();
+
   let primaryColors = ["#48CAE4", "#0096C7", "#0077B6", "#90E0EF", "#00B4D8"];
   let accentColor = "#CAF0F8";
   let metallicColor = "#A0E7E5";
   let themeName = "Iridescent Sea-Glass";
 
-  if ((p.includes("teal") || p.includes("turquoise")) && (p.includes("black") || p.includes("noir") || p.includes("dark"))) {
-    primaryColors = ["#008080", "#18181B", "#0A5C5C", "#27272A", "#00A896"];
+  // Priority color evaluation: check specific color palettes before checking generic words like "gold"
+  if (colorPref.includes("black") || p.includes("black color") || p.includes("nero") || p.includes("marquina") || (p.includes("black") && !p.includes("gold color"))) {
+    primaryColors = ["#141416", "#1E1E22", "#2B2B30", "#383840", "#454550"];
+    accentColor = "#FFFFFF";
+    metallicColor = "#B0B0B8";
+    themeName = "Nero Marquina & Obsidian Noir";
+  } else if (colorPref.includes("white") || p.includes("white color") || p.includes("thassos") || p.includes("carrara")) {
+    primaryColors = ["#FFFFFF", "#F8F9FA", "#EDEFEF", "#DDE0E2", "#CBD0D4"];
     accentColor = "#D4AF37";
     metallicColor = "#E5C378";
-    themeName = "Teal & Noir Riad";
-  } else if (p.includes("teal") || p.includes("turquoise") || p.includes("cyan")) {
-    primaryColors = ["#008080", "#009688", "#00695C", "#26A69A", "#80CBC4"];
-    accentColor = "#D4AF37";
-    metallicColor = "#FFD700";
-    themeName = "Mediterranean Teal";
-  } else if (p.includes("zellige") || p.includes("moroccan") || p.includes("terracotta") || p.includes("saffron") || p.includes("marrakech")) {
-    primaryColors = ["#C86D51", "#E76F51", "#F4A261", "#E9C46A", "#264653"];
-    accentColor = "#2A9D8F";
-    metallicColor = "#E9C46A";
-    themeName = "Moroccan Terracotta";
-  } else if (p.includes("gold") || p.includes("calacatta") || p.includes("brass") || p.includes("sunburst") || p.includes("baroque")) {
-    primaryColors = ["#D4AF37", "#F3E5AB", "#C5A059", "#B8860B", "#FDFBF7"];
-    accentColor = "#996515";
-    metallicColor = "#FFD700";
-    themeName = "Calacatta Gold";
-  } else if (p.includes("emerald") || p.includes("botanical") || p.includes("jade") || p.includes("forest") || p.includes("green")) {
-    primaryColors = ["#1B4D3E", "#2E8B57", "#52796F", "#354F52", "#84A98C"];
-    accentColor = "#D4AF37";
-    metallicColor = "#C5A059";
-    themeName = "Emerald Botanical";
-  } else if (p.includes("lapis") || p.includes("blue") || p.includes("azure") || p.includes("cobalt") || p.includes("navy") || p.includes("sapphire")) {
-    primaryColors = ["#1E3A8A", "#1D4ED8", "#2563EB", "#3B82F6", "#60A5FA"];
+    themeName = "Pure Thassos & Carrara White";
+  } else if (colorPref.includes("silver") || p.includes("silver color") || p.includes("platinum")) {
+    primaryColors = ["#2B2D42", "#8D99AE", "#EDF2F4", "#CBD5E1", "#94A3B8"];
+    accentColor = "#FFFFFF";
+    metallicColor = "#E5E4E2";
+    themeName = "Platinum Silver & Ice Smalti";
+  } else if (colorPref.includes("blue") || p.includes("blue color") || p.includes("lapis") || p.includes("azure") || p.includes("cobalt") || p.includes("navy")) {
+    primaryColors = ["#0A2540", "#1E3A8A", "#2563EB", "#60A5FA", "#BFDBFE"];
     accentColor = "#D4AF37";
     metallicColor = "#F3E5AB";
-    themeName = "Lapis Lazuli";
-  } else if (p.includes("noir") || p.includes("black") || p.includes("charcoal") || p.includes("marquina") || p.includes("monochrome") || p.includes("slate")) {
-    primaryColors = ["#18181B", "#27272A", "#3F3F46", "#F4F4F5", "#A1A1AA"];
-    accentColor = "#E4E4E7";
-    metallicColor = "#D4AF37";
-    themeName = "Nero Marquina";
-  } else if (p.includes("ruby") || p.includes("rose") || p.includes("burgundy") || p.includes("wine") || p.includes("copper") || p.includes("pink")) {
-    primaryColors = ["#9F1239", "#BE123C", "#E11D48", "#FB7185", "#881337"];
-    accentColor = "#FDA4AF";
+    themeName = "Lapis Lazuli & Azure Smalti";
+  } else if (colorPref.includes("teal") || p.includes("teal color") || p.includes("turquoise") || p.includes("sea-glass")) {
+    primaryColors = ["#005F73", "#0A9396", "#94D2BD", "#008080", "#E9D8A6"];
+    accentColor = "#E9D8A6";
+    metallicColor = "#A0E7E5";
+    themeName = "Iridescent Sea-Glass & Teal";
+  } else if (colorPref.includes("green") || p.includes("green color") || p.includes("emerald") || p.includes("jade") || p.includes("botanical")) {
+    primaryColors = ["#1B4D3E", "#2D6A4F", "#40916C", "#52B788", "#74C69D"];
+    accentColor = "#D4AF37";
+    metallicColor = "#C5A059";
+    themeName = "Emerald Botanical & Jade";
+  } else if (colorPref.includes("purple") || p.includes("purple color") || p.includes("amethyst") || p.includes("byzantine")) {
+    primaryColors = ["#240046", "#3C096C", "#5A189A", "#7B2CBF", "#9D4EDD"];
+    accentColor = "#D4AF37";
+    metallicColor = "#E0AAFF";
+    themeName = "Byzantine Royal Amethyst";
+  } else if (colorPref.includes("pink") || p.includes("pink color") || p.includes("rose") || p.includes("coral") || p.includes("ruby")) {
+    primaryColors = ["#9F1239", "#BE123C", "#E11D48", "#FB7185", "#FDA4AF"];
+    accentColor = "#FFE4E6";
     metallicColor = "#FFD700";
-    themeName = "Venetian Ruby";
+    themeName = "Venetian Rose & Rose Quartz";
+  } else if (colorPref.includes("yellow") || p.includes("yellow color") || p.includes("amber") || p.includes("ochre")) {
+    primaryColors = ["#D4A73C", "#E9C46A", "#F4A261", "#F6BD60", "#FFF3B0"];
+    accentColor = "#996515";
+    metallicColor = "#FFD700";
+    themeName = "Amber Sunburst & Tuscan Ochre";
+  } else if (colorPref.includes("earth") || colorPref.includes("terracotta") || p.includes("terracotta") || p.includes("earth color") || p.includes("sienna") || p.includes("marrakech")) {
+    primaryColors = ["#8B4513", "#A8633F", "#C86D51", "#E76F51", "#F4A261"];
+    accentColor = "#264653";
+    metallicColor = "#E9C46A";
+    themeName = "Moroccan Terracotta & Sienna";
+  } else if (colorPref.includes("gold") || p.includes("gold color") || p.includes("calacatta gold")) {
+    primaryColors = ["#D4AF37", "#C5A059", "#F3E5AB", "#B8860B", "#FDFBF7"];
+    accentColor = "#996515";
+    metallicColor = "#FFD700";
+    themeName = "Calacatta Gold & 24k Inlay";
+  } else if (colorPref.includes("multicolor") || p.includes("multicolor")) {
+    primaryColors = ["#005F73", "#0A9396", "#94D2BD", "#E9D8A6", "#EE9B00", "#CA6702", "#BB3E03"];
+    accentColor = "#D4AF37";
+    metallicColor = "#FFD700";
+    themeName = "Mediterranean Multi-Chromatic";
   }
 
-  const tileShape = getFallbackTileShape(p, placement);
+  // Determine architectural tile shape
+  let tileShape: MosaicStyleSpec["tileShape"] = "wave";
+  if (shapePref.includes("round") || p.includes("round geometric") || placement === "Floor Medallion" || p.includes("medallion")) {
+    tileShape = "medallion";
+  } else if (stylePref.includes("geometric") || p.includes("geometric aesthetic") || p.includes("zellige") || p.includes("star")) {
+    tileShape = "star_and_cross";
+  } else if (stylePref.includes("floral") || p.includes("floral aesthetic") || p.includes("petal") || p.includes("fish")) {
+    tileShape = "fish_scale";
+  } else if (stylePref.includes("animal") || p.includes("wildlife")) {
+    tileShape = "hexagon";
+  } else if (stylePref.includes("abstract") || p.includes("abstract aesthetic")) {
+    tileShape = shapePref.includes("portrait") ? "diamond" : "wave";
+  } else {
+    tileShape = getFallbackTileShape(p, placement);
+  }
+
   return {
     themeName,
     tileShape,
@@ -908,16 +968,35 @@ export async function processMosaicGeneration(
     }
   }
 
-  // 5. From-Scratch Artisan Mosaic Generator: When no photo uploaded, synthesize high-resolution 1024x1024 artisan mosaic artwork
+  // 5. From-Scratch Artisan Mosaic Generator: When no photo uploaded, synthesize high-resolution artisan mosaic artwork
   if (!resultImageUrl && !isRoomInpainting) {
     try {
       const sharp = (await import("sharp")).default;
-      const styles = await parseDesignPromptWithAI(prompt, placement);
-      const groutConfig = GROUT_ARCHITECTURAL_SPECS[groutColor] || GROUT_ARCHITECTURAL_SPECS["Champagne Gold"];
-      const svgArt = generateArtisanMosaicSvg(1024, 1024, styles, finish, groutConfig.hexColor, groutConfig.borderColor);
+      const styles = await parseDesignPromptWithAI(prompt, placement, params.finderPreferences);
+
+      // Determine canvas aspect ratio & resolution based on requested shape
+      let canvasW = 1024;
+      let canvasH = 1024;
+      const shapeStr = (params.finderPreferences?.shape || "").toLowerCase();
+      const pLower = prompt.toLowerCase();
+
+      if (shapeStr.includes("landscape") || pLower.includes("landscape geometric")) {
+        canvasW = 1200;
+        canvasH = 750;
+      } else if (shapeStr.includes("portrait") || pLower.includes("portrait geometric")) {
+        canvasW = 750;
+        canvasH = 1200;
+      }
+
+      const isBlackPalette = styles.primaryColors[0] === "#141416";
+      const groutConfig = isBlackPalette
+        ? GROUT_ARCHITECTURAL_SPECS["Charcoal Slate"]
+        : (GROUT_ARCHITECTURAL_SPECS[groutColor] || GROUT_ARCHITECTURAL_SPECS["Champagne Gold"]);
+
+      const svgArt = generateArtisanMosaicSvg(canvasW, canvasH, styles, finish, groutConfig.hexColor, groutConfig.borderColor);
       const artBuf = await sharp(Buffer.from(svgArt)).jpeg({ quality: 92 }).toBuffer();
       resultImageUrl = `data:image/jpeg;base64,${artBuf.toString("base64")}`;
-      console.log(`[MOSAIC PIPELINE] 🎨 Synthesized 1024x1024 bespoke artisan mosaic render for '${styles.themeName}' (${styles.tileShape})!`);
+      console.log(`[MOSAIC PIPELINE] 🎨 Synthesized ${canvasW}x${canvasH} bespoke artisan mosaic render for '${styles.themeName}' (${styles.tileShape})!`);
     } catch (artErr) {
       console.warn("[MOSAIC PIPELINE SYNTHESIS NOTICE]:", artErr);
     }

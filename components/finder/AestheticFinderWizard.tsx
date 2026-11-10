@@ -344,6 +344,11 @@ function AestheticFinderContent({
   const questionnaireSteps = initialSteps.filter((s) => s.key !== "result");
   const promptSegments: string[] = [];
 
+  const rawColor = (selectedColor || answers["color"] || "").toLowerCase();
+  const rawStyle = (selectedStyle || answers["style"] || "").toLowerCase();
+  const rawShape = (selectedShape || answers["shape"] || "").toLowerCase();
+  const rawSpace = (selectedSpace || answers["space"] || "").toLowerCase();
+
   questionnaireSteps.forEach((s) => {
     const val = answers[s.key] || (s.key === "style" ? selectedStyle : s.key === "shape" ? selectedShape : s.key === "color" ? selectedColor : s.key === "space" ? selectedSpace : "");
     if (val && val !== "any" && val !== "no-preference") {
@@ -357,9 +362,48 @@ function AestheticFinderContent({
     }
   });
 
+  const colorAccentText = rawColor.includes("black")
+    ? "engineered with hand-cut Nero Marquina marble, dark obsidian smalti, and charcoal shadow depth"
+    : rawColor.includes("white")
+    ? "engineered with pure Thassos marble, Carrara veins, and luminous mother-of-pearl tesserae"
+    : rawColor.includes("gold")
+    ? "engineered with 24k gold leaf inlays, Calacatta gold veins, and polished marble"
+    : rawColor.includes("silver")
+    ? "engineered with shimmering platinum and silver smalti with cool architectural luster"
+    : rawColor.includes("teal")
+    ? "engineered with iridescent Mediterranean sea-glass, ocean teal tiles, and subtle champagne accents"
+    : rawColor.includes("blue")
+    ? "engineered with authentic Venetian smalti glass, lapis lazuli depth, and azure highlights"
+    : rawColor.includes("green")
+    ? "engineered with lush emerald stone, jade tesserae, and polished botanical depth"
+    : rawColor.includes("earth") || rawColor.includes("terracotta")
+    ? "engineered with rich terracotta tiles, sienna clay, and warm Mediterranean zellige textures"
+    : rawColor.includes("purple")
+    ? "engineered with deep Byzantine amethyst, royal purple smalti, and polished stone"
+    : rawColor.includes("pink")
+    ? "engineered with delicate rose quartz, Venetian ruby smalti, and warm polished highlights"
+    : rawColor.includes("yellow")
+    ? "engineered with amber sunburst tesserae, Tuscan ochre marble, and warm glazed tiles"
+    : rawColor.includes("multicolor")
+    ? "engineered with a vibrant chromatic mosaic of hand-cut Venetian smalti and Italian marble"
+    : "engineered with authentic Italian marble, Venetian smalti, and bespoke tesserae";
+
   const generatedVisionPrompt = promptSegments.length > 0
-    ? `Bespoke handcrafted architectural mosaic installation featuring ${promptSegments.join(", ")}, engineered with authentic Italian marble, Venetian smalti, and polished gold accents.`
-    : `Bespoke handcrafted architectural mosaic installation in authentic Italian marble and Venetian smalti with polished gold accents.`;
+    ? `Bespoke handcrafted architectural mosaic installation featuring ${promptSegments.join(", ")}, ${colorAccentText}.`
+    : `Bespoke handcrafted architectural mosaic installation, ${colorAccentText}.`;
+
+  // Determine appropriate grout and finish matching color choice
+  const tailoredGroutColor = rawColor.includes("black")
+    ? "Charcoal Slate"
+    : rawColor.includes("white")
+    ? "Pure Thassos White"
+    : rawColor.includes("silver")
+    ? "Platinum Silver"
+    : "Champagne Gold";
+
+  const tailoredFinish = rawColor.includes("black") || rawColor.includes("earth")
+    ? "Satin Honed"
+    : "Polished High-Gloss";
 
   // Execute AI Generation in-place on /finder
   const handleExecuteGeneration = async (emailOverride?: string) => {
@@ -383,7 +427,7 @@ function AestheticFinderContent({
       }, 2400);
 
       const stepTimer2 = setTimeout(() => {
-        setGenerationStep(`Applying ${colorLabel || "custom"} palette, 24k gold leaf inlays, and surface perspective...`);
+        setGenerationStep(`Applying ${colorLabel || "custom"} palette and tailored surface perspective...`);
       }, 5200);
 
       const response = await fetch("/api/ai/generate", {
@@ -396,9 +440,15 @@ function AestheticFinderContent({
         },
         body: JSON.stringify({
           prompt: generatedVisionPrompt,
-          placement: spaceLabel || "Floor Medallion",
-          finish: "Honed with Polished Gold Accents",
-          groutColor: "Charcoal Platinum",
+          placement: spaceLabel || "Wall",
+          finish: tailoredFinish,
+          groutColor: tailoredGroutColor,
+          finderPreferences: {
+            style: rawStyle || styleLabel,
+            shape: rawShape || shapeLabel,
+            color: rawColor || colorLabel,
+            space: rawSpace || spaceLabel,
+          },
           email: emailToSend,
           verifiedToken:
             typeof window !== "undefined"
