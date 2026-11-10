@@ -32,6 +32,18 @@ class InMemorySlidingWindowLimiter {
     const now = Date.now();
     const windowStart = now - this.windowMs;
 
+    // Periodic self-cleaning: prune expired identifiers to ensure zero memory leaks
+    if (this.requests.size > 500) {
+      for (const [key, times] of this.requests.entries()) {
+        const active = times.filter((t) => t > windowStart);
+        if (active.length === 0) {
+          this.requests.delete(key);
+        } else {
+          this.requests.set(key, active);
+        }
+      }
+    }
+
     const timestamps = this.requests.get(identifier) || [];
     const validTimestamps = timestamps.filter((t) => t > windowStart);
 

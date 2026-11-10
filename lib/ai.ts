@@ -573,12 +573,24 @@ async function compositeMosaicOntoRoomPhoto(params: {
     const base64Data = params.inputImageBase64.includes(",")
       ? params.inputImageBase64.split(",")[1]
       : params.inputImageBase64;
-    const imageBuffer = Buffer.from(base64Data, "base64");
-    const metadata = await sharp(imageBuffer).metadata();
-    if (!metadata.width || !metadata.height) return null;
+    const rawInputBuffer = Buffer.from(base64Data, "base64");
+    const initialMeta = await sharp(rawInputBuffer).metadata();
+    if (!initialMeta.width || !initialMeta.height) return null;
 
-    const imgWidth = metadata.width;
-    const imgHeight = metadata.height;
+    // Normalize resolution to max 1600px to ensure serverless memory safety, fast execution, and retina quality
+    let imageBuffer = rawInputBuffer;
+    let imgWidth = initialMeta.width;
+    let imgHeight = initialMeta.height;
+
+    if (imgWidth > 1600 || imgHeight > 1600) {
+      imageBuffer = await sharp(rawInputBuffer)
+        .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 92 })
+        .toBuffer();
+      const scaledMeta = await sharp(imageBuffer).metadata();
+      imgWidth = scaledMeta.width || imgWidth;
+      imgHeight = scaledMeta.height || imgHeight;
+    }
 
     const finishKey = params.finish in FINISH_ARCHITECTURAL_SPECS ? params.finish : "Polished High-Gloss";
     const isHighGloss = finishKey === "Polished High-Gloss";
@@ -811,10 +823,7 @@ export async function processMosaicGeneration(
   // 1. Top Priority for Inpainting Mask: When user draws a mask on their space photo,
   // execute pixel-perfect inpainting directly onto the masked region while preserving their room/portrait 100%!
   if (isRoomInpainting && inputImageBase64 && params.maskBase64) {
-    console.log("=======================================================");
-    console.log("[INPAINTING PIPELINE] 🎯 Processing user-drawn Inpainting Mask composite...");
-    console.log("[INPAINTING PROMPT]:", prompt);
-    console.log("=======================================================");
+    console.log(`[INPAINTING] Processing mask composite for prompt: "${prompt.slice(0, 80)}..."`);
     const composited = await compositeMosaicOntoRoomPhoto({
       inputImageBase64,
       maskBase64: params.maskBase64,
@@ -827,7 +836,7 @@ export async function processMosaicGeneration(
     });
     if (composited) {
       resultImageUrl = composited;
-      console.log("[INPAINTING SUCCESS] ✅ Inpainting mask composited seamlessly onto uploaded space photo!");
+      console.log("[INPAINTING] Mask composite completed successfully.");
     }
   }
 
@@ -835,11 +844,7 @@ export async function processMosaicGeneration(
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!resultImageUrl && geminiApiKey) {
     const geminiModel = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
-    console.log("=======================================================");
-    console.log(`[GEMINI AI PIPELINE] 🚀 Executing Gemini Image Generation (${geminiModel})...`);
-    console.log("[GEMINI INPAINTING]:", isRoomInpainting ? "YES (Room Reference Provided)" : "NO (From Scratch)");
-    console.log("[GEMINI PROMPT]:", fullPrompt);
-    console.log("=======================================================");
+    console.log(`[AI GENERATION] Dispatching to Gemini image model (${geminiModel})...`);
 
     try {
       if (geminiModel.toLowerCase().includes("imagen")) {
@@ -921,10 +926,7 @@ export async function processMosaicGeneration(
 
   // 3. Fallback to OpenAI DALL-E 3 if available and Gemini didn't return an image
   if (!resultImageUrl && openai) {
-    console.log("=======================================================");
-    console.log("[OPENAI AI PIPELINE] 🚀 Executing DALL-E 3 Image Generation...");
-    console.log("[OPENAI PROMPT]:", fullPrompt);
-    console.log("=======================================================");
+    console.log("[AI GENERATION] Dispatching to OpenAI DALL-E 3...");
     try {
       const response = await openai.images.generate({
         model: "dall-e-3",
@@ -935,10 +937,10 @@ export async function processMosaicGeneration(
 
       if (response && response.data && response.data[0]?.url) {
         resultImageUrl = response.data[0].url;
-        console.log("[OPENAI SUCCESS] ✅ Live DALL-E 3 image URL generated:", resultImageUrl);
+        console.log("[OPENAI SUCCESS] DALL-E 3 image URL generated.");
       }
     } catch (err: any) {
-      console.warn("[OPENAI WARNING] ⚠️ Quota or API limit reached:", err?.message || err);
+      console.warn("[OPENAI NOTICE] DALL-E generation unavailable:", err?.message || err);
     }
   }
 

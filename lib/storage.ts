@@ -38,7 +38,16 @@ export async function uploadImageToStorage(
     }
   }
 
-  // Fallback to data URL for immediate local preview without cloud config
-  const base64 = buffer.toString("base64");
-  return `data:${contentType};base64,${base64}`;
+  // Fallback to optimized data URL when S3 is not configured
+  try {
+    const sharp = (await import("sharp")).default;
+    const optimizedBuffer = await sharp(buffer)
+      .resize(1400, 1400, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${optimizedBuffer.toString("base64")}`;
+  } catch {
+    const base64 = buffer.toString("base64");
+    return `data:${contentType};base64,${base64}`;
+  }
 }
