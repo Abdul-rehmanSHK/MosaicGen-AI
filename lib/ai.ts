@@ -446,6 +446,7 @@ async function compositeMosaicOntoRoomPhoto(params: {
 
     // =========================================================================
     // CASE B: No mask painted - target detected surface box or placement plane
+    // Apply soft feathered margins and architectural blending to prevent harsh rectangular lines
     // =========================================================================
     let top = 0;
     let left = 0;
@@ -465,10 +466,10 @@ async function compositeMosaicOntoRoomPhoto(params: {
         width = Math.round(imgWidth * 0.64);
         height = Math.round(imgHeight * 0.42);
       } else if (params.placement === "Backsplash") {
-        top = Math.round(imgHeight * 0.32);
-        left = Math.round(imgWidth * 0.12);
-        width = Math.round(imgWidth * 0.76);
-        height = Math.round(imgHeight * 0.38);
+        top = Math.round(imgHeight * 0.28);
+        left = Math.round(imgWidth * 0.08);
+        width = Math.round(imgWidth * 0.84);
+        height = Math.round(imgHeight * 0.44);
       } else if (params.placement === "Pool") {
         top = Math.round(imgHeight * 0.44);
         left = Math.round(imgWidth * 0.10);
@@ -476,10 +477,10 @@ async function compositeMosaicOntoRoomPhoto(params: {
         height = Math.round(imgHeight * 0.50);
       } else {
         // Accent Wall / Auto-detect
-        top = Math.round(imgHeight * 0.16);
-        left = Math.round(imgWidth * 0.14);
-        width = Math.round(imgWidth * 0.72);
-        height = Math.round(imgHeight * 0.62);
+        top = Math.round(imgHeight * 0.14);
+        left = Math.round(imgWidth * 0.10);
+        width = Math.round(imgWidth * 0.80);
+        height = Math.round(imgHeight * 0.66);
       }
     }
 
@@ -509,10 +510,32 @@ async function compositeMosaicOntoRoomPhoto(params: {
       mosaicBuffer = await sharp(Buffer.from(svgPattern)).resize(width, height).png().toBuffer();
     }
 
+    // Apply soft feathered edge mask to blend seamlessly into the room photo without harsh rectangular cuts
+    const cornerRadius = Math.max(8, Math.min(24, Math.round(Math.min(width, height) * 0.05)));
+    const featherSvg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="featherSoft" cx="50%" cy="50%" r="50%">
+          <stop offset="78%" stop-color="#FFFFFF" stop-opacity="1" />
+          <stop offset="94%" stop-color="#FFFFFF" stop-opacity="0.88" />
+          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="${width}" height="${height}" rx="${cornerRadius}" fill="url(#featherSoft)" />
+    </svg>
+    `;
+    const featherMaskBuffer = await sharp(Buffer.from(featherSvg)).resize(width, height).png().toBuffer();
+
+    const featheredMosaic = await sharp(mosaicBuffer)
+      .ensureAlpha()
+      .composite([{ input: featherMaskBuffer, blend: "dest-in" }])
+      .png()
+      .toBuffer();
+
     const composited = await sharp(imageBuffer)
       .composite([
         {
-          input: mosaicBuffer,
+          input: featheredMosaic,
           top,
           left,
           blend: "over",
@@ -691,21 +714,29 @@ export async function processMosaicGeneration(
     }
   }
 
-  // 4. Space Photo Compositor: If user uploaded a room photo, composite the bespoke mosaic into the detected surface boundary
+  // 4. Space Photo Compositor: If user uploaded a distinct room photo, composite the bespoke mosaic into the detected surface boundary
   if (!resultImageUrl && isRoomInpainting && inputImageBase64) {
-    const composited = await compositeMosaicOntoRoomPhoto({
-      inputImageBase64,
-      maskBase64: params.maskBase64,
-      placement,
-      prompt,
-      finish,
-      groutColor,
-      box_2d: params.surfaceDetection?.box_2d,
-      referenceProductImageUrl: params.referenceProductImageUrl,
-    });
-    if (composited) {
-      resultImageUrl = composited;
-      console.log(`[MOSAIC PIPELINE] 🎨 Composited bespoke mosaic onto detected "${placement}" surface of user room photo!`);
+    const isSameAsReference = Boolean(
+      params.referenceProductImageUrl &&
+      params.inputImageUrl &&
+      (params.referenceProductImageUrl === params.inputImageUrl || params.referenceProductImageUrl.includes(params.inputImageUrl) || params.inputImageUrl.includes(params.referenceProductImageUrl))
+    );
+
+    if (!isSameAsReference) {
+      const composited = await compositeMosaicOntoRoomPhoto({
+        inputImageBase64,
+        maskBase64: params.maskBase64,
+        placement,
+        prompt,
+        finish,
+        groutColor,
+        box_2d: params.surfaceDetection?.box_2d,
+        referenceProductImageUrl: params.referenceProductImageUrl,
+      });
+      if (composited) {
+        resultImageUrl = composited;
+        console.log(`[MOSAIC PIPELINE] 🎨 Composited bespoke mosaic onto detected "${placement}" surface of user room photo!`);
+      }
     }
   }
 

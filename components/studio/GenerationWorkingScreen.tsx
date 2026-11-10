@@ -141,21 +141,21 @@ export function GenerationWorkingScreen({
         {/* ================= LEFT COLUMN ================= */}
         <div className="lg:col-span-7 flex flex-col justify-between gap-6 py-2">
           {result ? (
-            /* COMPLETED STATE (Matching Reference Design) */
+            /* COMPLETED STATE */
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                  <span className="text-[11px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span className="text-[11px] font-mono tracking-widest text-emerald-700 uppercase font-bold">
                     • ARTISAN RENDER COMPLETE
                   </span>
                 </div>
 
-                <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-tight leading-tight">
+                <h1 className="text-3xl sm:text-5xl font-serif font-bold text-stone-900 tracking-tight leading-tight">
                   Bring this design to life
                 </h1>
 
-                <p className="text-sm sm:text-base text-neutral-400 leading-relaxed max-w-lg">
+                <p className="text-sm sm:text-base text-stone-600 leading-relaxed max-w-lg">
                   Reimagine it, refine it, then get a quote. We&apos;ll turn your vision into a custom mosaic—from design to fabrication and installation.
                 </p>
               </div>
@@ -165,16 +165,16 @@ export function GenerationWorkingScreen({
                 <button
                   type="button"
                   onClick={onRequestQuote}
-                  className="py-3.5 px-6 rounded-xl font-serif font-bold text-sm bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 text-obsidian-950 hover:brightness-110 active:scale-[0.99] transition-all shadow-lg shadow-gold-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                  className="py-3.5 px-6 rounded-xl font-serif font-bold text-sm bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 hover:from-gold-600 hover:to-gold-500 text-stone-950 active:scale-[0.99] transition-all shadow-md shadow-gold-500/20 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <FileText className="w-4 h-4 text-obsidian-950" />
+                  <FileText className="w-4 h-4 text-stone-950" />
                   Get a quote for this
                 </button>
 
                 <button
                   type="button"
                   onClick={onBackToStudio}
-                  className="py-3.5 px-5 rounded-xl bg-obsidian-900 hover:bg-obsidian-800 text-white border border-neutral-700 hover:border-gold-500/40 text-xs font-serif font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                  className="py-3.5 px-5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-serif font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                 >
                   <RefreshCw className="w-3.5 h-3.5 text-gold-400" />
                   Reimagine
@@ -183,9 +183,9 @@ export function GenerationWorkingScreen({
                 <button
                   type="button"
                   onClick={onRequestSpecialist}
-                  className="py-3.5 px-5 rounded-xl bg-obsidian-900 hover:bg-obsidian-800 text-neutral-300 hover:text-white border border-neutral-700 hover:border-gold-500/40 text-xs font-serif font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                  className="py-3.5 px-5 rounded-xl bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-xs font-serif font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-gold-400" />
+                  <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
                   Speak to specialist
                 </button>
               </div>
@@ -194,26 +194,26 @@ export function GenerationWorkingScreen({
             /* LOADING STATE: Heading Changes One-by-One As AI Generates */
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                <span className="text-[11px] font-mono tracking-widest text-neutral-400 uppercase font-bold">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-[11px] font-mono tracking-widest text-stone-600 uppercase font-bold">
                   • WORKING
                 </span>
               </div>
 
               {/* Dynamic Animated Heading */}
-              <h1 className="text-3xl sm:text-5xl font-serif font-bold text-white tracking-tight leading-tight min-h-[3.5rem] transition-all duration-500 ease-out">
+              <h1 className="text-3xl sm:text-5xl font-serif font-bold text-stone-900 tracking-tight leading-tight min-h-[3.5rem] transition-all duration-500 ease-out">
                 {currentStage.heading}
               </h1>
 
               {/* User Prompt Quote */}
-              <p className="text-xs sm:text-sm text-neutral-300 italic font-serif leading-relaxed line-clamp-3 bg-obsidian-900/60 p-4 rounded-2xl border border-gold-500/15">
+              <p className="text-xs sm:text-sm text-stone-700 italic font-serif leading-relaxed line-clamp-3 bg-white p-4 rounded-2xl border border-gold-400/30 shadow-2xs">
                 &ldquo;{prompt}&rdquo;
               </p>
 
               {/* Live Subdetail */}
-              <div className="text-xs text-neutral-400 font-mono flex items-center gap-2 pt-1">
-                <Loader2 className="w-3.5 h-3.5 text-gold-400 animate-spin shrink-0" />
-                <span className="text-neutral-300">{currentStage.subdetail}</span>
+              <div className="text-xs text-stone-600 font-mono flex items-center gap-2 pt-1 font-medium">
+                <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                <span>{currentStage.subdetail}</span>
               </div>
             </div>
           )}
@@ -222,9 +222,9 @@ export function GenerationWorkingScreen({
         {/* ================= RIGHT COLUMN ================= */}
         <div className="lg:col-span-5 flex flex-col gap-3 justify-center">
           {result ? (
-            /* COMPLETED STATE: Generated Image + 3-Button Action Bar (Matching Reference) */
+            /* COMPLETED STATE: Generated Image + 3-Button Action Bar */
             <>
-              <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-stone-200 shadow-2xl bg-stone-900 group">
+              <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-stone-200/90 shadow-xl bg-stone-900 group">
                 <img
                   src={result.resultImageUrl}
                   alt="Generated Bespoke Mosaic Surface"
@@ -233,25 +233,25 @@ export function GenerationWorkingScreen({
                     e.currentTarget.src = "/mosaic-finder-pattern.png";
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-black/20 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/40 via-transparent to-black/10 pointer-events-none" />
 
                 {/* Top Badge */}
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-obsidian-950/85 backdrop-blur-md text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-900/85 backdrop-blur-md text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold shadow-sm">
                     <CheckCircle2 className="w-3 h-3 text-emerald-400" /> 100% Complete
                   </span>
-                  <span className="text-[11px] font-mono text-gold-300 font-bold bg-obsidian-900/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-gold-500/30">
+                  <span className="text-[11px] font-mono text-gold-300 font-bold bg-stone-900/85 backdrop-blur-md px-2.5 py-1 rounded-full border border-gold-500/30 shadow-sm">
                     {result.estimatedSqFt} sq.ft
                   </span>
                 </div>
               </div>
 
-              {/* Bottom Button Bar: [ ↓ ] [ Get a quote ] [ Reimagine ] */}
+              {/* Bottom Button Bar: [ Download ] [ Get a quote ] [ Reimagine ] */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onDownload}
-                  className="p-3 rounded-xl bg-obsidian-900 hover:bg-gold-500/20 text-gold-400 hover:text-gold-300 border border-gold-500/30 transition-all hover:scale-105 cursor-pointer shadow-md"
+                  className="p-3 rounded-xl bg-stone-900 hover:bg-stone-800 text-gold-400 border border-stone-800 transition-all hover:scale-105 cursor-pointer shadow-sm"
                   title="Download High-Resolution Image"
                 >
                   <Download className="w-4 h-4" />
@@ -260,16 +260,16 @@ export function GenerationWorkingScreen({
                 <button
                   type="button"
                   onClick={onRequestQuote}
-                  className="flex-1 py-3 px-3.5 rounded-xl bg-obsidian-900 hover:bg-obsidian-800 text-white border border-neutral-700 hover:border-gold-500/40 text-xs font-serif font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  className="flex-1 py-3 px-3.5 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 hover:from-gold-600 hover:to-gold-500 text-stone-950 text-xs font-serif font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-gold-500/20"
                 >
-                  <FileText className="w-3.5 h-3.5 text-gold-400" />
+                  <FileText className="w-3.5 h-3.5 text-stone-950" />
                   Get a quote
                 </button>
 
                 <button
                   type="button"
                   onClick={onBackToStudio}
-                  className="flex-1 py-3 px-3.5 rounded-xl bg-obsidian-900 hover:bg-obsidian-800 text-neutral-300 hover:text-white border border-neutral-700 hover:border-gold-500/40 text-xs font-serif font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  className="flex-1 py-3 px-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white border border-stone-800 text-xs font-serif font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
                 >
                   <RefreshCw className="w-3.5 h-3.5 text-gold-400" />
                   Reimagine
@@ -278,11 +278,11 @@ export function GenerationWorkingScreen({
             </>
           ) : (
             /* LOADING STATE: Ambient Backdrop Card with Progress Bar */
-            <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-gold-500/40 shadow-2xl bg-gradient-to-br from-obsidian-900 via-obsidian-950 to-neutral-900 flex flex-col justify-end">
+            <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-gold-400/40 shadow-xl bg-gradient-to-br from-stone-900 via-stone-950 to-neutral-900 flex flex-col justify-end">
               {/* Shimmer Ambient Backdrop */}
               <div className="absolute inset-0 opacity-40 mix-blend-overlay">
                 <div className="absolute inset-0 bg-[radial-gradient(#CBA741_1px,transparent_1px)] [background-size:14px_14px] animate-pulse" />
-                <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950 via-obsidian-950/70 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/70 to-transparent" />
               </div>
 
               {/* Shimmer sweep animation */}
@@ -301,20 +301,20 @@ export function GenerationWorkingScreen({
                 </div>
 
                 {/* Glowing Gold Progress Bar */}
-                <div className="w-full h-2 rounded-full bg-obsidian-950 border border-neutral-800 overflow-hidden p-0.5">
+                <div className="w-full h-2 rounded-full bg-stone-950 border border-stone-800 overflow-hidden p-0.5">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-gold-600 via-gold-400 to-amber-300 shadow-[0_0_12px_rgba(203,167,65,0.6)] transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-1 text-[10px] text-neutral-400 font-mono tracking-wider">
+                <div className="flex items-center justify-between pt-1 text-[10px] text-stone-400 font-mono tracking-wider">
                   <span>USUALLY READY IN ABOUT 45 SECONDS</span>
                   {onCancel && (
                     <button
                       type="button"
                       onClick={onCancel}
-                      className="text-neutral-500 hover:text-neutral-300 underline transition-colors cursor-pointer"
+                      className="text-stone-400 hover:text-white underline transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -327,13 +327,12 @@ export function GenerationWorkingScreen({
       </div>
 
       {/* ================= BOTTOM CONTEXT CARD ================= */}
-      {/* Displayed in both loading and completed states to match reference */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-obsidian-900/80 border border-gold-500/20 backdrop-blur-xl shadow-xl flex flex-col gap-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-stone-200/90 shadow-xl flex flex-col gap-6 text-stone-900">
         {/* Space Reference Row */}
         {roomPhotoUrl ? (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-stone-100">
             <div className="flex items-center gap-4">
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-gold-500/30 bg-obsidian-950 shrink-0 shadow-lg">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 shrink-0 shadow-sm">
                 <Image
                   src={roomPhotoUrl}
                   alt="Reference Space"
@@ -342,14 +341,14 @@ export function GenerationWorkingScreen({
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs sm:text-sm font-semibold text-white truncate max-w-xs sm:max-w-md">
+                <span className="text-xs sm:text-sm font-semibold text-stone-900 truncate max-w-xs sm:max-w-md">
                   {roomPhotoName || "custom-reference-space.jpg"}
                 </span>
-                <span className="text-[11px] text-neutral-400 font-mono">
+                <span className="text-[11px] text-stone-500 font-mono">
                   Custom Architectural Reference
                 </span>
-                <span className="text-[11px] text-gold-400/90 flex items-center gap-1 mt-0.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-gold-400" />
+                <span className="text-[11px] text-amber-700 flex items-center gap-1 mt-0.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
                   Used only to render this preview. Not stored.
                 </span>
               </div>
@@ -359,23 +358,23 @@ export function GenerationWorkingScreen({
               <button
                 type="button"
                 onClick={onReplacePhoto || onBackToStudio}
-                className="text-xs font-mono font-semibold tracking-wider text-neutral-400 hover:text-gold-300 transition-colors uppercase cursor-pointer"
+                className="text-xs font-mono font-semibold tracking-wider text-stone-600 hover:text-stone-900 transition-colors uppercase cursor-pointer"
               >
                 REPLACE
               </button>
             )}
           </div>
         ) : (
-          <div className="flex items-center justify-between pb-5 border-b border-neutral-800">
+          <div className="flex items-center justify-between pb-5 border-b border-stone-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gold-500/10 border border-gold-500/30 flex items-center justify-center text-gold-400">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-center text-amber-700">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs sm:text-sm font-semibold text-white">
+                <span className="text-xs sm:text-sm font-semibold text-stone-900">
                   Imagine From Scratch Studio
                 </span>
-                <span className="text-[11px] text-neutral-400">
+                <span className="text-[11px] text-stone-500">
                   Pure architectural mosaic art formulation
                 </span>
               </div>
@@ -384,7 +383,7 @@ export function GenerationWorkingScreen({
               <button
                 type="button"
                 onClick={onBackToStudio}
-                className="text-xs font-mono font-semibold tracking-wider text-neutral-400 hover:text-gold-300 transition-colors uppercase cursor-pointer"
+                className="text-xs font-mono font-semibold tracking-wider text-stone-600 hover:text-stone-900 transition-colors uppercase cursor-pointer"
               >
                 CHANGE PROMPT
               </button>
@@ -393,22 +392,22 @@ export function GenerationWorkingScreen({
         )}
 
         {/* Active Prompt Row */}
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-mono">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] text-stone-500 uppercase tracking-wider font-mono font-semibold">
             Active Vision Prompt:
           </span>
-          <p className="text-xs sm:text-sm text-neutral-200 font-serif italic">
+          <p className="text-xs sm:text-sm text-stone-800 font-serif italic leading-relaxed bg-stone-50/70 p-3.5 rounded-xl border border-stone-200/80">
             &ldquo;{result?.promptApplied || prompt}&rdquo;
           </p>
         </div>
 
         {/* WHERE SHOULD IT GO? Placement Selector Display */}
-        <div className="flex flex-col gap-3 pt-2">
+        <div className="flex flex-col gap-3 pt-1">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-bold">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-stone-500 font-bold">
               WHERE SHOULD IT GO?
             </span>
-            {!result && <Loader2 className="w-4 h-4 text-gold-400 animate-spin" />}
+            {!result && <Loader2 className="w-4 h-4 text-amber-600 animate-spin" />}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -424,8 +423,8 @@ export function GenerationWorkingScreen({
                   onClick={() => onSelectPlacement?.(opt)}
                   className={`px-4 py-2 rounded-full text-xs font-medium transition-all cursor-pointer ${
                     isActive
-                      ? "bg-gold-500 text-obsidian-950 font-bold border border-gold-400 shadow-md shadow-gold-500/20 scale-105"
-                      : "bg-obsidian-950/80 text-neutral-400 border border-neutral-800 hover:border-gold-500/40 hover:text-gold-300"
+                      ? "bg-stone-900 text-white font-bold border border-stone-900 shadow-xs scale-105"
+                      : "bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200"
                   }`}
                 >
                   {opt}
@@ -437,41 +436,41 @@ export function GenerationWorkingScreen({
 
         {/* If Result Ready: Show Material Estimation Cards */}
         {result && (
-          <div className="pt-5 border-t border-neutral-800 flex flex-col gap-4">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-gold-400 font-bold flex items-center gap-1.5">
-              <Grid className="w-3.5 h-3.5" /> Architectural Material Estimation
+          <div className="pt-5 border-t border-stone-100 flex flex-col gap-4">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-amber-800 font-bold flex items-center gap-1.5">
+              <Grid className="w-3.5 h-3.5 text-amber-600" /> Architectural Material Estimation
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-2xl bg-obsidian-950 border border-neutral-800 text-center">
-                <span className="text-[10px] text-neutral-400 block mb-1 uppercase tracking-wider font-mono">
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-center shadow-2xs">
+                <span className="text-[10px] text-stone-500 block mb-1 uppercase tracking-wider font-mono font-semibold">
                   Estimated Area
                 </span>
-                <span className="text-base sm:text-lg font-serif font-bold text-white">
+                <span className="text-base sm:text-xl font-serif font-bold text-stone-900">
                   {result.estimatedSqFt} sq.ft
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-obsidian-950 border border-neutral-800 text-center">
-                <span className="text-[10px] text-neutral-400 block mb-1 uppercase tracking-wider font-mono">
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-center shadow-2xs">
+                <span className="text-[10px] text-stone-500 block mb-1 uppercase tracking-wider font-mono font-semibold">
                   Mosaic Chips
                 </span>
-                <span className="text-base sm:text-lg font-serif font-bold text-white">
+                <span className="text-base sm:text-xl font-serif font-bold text-stone-900">
                   {result.estimatedTileCount.toLocaleString()}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-obsidian-950 border border-gold-500/30 text-center">
-                <span className="text-[10px] text-gold-400 block mb-1 uppercase tracking-wider font-mono">
+              <div className="p-4 rounded-2xl bg-gold-50/70 border border-gold-300 text-center shadow-2xs">
+                <span className="text-[10px] text-amber-800 block mb-1 uppercase tracking-wider font-mono font-bold">
                   Material Cost
                 </span>
-                <span className="text-base sm:text-lg font-serif font-bold text-white">
+                <span className="text-base sm:text-xl font-serif font-bold text-amber-900">
                   ${result.estimatedMaterialCost.toLocaleString()}
                 </span>
               </div>
             </div>
 
-            <span className="text-[10px] text-neutral-500 font-mono">
+            <span className="text-[10px] text-stone-500 font-mono">
               *Includes precision waterjet cut tesserae, fiberglass mesh mounting, and bespoke wooden crating.
             </span>
           </div>

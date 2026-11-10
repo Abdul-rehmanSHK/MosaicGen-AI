@@ -501,10 +501,17 @@ export function DesignStudio({
         ? canvasRef.current.getMaskBase64()
         : null;
 
-      // Prefer the direct high-res uploaded photo dataUrl, fallback to canvas snapshot if available
+      // Only treat roomPhotoUrl as an inpainting base photo if the user actually uploaded it
+      // (not when it's simply the reference catalog product image)
       let inputImageBase64: string | null = null;
       let inputImageUrl: string | null = null;
-      if (!isScratch) {
+      const isInspirationProductOnly = Boolean(
+        selectedDesignItem?.image &&
+        roomPhotoUrl &&
+        (roomPhotoUrl === selectedDesignItem.image || roomPhotoName?.includes("(Inspiration Space)"))
+      );
+
+      if (!isScratch && !isInspirationProductOnly) {
         if (roomPhotoUrl && roomPhotoUrl.startsWith("data:image")) {
           inputImageBase64 = roomPhotoUrl;
         } else if (canvasRef.current?.getInputImageBase64) {

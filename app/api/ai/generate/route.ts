@@ -168,18 +168,10 @@ export async function POST(request: Request) {
     }
 
     // -------------------------------------------------------------------------
-    // 5. Enforce Total Free Previews Quota (Max 5 per verified email for public visitors)
-    // Studio Admins & authenticated team members have UNLIMITED generations
+    // 5. Total Free Previews Quota (Temporarily Uncapped / Unlimited for testing & refinement)
     // -------------------------------------------------------------------------
-    const isAdmin =
-      (session?.user as any)?.role === "ADMIN" ||
-      userCleanEmail === "abdulrehman.irfan11286@gmail.com" ||
-      userCleanEmail === "admin@mosaic.com" ||
-      (userId ? (await prisma.user.findUnique({ where: { id: userId } }))?.role === "ADMIN" : false);
-
     let generationCount = 0;
-
-    if (!isAdmin) {
+    try {
       generationCount = await prisma.aIGeneration.count({
         where: {
           OR: [
@@ -189,20 +181,8 @@ export async function POST(request: Request) {
           isTrashed: false,
         },
       });
-
-      if (generationCount >= 5) {
-        return NextResponse.json(
-          {
-            error: "LIMIT_REACHED",
-            message: `You have reached your limit of 5 free previews for ${userCleanEmail}. Please speak to a specialist or use a different email.`,
-            email: userCleanEmail,
-            usedCount: generationCount,
-            maxLimit: 5,
-            remaining: 0,
-          },
-          { status: 403 }
-        );
-      }
+    } catch (countErr) {
+      console.warn("Could not retrieve generation count:", countErr);
     }
 
     // -------------------------------------------------------------------------
@@ -296,7 +276,7 @@ export async function POST(request: Request) {
     });
 
     const newUsedCount = generationCount + 1;
-    const remaining = isAdmin ? 999 : Math.max(0, 5 - newUsedCount);
+    const remaining = 999;
 
     return NextResponse.json(
       {
@@ -308,7 +288,7 @@ export async function POST(request: Request) {
         estimatedMaterialCost: aiResult.estimatedMaterialCost,
         promptApplied: aiResult.promptApplied,
         usedCount: newUsedCount,
-        maxLimit: isAdmin ? 999 : 5,
+        maxLimit: 999,
         remaining,
       },
       {
